@@ -5,6 +5,16 @@
  * ============================================================ */
 
 window.DB = {
+  // 家长账号（Demo：本地模拟登录 / 注册 / 微信绑定）
+  parent: {
+    nickname: '李先生',
+    avatar: '李',
+    phone: '138****8888',
+    password: '123456',
+    wechatBound: false,
+    loggedIn: true,
+  },
+
   // 当前登录家长 & 学生（进入后自动识别，可切换）
   currentStudentId: 'li-xiaoming',
   students: [
@@ -50,10 +60,16 @@ window.DB = {
       id: 'ai-qimeng',
       name: '人工智能启蒙课',
       cover: 'ai',
+      type: 'AI课',
       tags: ['AI 素质', '热门'],
       gradeRange: '1-3 年级',
       time: '每周三 16:30-17:30',
       place: '本校科技教室',
+      classes: [
+        { id: 'wed', name: '周三班', time: '每周三 16:30-17:30', place: '本校科技教室', enrolled: 18, maxSeats: 30 },
+        { id: 'fri', name: '周五班', time: '每周五 16:30-17:30', place: '本校科技教室', enrolled: 27, maxSeats: 30 },
+        { id: 'mon', name: '周一班', time: '每周一 17:00-18:00', place: '本校录播教室', enrolled: 30, maxSeats: 30 },
+      ],
       lessons: 8,
       minClass: 10,
       maxSeats: 30,
@@ -93,10 +109,15 @@ window.DB = {
       id: 'coding-思维',
       name: '少儿编程思维课',
       cover: 'code',
+      type: 'AI课',
       tags: ['科技', '逻辑'],
       gradeRange: '3-5 年级',
       time: '每周五 16:30-17:30',
       place: '本校计算机教室',
+      classes: [
+        { id: 'tue', name: '周二班', time: '每周二 16:30-17:30', place: '本校计算机教室', enrolled: 22, maxSeats: 30 },
+        { id: 'fri', name: '周五班', time: '每周五 16:30-17:30', place: '本校计算机教室', enrolled: 25, maxSeats: 30 },
+      ],
       lessons: 8,
       minClass: 12,
       maxSeats: 30,
@@ -131,10 +152,15 @@ window.DB = {
       id: 'science-shiyan',
       name: '科学实验探索课',
       cover: 'science',
+      type: '研学',
       tags: ['科学', '动手'],
       gradeRange: '1-4 年级',
       time: '每周二 16:30-17:30',
       place: '本校科学教室',
+      classes: [
+        { id: 'tue', name: '周二班', time: '每周二 16:30-17:30', place: '本校科学教室', enrolled: 30, maxSeats: 30 },
+        { id: 'thu', name: '周四班', time: '每周四 16:30-17:30', place: '本校科学教室', enrolled: 30, maxSeats: 30 },
+      ],
       lessons: 8,
       minClass: 10,
       maxSeats: 30,
@@ -222,7 +248,11 @@ window.DB = {
           desc: '学生使用 AI 工具创作了一幅未来城市主题作品，并能描述自己的创作思路。',
         },
         teacherComment:
-          '李小明在课程中表现积极，能够理解人工智能的基础概念，并能使用简单提示词完成 AI 图像创作。课程结束时已完成个人作品展示。',
+          '李小明同学在本期 AI 创意作品课中表现非常积极，8 次课全勤，每节课都能主动举手提问，是班上参与度最高的孩子之一。\n从最初对 AI 绘画完全陌生，到能够独立设计提示词、反复调整画面细节，他的进步非常明显。期末作品《未来城市》构思完整，色彩搭配大胆，在成果展示环节获得了全班同学的掌声。\n建议家长平时可以多和孩子聊聊他感兴趣的科技话题，鼓励他把想法画下来、说出来。下学期若继续学习进阶课程，相信他会有更大的突破。',
+        commentImages: [
+          'assets/images/courses/ai-art.png',
+          'assets/images/courses/ai-basics.png',
+        ],
       },
     },
     {
@@ -251,7 +281,11 @@ window.DB = {
           desc: '学生使用图形化编程独立完成了一个接水果小游戏，设置了计分与难度递增，能讲清楚实现思路。',
         },
         teacherComment:
-          '李小明在编程课中表现出色，能够理解顺序、循环、条件三种编程结构，并独立完成了一个可玩的小游戏作品，逻辑清晰、动手能力强，课堂参与度高。',
+          '李小明同学逻辑思维清晰，8 次课出勤 7 次（1 次病假后主动补课），学习态度值得表扬。\n课程中他很快掌握了顺序、循环、条件三种基本编程结构，中期开始就能脱离示例独立搭建程序。期末作品《接水果小游戏》加入了计分和难度递增两个自选功能，调试过程中遇到角色碰撞判定的问题，他没有急着求助，而是自己逐步排查解决，这种解决问题的耐心非常难得。\n建议家长鼓励孩子继续保持"先自己试、再提问"的习惯，如果条件允许，可以在家安排每周一次的编程练习时间。',
+        commentImages: [
+          'assets/images/courses/coding-thinking.png',
+          'assets/images/courses/science-lab.png',
+        ],
       },
     },
   ],

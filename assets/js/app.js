@@ -17,10 +17,28 @@
     const list = DB.students || [DB.student];
     return list.find((s) => s.id === DB.currentStudentId) || list[0];
   };
+  /* 本地持久化（Demo：学生 / 家长信息的增删改存 localStorage） */
+  const STORE_KEY = 'futureEdu.state.v1';
+  const persistState = () => {
+    try {
+      localStorage.setItem(STORE_KEY, JSON.stringify({
+        students: DB.students, currentStudentId: DB.currentStudentId, parent: DB.parent,
+      }));
+    } catch (_) {}
+  };
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORE_KEY) || 'null');
+    if (saved) {
+      if (Array.isArray(saved.students) && saved.students.length) DB.students = saved.students;
+      if (saved.currentStudentId) DB.currentStudentId = saved.currentStudentId;
+      if (saved.parent) Object.assign(DB.parent, saved.parent);
+    }
+  } catch (_) {}
   try {
     const savedStudentId = localStorage.getItem('futureEdu.currentStudentId');
     if ((DB.students || []).some((s) => s.id === savedStudentId)) DB.currentStudentId = savedStudentId;
   } catch (_) {}
+  if (!(DB.students || []).some((s) => s.id === DB.currentStudentId)) DB.currentStudentId = (DB.students[0] || {}).id;
   const syncCurrentStudent = () => {
     DB.student = currentStudent();
     return DB.student;
@@ -66,6 +84,7 @@
     check: '<svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     checkBig: '<svg width="38" height="38" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     clock: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M12 7v5l3 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+    swap: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M7 4 3.5 7.5 7 11M3.5 7.5H16M17 13l3.5 3.5L17 20m3.5-3.5H8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
 
     /* 底部导航：未选中描边、选中实心 */
     home: (a) => a
@@ -90,6 +109,7 @@
     rocket: '<svg viewBox="0 0 24 24" fill="currentColor" fill-rule="evenodd"><path d="M18.8 3.2c-2.9.2-5.5 1.8-7.2 4.4l-2.7.4c-.5.1-.7.7-.4 1.1l1.4 1.9c-.2.6-.4 1.2-.5 1.9l2.9 2.9c.6-.1 1.3-.3 1.9-.5l1.9 1.4c.4.3 1 .1 1.1-.4l.4-2.7c2.6-1.7 4.2-4.3 4.4-7.2l.1-2.4a.7.7 0 0 0-.7-.7l-2.5-.1zm-4.2 6.2a1.5 1.5 0 1 1 3 0 1.5 1.5 0 0 1-3 0zM5 16.3c-1 1-1.2 4-1.2 4s3-.2 4-1.2A2 2 0 0 0 5 16.3z"/></svg>',
     cap: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 4 1.5 9 12 14l8.5-4V15a1 1 0 1 0 1.5 0V9L12 4z"/><path d="M6 12.2v3C6 17.2 8.7 19 12 19s6-1.8 6-3.8v-3l-6 2.9-6-2.9z"/></svg>',
     star: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3.5l2.6 5.7 6.2.6-4.7 4.1 1.4 6.1L12 16.9 6.5 20l1.4-6.1L3.2 9.8l6.2-.6z"/></svg>',
+    gear: '<svg viewBox="0 0 24 24" fill="currentColor" fill-rule="evenodd"><path d="M10.3 3.2a1 1 0 0 0-1 .8l-.3 1.7c-.5.2-1 .5-1.5.8l-1.6-.6a1 1 0 0 0-1.2.4L3.6 8.2a1 1 0 0 0 .2 1.3L5.1 10.6a6.9 6.9 0 0 0 0 1.7l-1.3 1.1a1 1 0 0 0-.2 1.3l1.1 1.9a1 1 0 0 0 1.2.4l1.6-.6c.5.3 1 .6 1.5.8l.3 1.7a1 1 0 0 0 1 .8h2.2a1 1 0 0 0 1-.8l.3-1.7c.5-.2 1-.5 1.5-.8l1.6.6a1 1 0 0 0 1.2-.4l1.1-1.9a1 1 0 0 0-.2-1.3l-1.3-1.1a6.9 6.9 0 0 0 0-1.7l1.3-1.1a1 1 0 0 0 .2-1.3l-1.1-1.9a1 1 0 0 0-1.2-.4l-1.6.6c-.5-.3-1-.6-1.5-.8l-.3-1.7a1 1 0 0 0-1-.8h-2.2zm1.1 5.6a2.7 2.7 0 1 1 0 5.4 2.7 2.7 0 0 1 0-5.4z"/></svg>',
   };
 
   const navbar = (title, { orange, back = true, right } = {}) => `
@@ -170,6 +190,7 @@
       const pct = Math.round((c.enrolled / c.maxSeats) * 100);
       return `
       <div class="card course-card mx mt" onclick="location.hash='#/course/${c.id}'">
+        <span class="course-type-badge ${c.type === '研学' ? 'study' : 'ai'}">${esc(c.type || 'AI课')}</span>
         <div class="cc-cover">${coverImg(c.cover, c.name)}</div>
         <div class="cc-body">
           <div class="cc-name">${esc(c.name)}</div>
@@ -187,28 +208,23 @@
       </div>`;
     };
 
+    const hour = new Date().getHours();
+    const greet = hour < 6 ? '夜深了' : hour < 11 ? '早上好' : hour < 13 ? '中午好' : hour < 18 ? '下午好' : '晚上好';
     render(`
     <div class="screen has-tabbar">
       <div class="scroll">
-        <div style="padding-top:env(safe-area-inset-top);background:var(--orange-grad)">
-          <div class="student-hero">
+        <div class="home-hero" style="padding-top:calc(14px + env(safe-area-inset-top))">
+          <div class="hh-deco hh-deco1"></div>
+          <div class="hh-deco hh-deco2"></div>
+          <div class="hh-top">
+            <div class="hh-greet">${greet}，欢迎回来</div>
+            <button class="hh-switch" onclick="App.openSwitchSheet()">${I.swap} 切换孩子</button>
+          </div>
+          <div class="hh-student">
             ${avatarImg(s.avatarImage, s.avatar, s.name)}
             <div class="info">
               <div class="nm">${esc(s.name)} <span class="school-pill">${esc(s.grade)}</span></div>
-              <div class="sc">${esc(s.school)}</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="mx" style="margin-top:-2px;padding-top:12px">
-          <div class="quick2">
-            <div class="qi" onclick="location.hash='#/orders'">
-              <div class="qc" style="background:var(--blue)">${I.clip}</div>
-              <div><div class="qt">我的报名</div><div class="qd">报名 / 成班进度</div></div>
-            </div>
-            <div class="qi" onclick="location.hash='#/results'">
-              <div class="qc" style="background:var(--green)">${I.award}</div>
-              <div><div class="qt">学习成果</div><div class="qd">作品 / 评价</div></div>
+              <div class="sc">${I.school} ${esc(s.school)}</div>
             </div>
           </div>
         </div>
@@ -217,8 +233,37 @@
         ${DB.courses.map(courseCard).join('')}
       </div>
       ${tabbar('home')}
+      ${switchSheet()}
     </div>`);
   }
+
+  /* 首页切换孩子弹层 */
+  function switchSheet() {
+    const cur = currentStudent();
+    return `
+    <div class="sheet-mask" id="swMask" onclick="if(event.target===this)App.closeSwitchSheet()">
+      <div class="sheet">
+        <div class="handle"></div>
+        <h3>切换孩子</h3>
+        ${(DB.students || []).map((stu) => {
+          const active = stu.id === cur.id;
+          return `
+          <div class="student-option ${active ? 'active' : ''}" onclick="App.switchStudent('${stu.id}')">
+            ${avatarImg(stu.avatarImage, stu.avatar, stu.name)}
+            <div class="so-main">
+              <div class="so-name">${esc(stu.name)} <span class="tag ${active ? '' : 'gray'}">${esc(stu.grade)}</span></div>
+              <div class="so-sub">${esc(stu.school)}</div>
+            </div>
+            <div class="so-state">${active ? '当前' : '切换'}</div>
+          </div>`;
+        }).join('')}
+        <div style="height:12px"></div>
+        <button class="btn btn-ghost" style="height:42px" onclick="location.hash='#/students'">管理孩子（添加 / 编辑）</button>
+      </div>
+    </div>`;
+  }
+  function openSwitchSheet() { $('#swMask')?.classList.add('show'); }
+  function closeSwitchSheet() { $('#swMask')?.classList.remove('show'); }
 
   /* ============================================================
    * 屏幕 3：课程详情页
@@ -232,6 +277,7 @@
       ${navbar('课程详情')}
       <div class="scroll">
         <div class="card mx course-detail-card">
+          <span class="course-type-badge ${c.type === '研学' ? 'study' : 'ai'}">${esc(c.type || 'AI课')}</span>
           <div class="pad">
             <div class="course-detail-head">
               <div class="course-detail-main">
@@ -244,7 +290,7 @@
             <div class="divider"></div>
             <div class="kv"><span class="k">上课学校</span><span class="v">${esc(currentStudent().school)}</span></div>
             <div class="kv"><span class="k">上课地点</span><span class="v">${esc(c.place)}</span></div>
-            <div class="kv"><span class="k">上课时间</span><span class="v">${esc(c.time)}</span></div>
+            <div class="kv"><span class="k">上课时间</span><span class="v">${(c.classes || []).length > 1 ? `共 ${c.classes.length} 个班次可选（报名时选择）` : esc(c.time)}</span></div>
             <div class="kv"><span class="k">课时数量</span><span class="v">共 ${c.lessons} 次</span></div>
             <div class="kv"><span class="k">成班人数</span><span class="v">满 ${c.minClass} 人开班 · 最大 ${c.maxSeats} 人</span></div>
             <div class="kv"><span class="k">当前报名</span><span class="v">${c.enrolled} 人 ${full ? '<span class="badge st-muted">已满员</span>' : ''}</span></div>
@@ -288,19 +334,81 @@
         <div class="price" style="margin-right:auto"><span class="yen">¥</span><span class="num">${c.price}</span><span class="small muted"> /期</span></div>
         ${full
           ? '<button class="btn" disabled style="max-width:200px">已满员，无法报名</button>'
-          : `<button class="btn btn-primary" style="max-width:200px" onclick="location.hash='#/enroll/${c.id}'">立即报名</button>`}
+          : `<button class="btn btn-primary" style="max-width:200px" onclick="App.openSkuSheet('${c.id}')">立即报名</button>`}
       </div>
+      ${skuSheet(c)}
     </div>`);
+  }
+
+  /* ---------- 班级 / 时段选择弹层（SKU：课后延时服务多班次） ---------- */
+  let skuSel = -1;
+  function skuSheet(c) {
+    const classes = c.classes || [];
+    if (!classes.length) return '';
+    return `
+    <div class="sheet-mask" id="skuMask" onclick="if(event.target===this)App.closeSkuSheet()">
+      <div class="sheet">
+        <div class="handle"></div>
+        <h3>选择班级</h3>
+        <div class="small muted" style="margin-bottom:2px">课后延时服务时段 · 请选择合适的班级和时间</div>
+        ${classes.map((k, i) => {
+          const isFull = k.enrolled >= k.maxSeats;
+          const left = k.maxSeats - k.enrolled;
+          return `
+          <div class="sku-opt ${isFull ? 'full' : ''}" id="sku${i}" onclick="App.selectSku(${i})">
+            <div class="sku-main">
+              <div class="sku-name">${esc(k.name)}<span class="sku-time">${esc(k.time)}</span></div>
+              <div class="sku-sub small muted">${esc(k.place)} · ${isFull ? '已满员' : `余 ${left} 名额`}</div>
+            </div>
+            <span class="radio"></span>
+          </div>`;
+        }).join('')}
+        <div class="row between" style="margin-top:14px;margin-bottom:10px">
+          <span class="price"><span class="yen">¥</span><span class="num">${c.price}</span><span class="small muted"> /期 · 先学后付</span></span>
+        </div>
+        <button class="btn btn-primary" onclick="App.confirmSku('${c.id}')">确认，去报名</button>
+      </div>
+    </div>`;
+  }
+
+  function openSkuSheet(cid) {
+    const c = courseById(cid);
+    const classes = (c && c.classes) || [];
+    if (!classes.length) { go('#/enroll/' + cid); return; }
+    skuSel = classes.findIndex((k) => k.enrolled < k.maxSeats);
+    classes.forEach((_, i) => $('#sku' + i)?.classList.toggle('on', i === skuSel));
+    $('#skuMask').classList.add('show');
+  }
+
+  function closeSkuSheet() { $('#skuMask')?.classList.remove('show'); }
+
+  function selectSku(i) {
+    skuSel = i;
+    document.querySelectorAll('.sku-opt').forEach((el, j) => el.classList.toggle('on', j === i));
+  }
+
+  function confirmSku(cid) {
+    const c = courseById(cid);
+    const cls = ((c && c.classes) || [])[skuSel];
+    if (!cls) return toast('请选择班级');
+    if (cls.enrolled >= cls.maxSeats) return toast('该班级已满员，请选择其他班级');
+    closeSkuSheet();
+    go('#/enroll/' + cid + '/' + cls.id);
   }
 
   /* ============================================================
    * 屏幕 4：报名确认页
    * ============================================================ */
   let enrollConfirmed = false;
-  function screenEnroll(id) {
+  let enrollClass = null; // 本次报名所选班级（SKU）
+  function screenEnroll(id, classId) {
     const c = courseById(id);
     if (!c) return screenHome();
     const s = currentStudent();
+    const classes = c.classes || [];
+    enrollClass = classes.find((k) => k.id === routeId(classId || ''))
+      || classes.find((k) => k.enrolled < k.maxSeats) || null;
+    const cls = enrollClass;
     enrollConfirmed = false;
     const ruleText = `我已阅读并同意《课程报名须知》，同意进行 ¥${c.price} 费用预授权；我已知晓未成班将自动取消报名并释放预授权，课程完成后可查看学习成果并确认付款。`;
 
@@ -318,8 +426,9 @@
         <div class="card mx mt pad">
           <div class="section-title">课程信息</div>
           <div class="kv"><span class="k">课程名称</span><span class="v bold">${esc(c.name)}</span></div>
-          <div class="kv"><span class="k">上课时间</span><span class="v">${esc(c.time)}</span></div>
-          <div class="kv"><span class="k">上课地点</span><span class="v">${esc(c.place)}</span></div>
+          ${cls ? `<div class="kv"><span class="k">报名班级</span><span class="v"><b>${esc(cls.name)}</b> <span class="small muted">（余 ${cls.maxSeats - cls.enrolled} 名额）</span></span></div>` : ''}
+          <div class="kv"><span class="k">上课时间</span><span class="v">${esc(cls ? cls.time : c.time)}</span></div>
+          <div class="kv"><span class="k">上课地点</span><span class="v">${esc(cls ? cls.place : c.place)}</span></div>
           <div class="kv"><span class="k">报名截止</span><span class="v">2026 年 7 月 8 日</span></div>
           <div class="divider"></div>
           <div class="kv"><span class="k">课程费用</span><span class="v price"><span class="yen">¥</span><span class="num">${c.price}</span></span></div>
@@ -339,6 +448,7 @@
       <div class="actionbar">
         <button class="btn btn-primary" id="enrollBtn" disabled onclick="App.submitEnroll('${c.id}')">确认报名并预授权</button>
       </div>
+      ${wxpaySheet(c)}
     </div>`);
   }
 
@@ -348,12 +458,48 @@
     $('#enrollBtn').disabled = !enrollConfirmed;
   }
 
+  /* ---------- 微信支付模拟弹窗（预授权收银台） ---------- */
+  const wxLogo = '<svg width="18" height="18" viewBox="0 0 24 24" fill="#07c160"><path d="M9.5 3C5.4 3 2 5.9 2 9.5c0 2 1 3.8 2.7 5l-.7 2.2 2.5-1.3c.7.2 1.4.4 2.2.4h.4a5.7 5.7 0 0 1-.3-1.8c0-3.5 3.3-6.3 7.3-6.3h.3C15.7 5 12.9 3 9.5 3zM7 8.4a.9.9 0 1 1 0-1.8.9.9 0 0 1 0 1.8zm5 0a.9.9 0 1 1 0-1.8.9.9 0 0 1 0 1.8zM22 14c0-3-2.9-5.4-6.4-5.4S9.2 11 9.2 14s2.9 5.4 6.4 5.4c.7 0 1.3-.1 1.9-.3l2.1 1.1-.6-1.9A5.2 5.2 0 0 0 22 14zm-8.5-.9a.8.8 0 1 1 0-1.6.8.8 0 0 1 0 1.6zm4.2 0a.8.8 0 1 1 0-1.6.8.8 0 0 1 0 1.6z"/></svg>';
+
+  function wxpaySheet(c) {
+    return `
+    <div class="sheet-mask" id="wxMask" onclick="if(event.target===this)App.closeWxpay()">
+      <div class="sheet wxpay">
+        <div class="wx-head"><span class="wx-close" onclick="App.closeWxpay()">✕</span>微信支付</div>
+        <div class="wx-amount"><span class="y">¥</span>${c.price}.00</div>
+        <div class="wx-sub">预授权冻结 · 暂不扣款</div>
+        <div class="wx-rows">
+          <div class="wx-row"><span class="k">商户</span><span class="v">天府通 · 未来教育</span></div>
+          <div class="wx-row"><span class="k">商品</span><span class="v">${esc(c.name)}（报名预授权）</span></div>
+          <div class="wx-row"><span class="k">支付方式</span><span class="v wx-method">${wxLogo}零钱</span></div>
+        </div>
+        <button class="wx-btn" id="wxPayBtn" onclick="App.confirmWxpay('${c.id}')">确认支付</button>
+      </div>
+    </div>`;
+  }
+
   function submitEnroll(id) {
-    const btn = $('#enrollBtn');
+    if ($('#enrollBtn').disabled) return;
+    const btn = $('#wxPayBtn');
+    btn.disabled = false;
+    btn.textContent = '确认支付';
+    $('#wxMask').classList.add('show');
+  }
+
+  function closeWxpay() {
+    const m = $('#wxMask');
+    if (m) m.classList.remove('show');
+  }
+
+  function confirmWxpay(id) {
+    const btn = $('#wxPayBtn');
     if (btn.disabled) return;
     btn.disabled = true;
-    btn.textContent = '预授权处理中…';
-    setTimeout(() => go('#/preauth/' + id), 800);
+    btn.textContent = '支付中…';
+    setTimeout(() => {
+      btn.textContent = '✓ 预授权成功';
+      setTimeout(() => { closeWxpay(); go('#/preauth/' + id); }, 600);
+    }, 900);
   }
 
   /* ============================================================
@@ -361,7 +507,9 @@
    * ============================================================ */
   function screenPreauth(id) {
     const c = courseById(id) || DB.courses[0];
-    const enrolledNow = c.enrolled + 1;
+    const cls = enrollClass && (c.classes || []).includes(enrollClass) ? enrollClass : null;
+    const seatBase = cls || c;
+    const enrolledNow = seatBase.enrolled + 1;
     render(`
     <div class="screen">
       ${navbar('报名结果', { back: false })}
@@ -377,10 +525,12 @@
             <div class="bold">${esc(c.name)}</div>
             <span class="badge st-info">待成班</span>
           </div>
+          ${cls ? `<div class="kv"><span class="k">报名班级</span><span class="v"><b>${esc(cls.name)}</b> · ${esc(cls.time)}</span></div>
+          <div class="kv"><span class="k">上课地点</span><span class="v">${esc(cls.place)}</span></div>` : ''}
           <div class="kv"><span class="k">预授权金额</span><span class="v"><b style="color:var(--orange-deep)">¥${c.price}</b></span></div>
           <div class="kv"><span class="k">成班条件</span><span class="v">满 ${c.minClass} 人开班</span></div>
-          <div class="kv"><span class="k">当前报名</span><span class="v">${enrolledNow} 人 / 最大 ${c.maxSeats} 人</span></div>
-          <div class="seat-bar" style="margin-top:4px"><i style="width:${Math.round((enrolledNow / c.maxSeats) * 100)}%"></i></div>
+          <div class="kv"><span class="k">当前报名</span><span class="v">${enrolledNow} 人 / 最大 ${seatBase.maxSeats} 人</span></div>
+          <div class="seat-bar" style="margin-top:4px"><i style="width:${Math.round((enrolledNow / seatBase.maxSeats) * 100)}%"></i></div>
         </div>
 
         <div class="card mx mt pad">
@@ -425,12 +575,14 @@
           <div class="row between">
             <div class="small">
               ${isPay
-                ? `<span class="muted">待付款</span> <b style="color:var(--orange-deep)">¥${o.amount}</b> · 老师已上传学习成果`
-                : `<span class="muted">已预授权</span> <b>¥${o.amount}</b>`}
+                ? `<span class="muted">待确认</span> <b style="color:var(--orange-deep)">¥${o.amount}</b> · 老师已上传学习成果`
+                : `<span class="muted">${o.status === 'done' ? '已完成' : '已预授权'}</span> <b>¥${o.amount}</b>`}
             </div>
             ${isPay
-              ? `<button class="btn btn-primary btn-sm" onclick="location.hash='#/result/${o.id}'">去查看并付款</button>`
-              : `<button class="btn btn-line btn-sm" onclick="location.hash='#/schedule/${o.id}'">查看详情</button>`}
+              ? `<button class="btn btn-primary btn-sm" onclick="location.hash='#/result/${o.id}'">查看并确认</button>`
+              : o.result
+                ? `<button class="btn btn-line btn-sm" onclick="location.hash='#/result/${o.id}'">查看成果</button>`
+                : `<button class="btn btn-line btn-sm" onclick="location.hash='#/schedule/${o.id}'">查看详情</button>`}
           </div>
         </div>
       </div>`;
@@ -553,39 +705,22 @@
         </div>
 
         <div class="card mx mt pad">
-          <div class="section-title">课堂照片</div>
-          <div class="photos">
-            ${r.photos.map((p, i) => `<div class="ph">${coverImg(['ai', 'code', 'art'][i % 3], p, 'cover-photo')}</div>`).join('')}
-          </div>
-        </div>
-
-        <div class="card mx mt pad">
-          <div class="section-title">学生作品</div>
-          <div class="work-card">
-            <div class="row" style="gap:12px">
-              <div style="width:64px;height:64px;border-radius:10px;overflow:hidden;flex-shrink:0">${coverImg('art', r.work.title)}</div>
-              <div><div class="wt">${esc(r.work.title)}</div><div class="small" style="color:#7a4a18;line-height:1.6">${esc(r.work.desc)}</div></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="card mx mt pad">
           <div class="section-title">老师评语</div>
-          <div class="small" style="color:#52565e;line-height:1.8">${esc(r.teacherComment)}</div>
-        </div>
-
-        <div class="card mx mt pad">
-          <div class="section-title">费用明细</div>
-          <div class="kv"><span class="k">课程费用</span><span class="v">¥${o.amount}</span></div>
-          <div class="kv"><span class="k">支付方式</span><span class="v">${done ? '天府通支付' : '天府通预授权'}</span></div>
-          <div class="kv"><span class="k">当前状态</span><span class="v"><span class="badge ${done ? 'st-done' : 'st-warn'}">${done ? '已完成' : '待家长确认'}</span></span></div>
+          <div class="comment-text small">
+            ${String(r.teacherComment).split('\n').map((p) => `<p>${esc(p)}</p>`).join('')}
+          </div>
+          ${(r.commentImages || []).length ? `
+          <div class="comment-pics">
+            ${r.commentImages.map((src) => `<div class="cp"><img src="${src}" alt="课堂图片" loading="lazy"></div>`).join('')}
+          </div>` : ''}
         </div>
         <div style="height:14px"></div>
       </div>
       ${done
         ? `<div class="actionbar"><button class="btn btn-ghost" onclick="location.hash='#/results'">返回学习成果</button></div>`
         : `<div class="actionbar" style="flex-direction:column;gap:8px">
-        <button class="btn btn-primary" onclick="App.confirmPay('${o.id}')">确认满意并付款 ¥${o.amount}</button>
+        <div class="small muted center">若 3 天内未确认，系统将自动确认</div>
+        <button class="btn btn-primary" onclick="App.confirmPay('${o.id}')">确认详情</button>
         <button class="btn btn-ghost" style="height:40px" onclick="App.openAftersale()">有问题，发起售后</button>
       </div>
       ${aftersaleSheet()}`}
@@ -638,63 +773,322 @@
       ${navbar('我的', { back: false })}
       <div class="scroll">
         <div style="padding-top:0">
-          <div class="profile-hero">
-            ${avatarImg(s.avatarImage, s.avatar, s.name)}
-            <div>
-              <div style="font-size:19px;font-weight:700">${esc(s.name)} 家长</div>
-              <div class="small" style="opacity:.92">${esc(s.parentPhone)}</div>
+          <div class="profile-hero" onclick="location.hash='#/profile'">
+            ${avatarImg(null, DB.parent.avatar, DB.parent.nickname)}
+            <div style="flex:1">
+              <div style="font-size:19px;font-weight:700">${esc(DB.parent.nickname)}</div>
+              <div class="small" style="opacity:.92">${esc(DB.parent.phone)}${DB.parent.wechatBound ? ' · 已绑定微信' : ''}</div>
             </div>
+            <span class="arr" style="color:rgba(255,255,255,.8)">${I.arrow}</span>
           </div>
         </div>
         <div class="card mx mt" style="overflow:hidden">
-          <div class="current-student-cell" onclick="App.openStudentSheet()">
+          <div class="current-student-cell" onclick="location.hash='#/students'">
             ${avatarImg(s.avatarImage, s.avatar, s.name)}
             <div class="cs-main">
               <div class="cs-title">当前学生</div>
               <div class="cs-name">${esc(s.name)} <span class="tag">${esc(s.grade)}</span></div>
+              <div class="small muted" style="margin-top:2px">${esc(s.school)}</div>
             </div>
             <span class="arr">${I.arrow}</span>
           </div>
-          ${cell('var(--orange)', I.school, '所在学校', s.school, '')}
-        </div>
-        <div class="card mx mt" style="overflow:hidden">
-          ${cell('var(--green)', I.clip, '我的报名', '查看全部报名记录', "location.hash='#/orders'")}
-          ${cell('#8a3dff', I.award, '学习成果', '作品与老师评价', "location.hash='#/results'")}
         </div>
         <div class="card mx mt" style="overflow:hidden">
           ${cell('#f59b1c', I.help, '帮助中心', '先学后付怎么用？', "App.soonTip()")}
           ${cell('#8a8f99', I.service, '客服与售后', '在线咨询', "App.soonTip()")}
         </div>
+        <div class="card mx mt" style="overflow:hidden">
+          ${cell('#334155', I.gear, '后台管理系统', 'Demo 调试入口 · 平台运营后台', "window.open('admin/', '_blank')")}
+        </div>
         <div class="mx mt small muted center" style="padding:14px 0">天府通 · 未来教育</div>
       </div>
       ${tabbar('me')}
-      ${studentSheet()}
     </div>`);
   }
 
-  function studentSheet() {
-    const s = currentStudent();
-    const students = DB.students || [s];
+  /* ============================================================
+   * 屏幕 11：学生管理（切换 / 添加 / 编辑 / 删除）
+   * ============================================================ */
+  let pendingDeleteId = null;
+  function screenStudents() {
+    const cur = currentStudent();
+    pendingDeleteId = null;
+    const card = (stu) => {
+      const active = stu.id === cur.id;
+      return `
+      <div class="card mx mt" style="overflow:hidden">
+        <div class="student-option ${active ? 'active' : ''}" onclick="App.switchStudent('${stu.id}')">
+          ${avatarImg(stu.avatarImage, stu.avatar, stu.name)}
+          <div class="so-main">
+            <div class="so-name">${esc(stu.name)} <span class="tag ${active ? '' : 'gray'}">${esc(stu.grade)}</span></div>
+            <div class="so-sub">${esc(stu.school)}</div>
+          </div>
+          <div class="so-state">${active ? '当前' : '切换'}</div>
+        </div>
+        <div class="row" style="gap:8px;justify-content:flex-end;padding:0 14px 12px">
+          <button class="btn btn-line btn-sm" onclick="event.stopPropagation();App.editStudent('${stu.id}')">编辑</button>
+          <button class="btn btn-sm btn-danger-line" id="del-${stu.id}" onclick="event.stopPropagation();App.deleteStudent('${stu.id}')">删除</button>
+        </div>
+      </div>`;
+    };
+    render(`
+    <div class="screen">
+      ${navbar('学生管理')}
+      <div class="scroll">
+        <div class="mx mt small muted">点击学生卡片可切换当前学生，报名与成果均按当前学生展示</div>
+        ${(DB.students || []).map(card).join('')}
+        <div style="height:14px"></div>
+      </div>
+      <div class="actionbar">
+        <button class="btn btn-primary" onclick="App.openStudentForm()">＋ 添加孩子</button>
+      </div>
+      ${studentFormSheet()}
+    </div>`);
+  }
+
+  function studentFormSheet() {
     return `
-    <div class="sheet-mask" id="studentMask" onclick="if(event.target===this)App.closeStudentSheet()">
+    <div class="sheet-mask" id="stuFormMask" onclick="if(event.target===this)App.closeStudentForm()">
       <div class="sheet">
         <div class="handle"></div>
-        <h3>切换学生</h3>
-        <div class="student-sheet-sub">当前账号共 ${students.length} 个孩子</div>
-        ${students.map((stu) => {
-          const active = stu.id === s.id;
-          return `
-          <div class="student-option ${active ? 'active' : ''}" onclick="App.switchStudent('${stu.id}')">
-            ${avatarImg(stu.avatarImage, stu.avatar, stu.name)}
-            <div class="so-main">
-              <div class="so-name">${esc(stu.name)} <span class="tag ${active ? '' : 'gray'}">${esc(stu.grade)}</span></div>
-              <div class="so-sub">${esc(stu.school)}</div>
-            </div>
-            <div class="so-state">${active ? '当前' : '切换'}</div>
-          </div>`;
-        }).join('')}
+        <h3 id="stuFormTitle">添加孩子</h3>
+        <input type="hidden" id="stuFormId" value="">
+        <div class="form-row"><label>学生姓名</label><input class="input" id="stuName" placeholder="请输入学生姓名"></div>
+        <div class="form-row"><label>所在学校</label><input class="input" id="stuSchool" placeholder="请输入学校名称"></div>
+        <div class="form-row"><label>年级班级</label><input class="input" id="stuGrade" placeholder="如：三年级 2 班"></div>
+        <div style="height:16px"></div>
+        <button class="btn btn-primary" onclick="App.saveStudentForm()">保存</button>
+        <div style="height:8px"></div>
+        <button class="btn btn-ghost" style="height:42px" onclick="App.closeStudentForm()">取消</button>
       </div>
     </div>`;
+  }
+
+  function openStudentForm() {
+    $('#stuFormTitle').textContent = '添加孩子';
+    $('#stuFormId').value = '';
+    $('#stuName').value = '';
+    $('#stuSchool').value = currentStudent().school || '';
+    $('#stuGrade').value = '';
+    $('#stuFormMask').classList.add('show');
+  }
+
+  function editStudent(id) {
+    const stu = (DB.students || []).find((x) => x.id === routeId(id));
+    if (!stu) return;
+    $('#stuFormTitle').textContent = '编辑孩子';
+    $('#stuFormId').value = stu.id;
+    $('#stuName').value = stu.name;
+    $('#stuSchool').value = stu.school;
+    $('#stuGrade').value = stu.grade;
+    $('#stuFormMask').classList.add('show');
+  }
+
+  function closeStudentForm() { $('#stuFormMask')?.classList.remove('show'); }
+
+  function saveStudentForm() {
+    const id = $('#stuFormId').value;
+    const name = $('#stuName').value.trim();
+    const school = $('#stuSchool').value.trim();
+    const grade = $('#stuGrade').value.trim();
+    if (!name) return toast('请输入学生姓名');
+    if (!school) return toast('请输入学校名称');
+    if (!grade) return toast('请输入年级班级');
+    if (id) {
+      const stu = DB.students.find((x) => x.id === id);
+      if (stu) Object.assign(stu, { name, school, grade, avatar: name.slice(0, 1) });
+    } else {
+      DB.students.push({
+        id: 'stu-' + Date.now(), name, school, grade,
+        avatar: name.slice(0, 1), parentPhone: DB.parent.phone,
+      });
+    }
+    syncCurrentStudent();
+    persistState();
+    closeStudentForm();
+    screenStudents();
+    toast(id ? '已保存修改' : '已添加 ' + name);
+  }
+
+  function deleteStudent(id) {
+    id = routeId(id);
+    if ((DB.students || []).length <= 1) return toast('至少保留 1 个孩子');
+    const btn = $('#del-' + id);
+    if (pendingDeleteId !== id) {
+      pendingDeleteId = id;
+      if (btn) btn.textContent = '确认删除';
+      toast('再次点击确认删除');
+      return;
+    }
+    const stu = DB.students.find((x) => x.id === id);
+    DB.students = DB.students.filter((x) => x.id !== id);
+    if (DB.currentStudentId === id) DB.currentStudentId = DB.students[0].id;
+    pendingDeleteId = null;
+    syncCurrentStudent();
+    persistState();
+    screenStudents();
+    toast('已删除 ' + (stu ? stu.name : ''));
+  }
+
+  /* ============================================================
+   * 屏幕 12：家长信息（头像 / 昵称 / 电话 / 改密 / 微信绑定）
+   * ============================================================ */
+  const AVATAR_CHOICES = ['李', '👨', '👩', '🧑‍🎓', '🐻', '🐱'];
+  let profileAvatar = '';
+  function screenProfile() {
+    const p = DB.parent;
+    profileAvatar = p.avatar;
+    render(`
+    <div class="screen">
+      ${navbar('家长信息')}
+      <div class="scroll">
+        <div class="card mx mt pad">
+          <div class="section-title">头像</div>
+          <div class="ava-picker">
+            ${AVATAR_CHOICES.map((a) => `
+              <div class="ava-opt ${a === p.avatar ? 'on' : ''}" onclick="App.pickAvatar('${a}', this)">${a}</div>`).join('')}
+          </div>
+          <div class="form-row"><label>昵称</label><input class="input" id="pfNick" value="${esc(p.nickname)}" placeholder="请输入昵称"></div>
+          <div class="form-row"><label>手机号</label><input class="input" id="pfPhone" value="${esc(p.phone)}" placeholder="请输入手机号"></div>
+        </div>
+
+        <div class="card mx mt pad">
+          <div class="section-title">修改密码</div>
+          <div class="form-row"><label>新密码</label><input class="input" type="password" id="pfPwd1" placeholder="不修改请留空"></div>
+          <div class="form-row"><label>确认新密码</label><input class="input" type="password" id="pfPwd2" placeholder="再次输入新密码"></div>
+        </div>
+
+        <div class="card mx mt" style="overflow:hidden">
+          <div class="list-cell" onclick="App.toggleWxBind()">
+            <div class="lc-ic" style="background:#07c160">${wxLogo.replace('fill="#07c160"', 'fill="#fff"')}</div>
+            <div class="lc-t"><div>微信账号</div><div class="small muted">${p.wechatBound ? '已绑定，可微信一键登录' : '未绑定'}</div></div>
+            <span class="small" style="color:${p.wechatBound ? 'var(--muted)' : 'var(--orange-deep)'};flex-shrink:0">${p.wechatBound ? '解绑' : '去绑定'}</span>
+          </div>
+        </div>
+
+        <div class="mx mt">
+          <button class="btn btn-ghost" style="color:var(--red)" onclick="App.logout()">退出登录</button>
+        </div>
+        <div style="height:14px"></div>
+      </div>
+      <div class="actionbar">
+        <button class="btn btn-primary" onclick="App.saveProfile()">保存</button>
+      </div>
+    </div>`);
+  }
+
+  function pickAvatar(a, el) {
+    profileAvatar = a;
+    document.querySelectorAll('.ava-opt').forEach((x) => x.classList.remove('on'));
+    el.classList.add('on');
+  }
+
+  function saveProfile() {
+    const nick = $('#pfNick').value.trim();
+    const phone = $('#pfPhone').value.trim();
+    const p1 = $('#pfPwd1').value;
+    const p2 = $('#pfPwd2').value;
+    if (!nick) return toast('请输入昵称');
+    if (!phone) return toast('请输入手机号');
+    if (p1 || p2) {
+      if (p1.length < 6) return toast('新密码至少 6 位');
+      if (p1 !== p2) return toast('两次输入的密码不一致');
+      DB.parent.password = p1;
+    }
+    Object.assign(DB.parent, { nickname: nick, phone: maskPhone(phone), avatar: profileAvatar });
+    persistState();
+    toast('已保存');
+    setTimeout(() => go('#/me'), 500);
+  }
+
+  function toggleWxBind() {
+    DB.parent.wechatBound = !DB.parent.wechatBound;
+    persistState();
+    toast(DB.parent.wechatBound ? '微信绑定成功' : '已解绑微信');
+    screenProfile();
+  }
+
+  function logout() {
+    DB.parent.loggedIn = false;
+    persistState();
+    toast('已退出登录');
+    go('#/login');
+  }
+
+  /* ============================================================
+   * 屏幕 13：登录 / 注册（验证码 + 微信一键登录）
+   * ============================================================ */
+  const maskPhone = (ph) => /^1\d{10}$/.test(ph) ? ph.slice(0, 3) + '****' + ph.slice(7) : ph;
+  let smsTimer = null;
+  function screenLogin() {
+    if (smsTimer) { clearInterval(smsTimer); smsTimer = null; }
+    render(`
+    <div class="screen">
+      <div class="scroll">
+        <div class="login-hero">
+          <div class="login-logo">${I.cap}</div>
+          <h2>天府通 · 未来教育</h2>
+          <p class="small muted">校内课后延时服务 · 家长端</p>
+        </div>
+        <div class="card mx pad">
+          <div class="form-row"><label>手机号</label><input class="input" id="lgPhone" type="tel" maxlength="11" placeholder="请输入 11 位手机号"></div>
+          <div class="form-row"><label>验证码</label>
+            <div class="code-row">
+              <input class="input" id="lgCode" type="tel" maxlength="4" placeholder="请输入验证码">
+              <button class="btn btn-line code-btn" id="lgSend" onclick="App.sendCode()">获取验证码</button>
+            </div>
+          </div>
+          <div style="height:16px"></div>
+          <button class="btn btn-primary" onclick="App.doLogin()">登录 / 注册</button>
+          <div class="small muted center" style="margin-top:10px">未注册的手机号验证后将自动创建账号并绑定</div>
+        </div>
+
+        <div class="login-divider mx"><span>其他登录方式</span></div>
+        <div class="mx">
+          <button class="btn wx-login-btn" onclick="App.wxLogin(this)">${wxLogo.replace('fill="#07c160"', 'fill="#fff"')} 微信一键登录</button>
+        </div>
+        <div class="mx mt small muted center" style="padding:12px 0">登录即代表同意《用户协议》与《隐私政策》</div>
+      </div>
+    </div>`);
+  }
+
+  let sentCode = '';
+  function sendCode() {
+    const phone = $('#lgPhone').value.trim();
+    if (!/^1\d{10}$/.test(phone)) return toast('请输入正确的 11 位手机号');
+    sentCode = '1234';
+    toast('验证码已发送：1234（演示）');
+    const btn = $('#lgSend');
+    let sec = 60;
+    btn.disabled = true;
+    btn.textContent = sec + 's';
+    smsTimer = setInterval(() => {
+      sec -= 1;
+      if (sec <= 0) { clearInterval(smsTimer); smsTimer = null; btn.disabled = false; btn.textContent = '重新获取'; return; }
+      btn.textContent = sec + 's';
+    }, 1000);
+  }
+
+  function doLogin() {
+    const phone = $('#lgPhone').value.trim();
+    const code = $('#lgCode').value.trim();
+    if (!/^1\d{10}$/.test(phone)) return toast('请输入正确的 11 位手机号');
+    if (!sentCode) return toast('请先获取验证码');
+    if (code !== sentCode) return toast('验证码不正确');
+    Object.assign(DB.parent, { loggedIn: true, phone: maskPhone(phone) });
+    persistState();
+    toast('登录成功');
+    go('#/me');
+  }
+
+  function wxLogin(btn) {
+    if (btn) { btn.disabled = true; btn.textContent = '微信授权中…'; }
+    setTimeout(() => {
+      Object.assign(DB.parent, { loggedIn: true, wechatBound: true });
+      persistState();
+      toast('微信登录成功');
+      go('#/me');
+    }, 900);
   }
 
   /* ============================================================
@@ -730,16 +1124,15 @@
     toast('售后申请已提交，平台将在 1-3 个工作日内处理');
   }
 
-  function openStudentSheet() { $('#studentMask')?.classList.add('show'); }
-  function closeStudentSheet() { $('#studentMask')?.classList.remove('show'); }
-
   function switchStudent(id) {
     const next = (DB.students || []).find((s) => s.id === routeId(id));
     if (!next) return toast('未找到学生信息');
+    if (next.id === DB.currentStudentId) return;
     DB.currentStudentId = next.id;
     try { localStorage.setItem('futureEdu.currentStudentId', next.id); } catch (_) {}
     syncCurrentStudent();
-    screenMe();
+    persistState();
+    route();
     toast('已切换为 ' + next.name);
   }
 
@@ -749,7 +1142,8 @@
   const routes = [
     [/^#\/?$|^#\/home$|^#\/tft$/, screenHome],
     [/^#\/course\/(.+)$/, (m) => screenCourse(m[1])],
-    [/^#\/enroll\/(.+)$/, (m) => screenEnroll(m[1])],
+    [/^#\/enroll\/([^/]+)\/([^/]+)$/, (m) => screenEnroll(m[1], m[2])],
+    [/^#\/enroll\/([^/]+)$/, (m) => screenEnroll(m[1])],
     [/^#\/preauth\/(.+)$/, (m) => screenPreauth(m[1])],
     [/^#\/orders$/, screenOrders],
     [/^#\/schedule\/(.+)$/, (m) => screenSchedule(m[1])],
@@ -757,9 +1151,13 @@
     [/^#\/result\/(.+)$/, (m) => screenResult(m[1])],
     [/^#\/paid\/(.+)$/, (m) => screenPaid(m[1])],
     [/^#\/me$/, screenMe],
+    [/^#\/students$/, screenStudents],
+    [/^#\/profile$/, screenProfile],
+    [/^#\/login$/, screenLogin],
   ];
   function route() {
     const h = location.hash || '#/';
+    if (!DB.parent.loggedIn && /^#\/(me|students|profile)/.test(h)) return screenLogin();
     for (const [re, fn] of routes) {
       const m = h.match(re);
       if (m) return fn(m);
@@ -771,8 +1169,11 @@
 
   /* 暴露给内联事件 */
   window.App = {
-    toggleEnrollConfirm, submitEnroll, confirmPay, switchStudent, openStudentSheet, closeStudentSheet, soonTip: () => toast('功能开发中'),
+    toggleEnrollConfirm, submitEnroll, closeWxpay, confirmWxpay, confirmPay, switchStudent, openSwitchSheet, closeSwitchSheet, soonTip: () => toast('功能开发中'),
+    openSkuSheet, closeSkuSheet, selectSku, confirmSku,
     openAftersale, closeAftersale, selectAS, submitAftersale,
+    openStudentForm, closeStudentForm, editStudent, saveStudentForm, deleteStudent,
+    pickAvatar, saveProfile, toggleWxBind, logout, sendCode, doLogin, wxLogin,
   };
   route();
 })();
