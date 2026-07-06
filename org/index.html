@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>天府通未来教育平台 · 机构端 Demo</title>
+<style>
+  :root {
+    --primary: #1677ff; --primary-soft: #e6f4ff;
+    --green: #52c41a; --green-soft: #f6ffed;
+    --orange: #fa8c16; --orange-soft: #fff7e6;
+    --red: #ff4d4f; --red-soft: #fff1f0;
+    --cyan: #13c2c2; --cyan-soft: #e6fffb;
+    --purple: #722ed1; --purple-soft: #f9f0ff;
+    --text: #1f2329; --muted: #8a919f; --line: #eef0f3; --bg: #f5f6f8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; }
+
+  /* ---------- 布局 ---------- */
+  .layout { display: flex; min-height: 100vh; }
+  .sider { width: 208px; background: #001529; color: rgba(255,255,255,.72); flex-shrink: 0; }
+  .sider .brand { display: flex; align-items: center; gap: 10px; padding: 18px 16px; color: #fff; }
+  .sider .brand .logo { width: 34px; height: 34px; border-radius: 8px; background: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; }
+  .sider .brand b { font-size: 14px; line-height: 1.3; }
+  .sider .brand .sub { font-size: 11px; opacity: .6; font-weight: 400; }
+  .menu { padding: 6px 0; }
+  .menu-item { padding: 11px 20px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 14px; transition: background .15s, color .15s; }
+  .menu-item:hover { color: #fff; }
+  .menu-item.active { background: var(--primary); color: #fff; }
+
+  .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .topbar { height: 56px; background: #fff; box-shadow: 0 1px 4px rgba(0,21,41,.06); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; position: sticky; top: 0; z-index: 20; }
+  .topbar .title { font-size: 16px; font-weight: 700; }
+  .role-switch { display: flex; align-items: center; gap: 12px; }
+  .role-switch .who { color: var(--muted); font-size: 13px; }
+  .role-switch .who b { color: var(--text); }
+  .seg { display: flex; background: #f0f1f4; border-radius: 8px; padding: 3px; }
+  .seg button { border: 0; background: transparent; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; color: var(--muted); font-family: inherit; }
+  .seg button.on { background: #fff; color: var(--primary); font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  .help-btn { border: 1px solid #d9dce3; background: #fff; color: var(--muted); border-radius: 14px; padding: 5px 12px; font-size: 12px; cursor: pointer; font-family: inherit; }
+  .help-btn:hover { color: var(--primary); border-color: var(--primary); }
+  .tag[title] { cursor: help; }
+
+  .content { padding: 20px 24px; flex: 1; }
+  .page-title { font-size: 15px; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; }
+  .page-title .hint { font-size: 12px; font-weight: 400; color: var(--muted); }
+
+  /* ---------- 卡片 / 统计 ---------- */
+  .card { background: #fff; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,21,41,.05); padding: 16px; }
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 16px; }
+  .stat { background: #fff; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,21,41,.05); padding: 16px; }
+  .stat .t { color: var(--muted); font-size: 13px; margin-bottom: 6px; }
+  .stat .v { font-size: 24px; font-weight: 700; }
+  .stat .v small { font-size: 13px; font-weight: 400; color: var(--muted); margin-left: 2px; }
+  .stat.warn .v { color: var(--orange); }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .mt { margin-top: 14px; }
+  .card h4 { font-size: 14px; margin-bottom: 10px; }
+
+  /* ---------- 流程条 ---------- */
+  .flow { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; background: #fff; border-radius: 10px; padding: 12px 16px; box-shadow: 0 1px 3px rgba(0,21,41,.05); margin-bottom: 16px; font-size: 12px; color: var(--muted); }
+  .flow .f { background: var(--primary-soft); color: var(--primary); padding: 4px 10px; border-radius: 12px; font-weight: 600; }
+  .flow .a { color: #c3c9d4; padding: 0 2px; }
+
+  /* ---------- 表格 ---------- */
+  table { width: 100%; border-collapse: collapse; background: #fff; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); font-size: 13px; white-space: nowrap; }
+  th { background: #fafbfc; color: var(--muted); font-weight: 600; }
+  tr:hover td { background: #fafcff; }
+  .tbl-wrap { overflow-x: auto; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,21,41,.05); }
+  .ell { max-width: 180px; overflow: hidden; text-overflow: ellipsis; }
+  .qi { display: inline-flex; align-items: center; justify-content: center; width: 15px; height: 15px; margin-left: 4px; border-radius: 50%; border: 1px solid #d9dce3; color: var(--muted); font-size: 11px; line-height: 1; cursor: pointer; background: #fff; vertical-align: 1px; }
+  .qi:hover { color: var(--primary); border-color: var(--primary); background: var(--primary-soft); }
+
+  /* ---------- 标签 / 按钮 ---------- */
+  .tag { display: inline-block; font-size: 12px; padding: 2px 10px; border-radius: 10px; font-weight: 500; }
+  .tg-blue { background: var(--primary-soft); color: var(--primary); }
+  .tg-green { background: var(--green-soft); color: var(--green); }
+  .tg-orange { background: var(--orange-soft); color: var(--orange); }
+  .tg-red { background: var(--red-soft); color: var(--red); }
+  .tg-cyan { background: var(--cyan-soft); color: var(--cyan); }
+  .tg-purple { background: var(--purple-soft); color: var(--purple); }
+  .tg-gray { background: #f0f1f4; color: var(--muted); }
+
+  .lnk { color: var(--primary); cursor: pointer; margin-right: 10px; font-size: 13px; }
+  .lnk:hover { text-decoration: underline; }
+  .lnk.warn { color: var(--orange); }
+  .btn { border: 0; border-radius: 6px; padding: 8px 18px; cursor: pointer; font-size: 13px; font-family: inherit; }
+  .btn-primary { background: var(--primary); color: #fff; }
+  .btn-primary:hover { opacity: .9; }
+  .btn-ghost { background: #fff; border: 1px solid #d9dce3; color: var(--text); }
+
+  /* ---------- 签到 ---------- */
+  .sign-head { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px 20px; margin-bottom: 14px; font-size: 13px; }
+  .sign-head .k { color: var(--muted); margin-right: 6px; }
+  .sign-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 4px; border-bottom: 1px solid var(--line); }
+  .sign-row .nm { font-weight: 600; }
+  .sign-btns { display: flex; gap: 6px; }
+  .sign-btns button { border: 1px solid #d9dce3; background: #fff; border-radius: 14px; padding: 4px 12px; font-size: 12px; cursor: pointer; color: var(--muted); font-family: inherit; }
+  .sign-btns button.on-已到 { background: var(--green-soft); border-color: var(--green); color: var(--green); }
+  .sign-btns button.on-迟到 { background: var(--orange-soft); border-color: var(--orange); color: var(--orange); }
+  .sign-btns button.on-请假 { background: var(--primary-soft); border-color: var(--primary); color: var(--primary); }
+  .sign-btns button.on-缺勤 { background: var(--red-soft); border-color: var(--red); color: var(--red); }
+
+  /* ---------- 弹窗 / Toast ---------- */
+  .mask { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: none; align-items: flex-start; justify-content: center; z-index: 100; padding: 60px 20px 40px; overflow-y: auto; }
+  .mask.show { display: flex; }
+  .modal { background: #fff; border-radius: 10px; width: 620px; max-width: 100%; }
+  .modal .m-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--line); font-weight: 700; }
+  .modal .m-close { cursor: pointer; color: var(--muted); font-size: 16px; padding: 2px 6px; }
+  .modal .m-body { padding: 18px; max-height: 68vh; overflow-y: auto; }
+  .modal .m-foot { padding: 12px 18px; border-top: 1px solid var(--line); text-align: right; display: flex; gap: 10px; justify-content: flex-end; }
+  .desc { display: grid; grid-template-columns: 96px 1fr; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; font-size: 13px; }
+  .desc .k { background: #fafbfc; color: var(--muted); padding: 9px 12px; border-bottom: 1px solid var(--line); }
+  .desc .v { padding: 9px 12px; border-bottom: 1px solid var(--line); }
+  .desc .k:nth-last-child(2), .desc .v:last-child { border-bottom: 0; }
+  .m-body h5 { font-size: 13px; margin: 14px 0 8px; }
+  .m-body ol { padding-left: 20px; color: #52565e; font-size: 13px; line-height: 2; }
+  .form-row { margin-bottom: 12px; }
+  .form-row label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+  .form-row textarea, .form-row input { width: 100%; border: 1px solid #d9dce3; border-radius: 6px; padding: 9px 10px; font-size: 13px; font-family: inherit; resize: vertical; }
+  .form-row textarea:focus, .form-row input:focus { outline: none; border-color: var(--primary); }
+
+  .toast { position: fixed; top: 70px; left: 50%; transform: translateX(-50%) translateY(-8px); background: rgba(20,22,30,.88); color: #fff; padding: 10px 20px; border-radius: 8px; font-size: 13px; z-index: 200; opacity: 0; pointer-events: none; transition: all .25s; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .notice-item { display: flex; gap: 12px; padding: 13px 4px; border-bottom: 1px solid var(--line); align-items: flex-start; }
+  .notice-item .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--primary); margin-top: 6px; flex-shrink: 0; }
+  .notice-item.read .dot { background: #d9dce3; }
+  .notice-item .nt { font-weight: 600; margin-bottom: 2px; }
+  .notice-item .nd { color: var(--muted); font-size: 12px; }
+  .empty { text-align: center; color: var(--muted); padding: 40px 0; }
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sider">
+    <div class="brand">
+      <div class="logo">机</div>
+      <b>天府通未来教育平台<div class="sub">机构端 · Demo</div></b>
+    </div>
+    <nav class="menu" id="menu"></nav>
+  </aside>
+  <div class="main">
+    <header class="topbar">
+      <div class="title" id="pageTitle">首页看板</div>
+      <div class="role-switch">
+        <button class="help-btn" onclick="showGlossary()" title="查看平台全部名词与状态解释">？ 名词解释</button>
+        <span class="who" id="whoami"></span>
+        <div class="seg">
+          <button id="roleOrg" onclick="setRole('org')">机构管理员</button>
+          <button id="roleTeacher" onclick="setRole('teacher')">老师账号</button>
+        </div>
+      </div>
+    </header>
+    <main class="content" id="content"></main>
+  </div>
+</div>
+
+<div class="mask" id="mask" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="m-head"><span id="mTitle"></span><span class="m-close" onclick="closeModal()">✕</span></div>
+    <div class="m-body" id="mBody"></div>
+    <div class="m-foot" id="mFoot"></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+ * 天府通未来教育平台 · 机构端 / 老师端 单文件原型
+ * 角色权限：机构管理员看全部；老师只看自己班级，隐藏财务
+ * ============================================================ */
+
+/* ---------- Mock 数据 ---------- */
+const ORG = {
+  name: '成都启智未来教育科技有限公司',
+  dir: '人工智能、少儿编程、科学实验',
+  status: '审核通过', account: '已绑定',
+  contact: '张经理', phone: '138****8888',
+  license: '统一社会信用代码 91510100MA6XXXX88', joined: '2026-05-15',
+};
+
+const TEACHERS = [
+  { id: 't1', name: '王老师', phone: '138****3001', dir: '人工智能启蒙', status: '审核通过', classes: 3, monthLessons: 12,
+    cert: '教师资格证（小学信息技术）', idcard: '5101**********0011', bio: '6 年少儿 AI 教学经验，市级科技社团指导教师。' },
+  { id: 't2', name: '李老师', phone: '139****3002', dir: '少儿编程', status: '待平台审核', classes: 0, monthLessons: 0,
+    cert: '教师资格证（小学信息技术）', idcard: '5101**********0022', bio: 'Scratch / Python 项目导师，3 年教学经验。' },
+  { id: 't3', name: '张老师', phone: '137****3003', dir: '科学实验', status: '审核通过', classes: 2, monthLessons: 8,
+    cert: '教师资格证（小学科学）', idcard: '5101**********0033', bio: 'STEAM 实验课程导师，多次承担校级公开课。' },
+];
+
+const COURSES = [
+  { id: 'c1', name: '人工智能启蒙课', cat: 'AI 素质', grade: '1-3 年级', lessons: 10, price: 800, status: '已进入课程库', schools: 3,
+    teacher: '王老师', venue: '科技教室 / 计算机教室', device: '平板、投影',
+    intro: '面向低年级学生的 AI 启蒙课程，游戏化认识人工智能，完成个人 AI 小作品。',
+    syllabus: ['认识人工智能', '和 AI 对话', 'AI 画图体验', '训练小模型', 'AI 故事创作', 'AI 音乐体验', 'AI 编程游戏', '综合创作（一）', '综合创作（二）', '成果展示'],
+    audits: [{ t: '2026-06-05 10:00', act: '平台审核通过，进入课程库', by: '平台审核员' }, { t: '2026-06-01 14:20', act: '机构提交课程审核', by: '张经理' }] },
+  { id: 'c2', name: '少儿编程思维课', cat: '编程', grade: '3-5 年级', lessons: 12, price: 960, status: '待平台审核', schools: 0,
+    teacher: '李老师', venue: '计算机教室', device: '电脑机房',
+    intro: '图形化编程入门，培养逻辑思维，独立完成小游戏作品。',
+    syllabus: ['认识编程', '顺序结构', '循环结构', '条件判断', '变量计分', '角色交互', '关卡设计（一）', '关卡设计（二）', '调试优化', '音效界面', '作品完善', '项目展示'],
+    audits: [{ t: '2026-06-29 16:00', act: '机构提交课程审核', by: '张经理' }] },
+  { id: 'c3', name: '科学实验探索课', cat: '科学', grade: '1-4 年级', lessons: 8, price: 640, status: '审核通过', schools: 2,
+    teacher: '张老师', venue: '科学教室', device: '实验器材包',
+    intro: '趣味科学实验，在动手中观察、提问、验证，培养科学探究精神。',
+    syllabus: ['观察与猜想', '浮沉与密度', '磁力探索', '气压与流动', '植物观察', '声音传播', '自制小装置', '实验报告展示'],
+    audits: [{ t: '2026-06-20 09:30', act: '平台审核通过', by: '平台审核员' }, { t: '2026-06-16 11:00', act: '机构提交课程审核', by: '张经理' }] },
+];
+
+const CLASSES = [
+  { id: 'cl1', name: '天府一小 - 人工智能启蒙课一班', course: '人工智能启蒙课', school: '天府一小', venue: '科技教室',
+    time: '每周三 17:00-18:00', teacher: '王老师', tid: 't1', total: 10, done: 4, enrolled: 28, max: 30, status: '上课中' },
+  { id: 'cl2', name: '天府二小 - 人工智能启蒙课一班', course: '人工智能启蒙课', school: '天府二小', venue: '计算机教室',
+    time: '每周五 17:00-18:00', teacher: '王老师', tid: 't1', total: 10, done: 2, enrolled: 24, max: 30, status: '上课中' },
+  { id: 'cl3', name: '天府实验小学 - 科学实验探索课一班', course: '科学实验探索课', school: '天府实验小学', venue: '科学教室',
+    time: '每周二 17:00-18:00', teacher: '张老师', tid: 't3', total: 8, done: 1, enrolled: 18, max: 25, status: '上课中' },
+];
+
+const STUDENTS = [
+  { name: '李小明', school: '天府一小', grade: '三年级 2 班', course: '人工智能启蒙课', cls: 'cl1', phone: '138****8888', status: '已报名', attend: '4/4' },
+  { name: '张一诺', school: '天府一小', grade: '三年级 1 班', course: '人工智能启蒙课', cls: 'cl1', phone: '139****2211', status: '已报名', attend: '4/4' },
+  { name: '王梓萱', school: '天府一小', grade: '二年级 3 班', course: '人工智能启蒙课', cls: 'cl1', phone: '137****5566', status: '已报名', attend: '3/4' },
+  { name: '陈梓航', school: '天府二小', grade: '三年级 4 班', course: '人工智能启蒙课', cls: 'cl2', phone: '136****7788', status: '已报名', attend: '2/2' },
+  { name: '刘思彤', school: '天府二小', grade: '二年级 2 班', course: '人工智能启蒙课', cls: 'cl2', phone: '135****3344', status: '已报名', attend: '1/2' },
+  { name: '黄雨桐', school: '天府实验小学', grade: '三年级 3 班', course: '科学实验探索课', cls: 'cl3', phone: '188****9900', status: '已报名', attend: '1/1' },
+  { name: '周子墨', school: '天府实验小学', grade: '四年级 1 班', course: '科学实验探索课', cls: 'cl3', phone: '186****1122', status: '已报名', attend: '1/1' },
+  { name: '杨浩然', school: '天府实验小学', grade: '三年级 2 班', course: '科学实验探索课', cls: 'cl3', phone: '158****6677', status: '已报名', attend: '0/1' },
+];
+
+/* 今日签到任务（周三 → cl1 第 5 节） */
+const CHECKIN = {
+  cls: 'cl1', className: '天府一小 - 人工智能启蒙课一班', course: '人工智能启蒙课', school: '天府一小',
+  venue: '科技教室', time: '今天 17:00-18:00（第 5 节）', teacher: '王老师', tid: 't1', submitted: false,
+  students: [
+    { name: '李小明', st: '已到' }, { name: '张一诺', st: '已到' }, { name: '王梓萱', st: '已到' },
+    { name: '赵一鸣', st: '迟到' }, { name: '钱多多', st: '请假' }, { name: '孙小美', st: '已到' },
+  ],
+};
+
+const RECORDS = [
+  { id: 'r1', cls: '天府一小 - AI启蒙一班', clsId: 'cl1', tid: 't1', no: 4, date: '2026-07-01', content: '训练自己的小模型', attend: 27, absent: 1, mood: '课堂气氛活跃，动手环节完成度高', comment: '整体掌握良好，个别学生需课后巩固', status: '已提交' },
+  { id: 'r2', cls: '天府一小 - AI启蒙一班', clsId: 'cl1', tid: 't1', no: 5, date: '2026-07-08', content: '', attend: 0, absent: 0, mood: '', comment: '', status: '待填写' },
+  { id: 'r3', cls: '天府二小 - AI启蒙一班', clsId: 'cl2', tid: 't1', no: 2, date: '2026-07-03', content: '和 AI 对话', attend: 24, absent: 0, mood: '学生提问踊跃', comment: '课堂参与度高', status: '已提交' },
+  { id: 'r4', cls: '天府实验小学 - 科学探索一班', clsId: 'cl3', tid: 't3', no: 1, date: '2026-06-30', content: '观察与猜想', attend: 17, absent: 1, mood: '实验安全规范讲解到位', comment: '学生兴趣浓厚', status: '已提交' },
+];
+
+const LESSONS = [
+  { course: '人工智能启蒙课', cls: '天府一小 - AI启蒙一班', school: '天府一小', no: 4, date: '2026-07-01', teacher: '王老师', tid: 't1', due: 28, actual: 27, tSubmit: '已提交', confirm: '已确认', status: '已确认销课', amount: 2160 },
+  { course: '人工智能启蒙课', cls: '天府一小 - AI启蒙一班', school: '天府一小', no: 3, date: '2026-06-24', teacher: '王老师', tid: 't1', due: 28, actual: 28, tSubmit: '已提交', confirm: '已确认', status: '已计入结算', amount: 2240 },
+  { course: '人工智能启蒙课', cls: '天府一小 - AI启蒙一班', school: '天府一小', no: 5, date: '2026-07-08', teacher: '王老师', tid: 't1', due: 28, actual: 0, tSubmit: '未提交', confirm: '—', status: '待上课', amount: 0 },
+  { course: '人工智能启蒙课', cls: '天府二小 - AI启蒙一班', school: '天府二小', no: 2, date: '2026-07-03', teacher: '王老师', tid: 't1', due: 24, actual: 24, tSubmit: '已提交', confirm: '待确认', status: '已上课待确认', amount: 1920 },
+  { course: '科学实验探索课', cls: '天府实验小学 - 科学探索一班', school: '天府实验小学', no: 1, date: '2026-06-30', teacher: '张老师', tid: 't3', due: 18, actual: 17, tSubmit: '已提交', confirm: '已确认', status: '已确认销课', amount: 1360 },
+  { course: '科学实验探索课', cls: '天府实验小学 - 科学探索一班', school: '天府实验小学', no: 2, date: '2026-07-07', teacher: '张老师', tid: 't3', due: 18, actual: 16, tSubmit: '已提交', confirm: '待确认', status: '异常', amount: 0, note: '实到人数与签到不符，待补充说明' },
+];
+
+const AFTERSALES = [
+  { id: 'SH20260701001', student: '刘思彤', school: '天府二小', cls: '人工智能启蒙课一班', type: '申请退款', status: '机构需反馈', opinion: '请机构 2 个工作日内提交该生出勤与课堂记录' },
+  { id: 'SH20260703002', student: '杨浩然', school: '天府实验小学', cls: '科学实验探索课一班', type: '老师缺课', status: '平台处理中', opinion: '平台已核实排课记录，待与学校确认' },
+];
+
+const SETTLES = [
+  { id: 'JS202607-01', month: '2026年7月', schools: '天府一小、天府二小、天府实验小学', clsCount: 3, lessons: 42,
+    gross: 33600, fee: 3360, refund: 800, net: 29440, status: '待审核',
+    detail: [
+      { cls: '天府一小 - AI启蒙一班', lessons: 18, amount: 14400 },
+      { cls: '天府二小 - AI启蒙一班', lessons: 14, amount: 11200 },
+      { cls: '天府实验小学 - 科学探索一班', lessons: 10, amount: 8000 },
+    ] },
+];
+
+const NOTICES = [
+  { t: '老师审核通过通知', d: '王老师资质审核已通过，可绑定课程与班级。', time: '2026-07-01 10:20', read: true },
+  { t: '课程审核驳回通知', d: '「硬笔书法课」审核驳回：课程大纲与课时数不匹配，请修改后重新提交。', time: '2026-07-01 09:12', read: false },
+  { t: '班级成班通知', d: '「天府一小 - 人工智能启蒙课一班」已达最低成班人数，正式成班。', time: '2026-06-30 15:04', read: true },
+  { t: '上课提醒', d: '今日 17:00「天府一小 - 人工智能启蒙课一班」第 5 节课，请王老师按时到校签到。', time: '2026-07-08 08:00', read: false },
+  { t: '销课确认通知', d: '7 月 1 日「天府一小 AI 启蒙一班」第 4 节销课已确认，计入本月结算。', time: '2026-07-02 10:30', read: true },
+  { t: '售后处理通知', d: '售后单 SH20260701001 需机构反馈，请在 2 个工作日内处理。', time: '2026-07-01 16:40', read: false },
+  { t: '结算单生成通知', d: '2026 年 7 月结算单 JS202607-01 已生成，请核对销课明细。', time: '2026-07-31 09:00', read: false },
+];
+
+/* ---------- 状态 → 标签色 ---------- */
+const TAG = {
+  审核通过: 'tg-green', 已进入课程库: 'tg-green', 已确认: 'tg-green', 已提交: 'tg-green', 已报名: 'tg-green', 已完成: 'tg-green', 已到: 'tg-green',
+  待平台审核: 'tg-orange', 待确认: 'tg-orange', 待填写: 'tg-orange', 待审核: 'tg-orange', 待处理: 'tg-orange', 已上课待确认: 'tg-orange', 迟到: 'tg-orange', 机构需反馈: 'tg-orange',
+  上课中: 'tg-blue', 平台处理中: 'tg-blue', 请假: 'tg-blue', 结算中: 'tg-blue',
+  已确认销课: 'tg-green', 已计入结算: 'tg-cyan', 待上课: 'tg-gray', 未提交: 'tg-gray', 审核驳回: 'tg-red', 异常: 'tg-red', 缺勤: 'tg-red', 已退款: 'tg-red',
+};
+/* ---------- 名词解释词典（顶部 ? 可查全量，状态标签悬停即显） ---------- */
+const GLOSSARY = [
+  { title: '销课状态（核心流程）', items: [
+    ['待上课', '课程已排期、尚未到上课时间，本节不产生任何费用。'],
+    ['已上课待确认', '老师已完成签到并提交课堂记录，等待平台或学校确认；确认之前本节不计入结算。'],
+    ['已确认销课', '平台/学校已确认本节课真实完成，本节费用进入当月可结算范围。'],
+    ['异常', '本节课数据存疑：如实到人数与签到不符、老师未签到、家长投诉课程未上等，暂停计费。处理方式：机构在 2 个工作日内补充说明或更正记录，平台复核后转为「已确认销课」，或作废本节（不计费）。'],
+    ['已计入结算', '本节课已随月度结算单锁定，金额不再变动。'],
+  ] },
+  { title: '结算状态', items: [
+    ['待生成', '结算周期未结束，结算单尚未生成。'],
+    ['待审核', '结算单已生成，等待平台财务核对销课明细与各项扣减。'],
+    ['结算中', '财务审核通过，进入打款流程。'],
+    ['已结算', '款项已打至机构结算账户，本期结算完成。'],
+    ['结算异常', '打款失败或明细存在争议（如账户信息错误、退款争议），需财务人工处理。'],
+    ['已驳回', '结算单审核不通过（如销课明细与课堂记录不符），退回重新核对后再提交。'],
+  ] },
+  { title: '结算相关名词', items: [
+    ['应结算金额', '当月所有「已确认销课」节次的金额合计。'],
+    ['平台服务费', '按合作协议比例（本 Demo 为 10%）从应结算金额中扣除。'],
+    ['学校分成', '涉及学校分成时按约定比例扣除（规则预留，Demo 为 5%）。'],
+    ['退款扣减', '当月发生退款的订单，对应金额从机构结算中扣回。'],
+    ['机构实收', '应结算金额 − 平台服务费 − 学校分成 − 退款扣减。'],
+  ] },
+  { title: '老师状态', items: [
+    ['待平台审核', '机构已创建老师并提交资质，平台审核中；审核通过前不能绑定班级授课。'],
+    ['审核通过', '资质审核通过，可绑定课程与班级正常授课。'],
+    ['审核驳回', '资质不符合要求，按驳回原因补充材料后重新提交。'],
+    ['已停用', '老师不再授课，账号停用。'],
+  ] },
+  { title: '课程状态', items: [
+    ['草稿', '机构编辑中，尚未提交平台审核。'],
+    ['待审核 / 待平台审核', '课程已提交，平台审核中（重点审核课程内容与资质合规）。'],
+    ['审核通过', '课程审核通过，待进入课程库。'],
+    ['已进入课程库', '课程进入平台课程库，由平台分发到指定学校后该校家长方可见；机构不直接对家长上架。'],
+    ['已下架', '课程停止分发与报名。'],
+  ] },
+  { title: '班级状态', items: [
+    ['报名中', '班级已上架，家长可报名。'],
+    ['待成班', '报名人数未达最低成班人数，暂不能开课。'],
+    ['已成班', '达到最低成班人数，可安排排课开课。'],
+    ['已排课', '已确定上课时间、场地与老师。'],
+    ['上课中', '班级正常上课中。'],
+    ['已结课', '全部课时完成，进入结课确认与结算。'],
+    ['已取消', '未成班或其他原因取消，家长已缴费用自动全额退款。'],
+  ] },
+  { title: '售后状态', items: [
+    ['待处理', '家长已提交售后申请，平台尚未受理。'],
+    ['平台处理中', '平台客服核实处理中。'],
+    ['机构需反馈', '售后已转机构，机构须在时限内（2 个工作日）提交说明或处理方案，超时平台将直接介入。'],
+    ['已退款', '售后以退款方式结案，退款金额将从机构结算中扣减。'],
+    ['已完成', '售后处理完毕结案。'],
+  ] },
+  { title: '通用名词', items: [
+    ['资金托管', '家长报名费一次性支付后进入平台监管账户，不直接支付给机构；机构按已确认销课的课时逐节累计结算。'],
+    ['销课', '每完成一节课形成一条销课记录，经平台/学校确认后机构累计一节可结算费用；按月汇总生成结算单。'],
+    ['成班人数', '开班所需的最低报名人数，未达标班级将取消并自动退款。'],
+    ['课程分发', '平台将课程库中的课程配置到指定合作学校，仅被分发学校的家长端可见该课程。'],
+  ] },
+];
+const DEF = {};
+GLOSSARY.forEach((g) => g.items.forEach(([t, d]) => { if (!DEF[t]) DEF[t] = d; }));
+/* 别名：同义状态共用解释 */
+DEF['待确认'] = DEF['已上课待确认'];
+DEF['已确认'] = '平台/学校已确认本节课真实完成。';
+DEF['已提交'] = '老师已提交，等待下一环节确认。';
+DEF['未提交'] = '老师尚未提交本节课的签到/课堂记录。';
+DEF['待审核'] = DEF['待审核 / 待平台审核'] || DEF['待审核'];
+DEF['待填写'] = '本节课已上完或临近，老师尚未填写课堂记录，请及时填写（销课以课堂记录为依据）。';
+
+const tag = (v) => `<span class="tag ${TAG[v] || 'tg-gray'}" ${DEF[v] ? `title="${DEF[v].replace(/"/g, '&quot;')}"` : ''}>${v}</span>`;
+const money = (n) => '¥' + n.toLocaleString('zh-CN');
+
+/* ---------- 表格字段解释（列名后的 ? 悬停提示） ---------- */
+const COLDEF = {
+  '教授方向': '老师主要授课的课程方向。',
+  '审核状态': '平台审核结果，悬停状态标签或点右上角「名词解释」查看各状态含义。',
+  '当前负责班级': '该老师正在带的班级数量（仅审核通过的老师可带班）。',
+  '本月上课次数': '本月已完成并提交记录的上课节次。',
+  '分类': '课程所属类目（AI / 编程 / 科学 / 美术等）。',
+  '适合年级': '建议报名的学生年级范围。',
+  '总课时': '一期课程包含的上课节次总数。',
+  '建议价格': '机构建议售价；实际报名价格以平台分发到各学校时的配置为准。',
+  '分发学校': '课程被平台分发（配置）到的学校数量；未分发学校的家长看不到该课程。',
+  '场地': '学校提供的上课教室 / 场馆。',
+  '上课场地': '学校提供的上课教室 / 场馆。',
+  '课时进度': '已上节次 / 总节次。',
+  '报名': '当前报名人数 / 班级最大容量。',
+  '状态': '当前业务状态，悬停状态标签可看含义，全量见右上角「名词解释」。',
+  '年级班级': '学生在校的年级与行政班级。',
+  '报名课程': '学生报名的平台课程。',
+  '所属班级': '报名后实际上课的具体班级（家长报名的是班级）。',
+  '家长手机号': '家长联系方式，脱敏展示保护隐私。',
+  '报名状态': '已报名 = 家长已缴费，资金由平台监管账户托管。',
+  '出勤情况': '已出勤节次 / 应出勤节次。',
+  '第几节': '本班课程的第几节课。',
+  '节次': '本班课程的第几节课。',
+  '上课内容': '本节课教学内容（来自老师提交的课堂记录）。',
+  '到课': '本节课实际到课人数。',
+  '缺勤': '本节课缺勤人数。',
+  '课堂情况': '老师记录的课堂纪律与参与度（随堂记录）。',
+  '课后评语': '本节课的随堂评语，区别于结课后的结课评价。',
+  '应到/实到': '应到 = 班级报名人数；实到 = 实际到课人数。两者与签到不符会触发销课异常。',
+  '老师提交': '老师是否已签到并提交本节课堂记录，销课以此为依据。',
+  '平台/学校确认': '平台或学校对本节课真实完成的确认，确认后本节方可计费。',
+  '销课状态': '本节课的计费流转状态（待上课 → 已上课待确认 → 已确认销课 → 已计入结算；异常节次暂停计费）。',
+  '可结算金额': '本节课确认销课后计入当月结算的金额；待上课 / 异常节次不计费。',
+  '售后编号': '售后工单编号。',
+  '问题类型': '家长提交的售后问题分类。',
+  '当前状态': '售后工单处理进度，含义见右上角「名词解释」。',
+  '平台处理意见': '平台对本工单的处理要求或结论，「机构需反馈」的工单须在 2 个工作日内响应。',
+  '结算单号': '月度结算单编号。',
+  '结算月份': '结算所属自然月，月底按当月已确认销课生成。',
+  '涉及学校': '本结算单包含的上课学校。',
+  '班级数': '本结算单涉及的班级数量。',
+  '已确认销课': '当月经平台/学校确认、可计费的课时数。',
+  '已确认课时': '当月经平台/学校确认、可计费的课时数。',
+  '应结算金额': '当月所有已确认销课节次的金额合计。',
+  '平台服务费': '按合作协议比例（Demo 为 10%）从应结算金额中扣除。',
+  '退款扣减': '当月退款订单对应金额，从结算中扣回。',
+  '机构实收': '应结算金额 − 平台服务费 − 学校分成 − 退款扣减。',
+  '时间': '上课时间段（课后延时服务时段）。',
+  '上课时间': '固定周期的上课时间（课后延时服务时段）。',
+  '上课日期': '本节课实际上课日期。',
+  '课程班级': '售后涉及的课程与班级。',
+};
+function showFieldDef(label, def) {
+  openModal(label + ' · 字段解释', `<div style="font-size:14px;line-height:1.9;color:#52565e">${def}</div>`);
+}
+function decorateTh(root) {
+  (root || document).querySelectorAll('th').forEach((th) => {
+    if (th.dataset.qi) return;
+    const label = th.textContent.trim();
+    const def = COLDEF[label];
+    if (def) {
+      th.dataset.qi = '1';
+      th.innerHTML = `${label} <span class="qi" title="查看字段解释" onclick="event.stopPropagation();showFieldDef('${label.replace(/'/g, '\\\'')}', '${def.replace(/\\/g, '\\\\').replace(/'/g, '\\\'')}')">?</span>`;
+    }
+  });
+}
+
+function showGlossary() {
+  openModal('平台名词解释', GLOSSARY.map((g) => `
+    <h5 style="margin:14px 0 8px;font-size:13px">${g.title}</h5>
+    ${g.items.map(([t, d]) => `
+      <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:8px">
+        <span style="flex-shrink:0">${tag(t)}</span>
+        <span style="font-size:13px;color:#52565e;line-height:1.7">${d}</span>
+      </div>`).join('')}`).join(''));
+}
+
+/* ---------- 角色与菜单 ---------- */
+let role = 'org';           // org | teacher（老师账号 = 王老师 t1）
+let page = 'dash';
+const ME_TEACHER = TEACHERS[0];
+
+const MENUS = {
+  org: [
+    ['dash', '首页看板'], ['orginfo', '机构信息'], ['teachers', '老师管理'], ['courses', '课程管理'],
+    ['classes', '分发班级'], ['students', '学生名单'], ['checkin', '上课签到'], ['records', '课堂记录'],
+    ['lessons', '销课管理'], ['aftersale', '售后管理'], ['settle', '结算管理'], ['notices', '消息通知'],
+  ],
+  teacher: [
+    ['dash', '首页看板'], ['classes', '我的班级'], ['students', '学生名单'],
+    ['checkin', '上课签到'], ['records', '课堂记录'], ['lessons', '我的销课'], ['notices', '消息通知'],
+  ],
+};
+
+function setRole(r) {
+  role = r;
+  const allowed = MENUS[role].map((m) => m[0]);
+  if (!allowed.includes(page)) page = 'dash';
+  render();
+}
+function go(p) { page = p; render(); }
+
+/* ---------- 渲染 ---------- */
+function render() {
+  document.getElementById('roleOrg').classList.toggle('on', role === 'org');
+  document.getElementById('roleTeacher').classList.toggle('on', role === 'teacher');
+  document.getElementById('whoami').innerHTML = role === 'org'
+    ? `当前角色：<b>机构管理员</b>（${ORG.contact}）` : `当前角色：<b>老师账号</b>（${ME_TEACHER.name}）`;
+
+  document.getElementById('menu').innerHTML = MENUS[role]
+    .map(([k, label]) => `<div class="menu-item ${page === k ? 'active' : ''}" onclick="go('${k}')">${label}</div>`).join('');
+
+  const labels = Object.fromEntries(MENUS[role]);
+  document.getElementById('pageTitle').textContent = labels[page] || '';
+  document.getElementById('content').innerHTML = PAGES[page]();
+  decorateTh(document.getElementById('content'));
+}
+
+/* 老师视角数据过滤 */
+const myClasses = () => role === 'teacher' ? CLASSES.filter((c) => c.tid === 't1') : CLASSES;
+const myStudents = () => {
+  const ids = myClasses().map((c) => c.id);
+  return STUDENTS.filter((s) => ids.includes(s.cls));
+};
+const myRecords = () => role === 'teacher' ? RECORDS.filter((r) => r.tid === 't1') : RECORDS;
+const myLessons = () => role === 'teacher' ? LESSONS.filter((l) => l.tid === 't1') : LESSONS;
+
+/* ---------- 页面 ---------- */
+const PAGES = {
+  /* 首页看板 */
+  dash() {
+    const flow = `<div class="flow">
+      <span class="f">机构管理老师</span><span class="a">→</span><span class="f">老师资质平台审核</span><span class="a">→</span>
+      <span class="f">机构发布课程</span><span class="a">→</span><span class="f">课程平台审核</span><span class="a">→</span>
+      <span class="f">平台分发学校成班</span><span class="a">→</span><span class="f">老师签到上课</span><span class="a">→</span>
+      <span class="f">提交课堂记录</span><span class="a">→</span><span class="f">生成销课记录</span><span class="a">→</span>
+      <span class="f">按月结算</span>
+    </div>`;
+    if (role === 'teacher') {
+      const stats = [['我的授课班级', 2, '个'], ['今日上课任务', 1, '节'], ['待签到课程', 1, '节'], ['待提交课堂记录', 1, '份'], ['已完成课时', 6, '节'], ['本周上课安排', 3, '节']];
+      return flow + `<div class="stats" style="grid-template-columns:repeat(3,1fr)">
+        ${stats.map(([t, v, u]) => `<div class="stat"><div class="t">${t}</div><div class="v">${v}<small>${u}</small></div></div>`).join('')}
+      </div>
+      <div class="card"><h4>今日上课任务</h4><div class="tbl-wrap"><table>
+        <tr><th>班级</th><th>时间</th><th>地点</th><th>状态</th><th>操作</th></tr>
+        <tr><td>${CHECKIN.className}</td><td>${CHECKIN.time}</td><td>${CHECKIN.school} · ${CHECKIN.venue}</td>
+        <td>${tag(CHECKIN.submitted ? '已提交' : '待签到')}</td><td><span class="lnk" onclick="go('checkin')">去签到</span></td></tr>
+      </table></div></div>`;
+    }
+    const stats = [['我的课程', 3, '门'], ['审核中课程', 1, '门'], ['已分发学校', 3, '所'], ['当前开课班级', 4, '个'],
+      ['今日上课班级', 2, '个'], ['本月已销课', 42, '节'], ['本月预估结算', '¥29,440', ''], ['待处理售后', 2, '单']];
+    return flow + `<div class="stats">
+      ${stats.map(([t, v, u], i) => `<div class="stat ${i === 7 || i === 1 ? 'warn' : ''}"><div class="t">${t}</div><div class="v">${v}<small>${u}</small></div></div>`).join('')}
+    </div>
+    <div class="grid2">
+      <div class="card"><h4>今日上课安排</h4><div class="tbl-wrap"><table>
+        <tr><th>班级</th><th>时间</th><th>老师</th></tr>
+        <tr><td>天府一小 - AI启蒙一班（第 5 节）</td><td>17:00-18:00</td><td>王老师</td></tr>
+        <tr><td>天府实验小学 - 科学探索一班（第 2 节）</td><td>17:00-18:00</td><td>张老师</td></tr>
+      </table></div></div>
+      <div class="card"><h4>课程审核状态</h4><div class="tbl-wrap"><table>
+        <tr><th>课程</th><th>状态</th><th>分发学校</th></tr>
+        ${COURSES.map((c) => `<tr><td>${c.name}</td><td>${tag(c.status)}</td><td>${c.schools} 所</td></tr>`).join('')}
+      </table></div></div>
+    </div>
+    <div class="card mt"><h4>本月销课概览</h4><div class="tbl-wrap"><table>
+      <tr><th>班级</th><th>已确认课时</th><th>可结算金额</th><th>状态</th></tr>
+      ${SETTLES[0].detail.map((d) => `<tr><td>${d.cls}</td><td>${d.lessons} 节</td><td>${money(d.amount)}</td><td>${tag('已确认销课')}</td></tr>`).join('')}
+      <tr><td><b>合计</b></td><td><b>${SETTLES[0].lessons} 节</b></td><td><b>${money(SETTLES[0].gross)}</b></td><td>${tag('待审核')}</td></tr>
+    </table></div></div>`;
+  },
+
+  /* 机构信息 */
+  orginfo() {
+    return `<div class="card" style="max-width:640px">
+      <h4 style="margin-bottom:14px">机构信息</h4>
+      <div class="desc">
+        <div class="k">机构名称</div><div class="v">${ORG.name}</div>
+        <div class="k">服务方向</div><div class="v">${ORG.dir}</div>
+        <div class="k">入驻状态</div><div class="v">${tag(ORG.status)}</div>
+        <div class="k">结算账户</div><div class="v">${tag('已绑定')} <span style="color:var(--muted)">按月结算至对公账户</span></div>
+        <div class="k">联系人</div><div class="v">${ORG.contact}</div>
+        <div class="k">联系电话</div><div class="v">${ORG.phone}</div>
+        <div class="k">营业执照</div><div class="v">${ORG.license}</div>
+        <div class="k">入驻时间</div><div class="v">${ORG.joined}</div>
+      </div>
+    </div>`;
+  },
+
+  /* 老师管理 */
+  teachers() {
+    return `<div class="page-title"><span></span><span class="hint">老师由机构创建，资质需平台审核通过后方可绑定班级</span></div>
+    <div class="tbl-wrap"><table>
+      <tr><th>老师姓名</th><th>手机号</th><th>教授方向</th><th>审核状态</th><th>当前负责班级</th><th>本月上课次数</th><th>操作</th></tr>
+      ${TEACHERS.map((t) => `<tr>
+        <td><b>${t.name}</b></td><td>${t.phone}</td><td>${t.dir}</td><td>${tag(t.status)}</td>
+        <td>${t.classes} 个班</td><td>${t.monthLessons} 次</td>
+        <td><span class="lnk" onclick="teacherDetail('${t.id}')">查看详情</span>
+            <span class="lnk" onclick="teacherLessons('${t.id}')">查看上课记录</span>
+            ${t.status === '待平台审核' ? `<span class="lnk warn" onclick="toast('已提交平台审核，请等待审核结果')">提交审核</span>` : ''}</td>
+      </tr>`).join('')}
+    </table></div>`;
+  },
+
+  /* 课程管理 */
+  courses() {
+    return `<div class="page-title"><span></span><span class="hint">课程经平台审核进入课程库后，由平台分发到学校，机构不直接对家长上架</span></div>
+    <div class="tbl-wrap"><table>
+      <tr><th>课程名称</th><th>分类</th><th>适合年级</th><th>总课时</th><th>建议价格</th><th>审核状态</th><th>分发学校</th><th>操作</th></tr>
+      ${COURSES.map((c) => `<tr>
+        <td><b>${c.name}</b></td><td>${c.cat}</td><td>${c.grade}</td><td>${c.lessons} 节</td><td>${money(c.price)}</td>
+        <td>${tag(c.status)}</td><td>${c.schools} 所</td>
+        <td><span class="lnk" onclick="courseDetail('${c.id}')">查看详情</span></td>
+      </tr>`).join('')}
+    </table></div>`;
+  },
+
+  /* 分发班级 / 我的班级 */
+  classes() {
+    const list = myClasses();
+    return `<div class="page-title"><span></span><span class="hint">${role === 'teacher' ? '仅展示我负责的班级' : '课程由平台分发到学校后形成班级，家长报名的是具体班级'}</span></div>
+    <div class="tbl-wrap"><table>
+      <tr><th>班级名称</th><th>课程</th><th>学校</th><th>场地</th><th>上课时间</th><th>老师</th><th>课时进度</th><th>报名</th><th>状态</th><th>操作</th></tr>
+      ${list.map((c) => `<tr>
+        <td class="ell" title="${c.name}"><b>${c.name}</b></td><td>${c.course}</td><td>${c.school}</td><td>${c.venue}</td>
+        <td>${c.time}</td><td>${c.teacher}</td><td>${c.done} / ${c.total} 节</td>
+        <td>${c.enrolled} / ${c.max}</td><td>${tag(c.status)}</td>
+        <td><span class="lnk" onclick="classStudents('${c.id}')">查看学生</span>
+            <span class="lnk" onclick="go('records')">上课记录</span>
+            <span class="lnk" onclick="go('lessons')">销课记录</span></td>
+      </tr>`).join('')}
+    </table></div>`;
+  },
+
+  /* 学生名单 */
+  students() {
+    const list = myStudents();
+    return `<div class="page-title"><span></span><span class="hint">${role === 'teacher' ? '仅展示我班级的学生' : '全机构报名学生'} · 家长手机号已脱敏</span></div>
+    <div class="tbl-wrap"><table>
+      <tr><th>学生姓名</th><th>学校</th><th>年级班级</th><th>报名课程</th><th>所属班级</th><th>家长手机号</th><th>报名状态</th><th>出勤情况</th></tr>
+      ${list.map((s) => `<tr>
+        <td><b>${s.name}</b></td><td>${s.school}</td><td>${s.grade}</td><td>${s.course}</td>
+        <td class="ell">${(CLASSES.find((c) => c.id === s.cls) || {}).name || ''}</td>
+        <td>${s.phone}</td><td>${tag(s.status)}</td><td>${s.attend}</td>
+      </tr>`).join('')}
+    </table></div>`;
+  },
+
+  /* 上课签到 */
+  checkin() {
+    return `<div class="card" style="max-width:760px">
+      <h4>今日上课任务</h4>
+      <div class="sign-head">
+        <div><span class="k">班级</span>${CHECKIN.className}</div>
+        <div><span class="k">课程</span>${CHECKIN.course}</div>
+        <div><span class="k">老师</span>${CHECKIN.teacher}</div>
+        <div><span class="k">学校</span>${CHECKIN.school}</div>
+        <div><span class="k">地点</span>${CHECKIN.venue}</div>
+        <div><span class="k">时间</span>${CHECKIN.time}</div>
+      </div>
+      ${CHECKIN.students.map((s, i) => `
+        <div class="sign-row">
+          <span class="nm">${s.name}</span>
+          <div class="sign-btns">
+            ${['已到', '迟到', '请假', '缺勤'].map((st) => `<button class="${s.st === st ? 'on-' + st : ''}" onclick="setSign(${i}, '${st}')">${st}</button>`).join('')}
+          </div>
+        </div>`).join('')}
+      <div style="margin-top:16px;display:flex;justify-content:space-between;align-items:center">
+        <span style="color:var(--muted);font-size:13px">已到 ${CHECKIN.students.filter((s) => s.st === '已到').length} / ${CHECKIN.students.length} 人${CHECKIN.submitted ? ' · 本节签到已提交' : ''}</span>
+        <button class="btn btn-primary" onclick="submitSign()">提交签到</button>
+      </div>
+    </div>`;
+  },
+
+  /* 课堂记录 */
+  records() {
+    const list = myRecords();
+    return `<div class="page-title"><span></span><span class="hint">${role === 'teacher' ? '上完课请及时填写课堂记录，销课以记录为依据' : '查看全部老师课堂记录'}</span></div>
+    <div class="tbl-wrap"><table>
+      <tr><th>班级名称</th><th>第几节</th><th>上课日期</th><th>上课内容</th><th>到课</th><th>缺勤</th><th>课堂情况</th><th>课后评语</th><th>状态</th>${role === 'teacher' ? '<th>操作</th>' : ''}</tr>
+      ${list.map((r) => `<tr>
+        <td class="ell">${r.cls}</td><td>第 ${r.no} 节</td><td>${r.date}</td>
+        <td class="ell">${r.content || '<span style="color:#c3c9d4">—</span>'}</td>
+        <td>${r.attend || '—'}</td><td>${r.status === '已提交' ? r.absent : '—'}</td>
+        <td class="ell" title="${r.mood}">${r.mood || '—'}</td><td class="ell" title="${r.comment}">${r.comment || '—'}</td>
+        <td>${tag(r.status)}</td>
+        ${role === 'teacher' ? `<td>${r.status === '待填写' ? `<span class="lnk" onclick="openRecordForm('${r.id}')">填写记录</span>` : `<span class="lnk" onclick="viewRecord('${r.id}')">查看</span>`}</td>` : ''}
+      </tr>`).join('')}
+    </table></div>`;
+  },
+
+  /* 销课管理 / 我的销课 */
+  lessons() {
+    const list = myLessons();
+    const isT = role === 'teacher';
+    return `<div class="page-title"><span></span><span class="hint">${isT ? '仅展示我的销课记录（金额由机构与平台结算，老师端不展示）' : '每上一节课生成一条销课记录，平台/学校确认后计入结算'}</span></div>
+    <div class="tbl-wrap"><table>
+      <tr><th>课程</th><th>班级</th><th>学校</th><th>节次</th><th>上课日期</th><th>老师</th><th>应到/实到</th><th>老师提交</th><th>平台/学校确认</th><th>销课状态</th>${isT ? '' : '<th>可结算金额</th>'}</tr>
+      ${list.map((l) => `<tr>
+        <td>${l.course}</td><td class="ell">${l.cls}</td><td>${l.school}</td><td>第 ${l.no} 节</td><td>${l.date}</td><td>${l.teacher}</td>
+        <td>${l.due} / ${l.actual || '—'}</td><td>${tag(l.tSubmit)}</td><td>${l.confirm === '—' ? '—' : tag(l.confirm)}</td>
+        <td>${tag(l.status)}${l.note ? ` <span style="color:var(--muted);font-size:12px" title="${l.note}">ⓘ</span>` : ''}</td>
+        ${isT ? '' : `<td>${l.amount ? '<b style="color:var(--green)">' + money(l.amount) + '</b>' : '—'}</td>`}
+      </tr>`).join('')}
+    </table></div>`;
+  },
+
+  /* 售后管理 */
+  aftersale() {
+    return `<div class="tbl-wrap"><table>
+      <tr><th>售后编号</th><th>学生姓名</th><th>学校</th><th>课程班级</th><th>问题类型</th><th>当前状态</th><th>平台处理意见</th></tr>
+      ${AFTERSALES.map((a) => `<tr>
+        <td>${a.id}</td><td><b>${a.student}</b></td><td>${a.school}</td><td>${a.cls}</td>
+        <td><span class="tag tg-red">${a.type}</span></td><td>${tag(a.status)}</td><td class="ell" style="max-width:260px" title="${a.opinion}">${a.opinion}</td>
+      </tr>`).join('')}
+    </table></div>`;
+  },
+
+  /* 结算管理 */
+  settle() {
+    return `<div class="page-title"><span></span><span class="hint">按月结算：已确认销课累计 − 平台服务费 − 退款扣减 = 机构实收</span></div>
+    <div class="tbl-wrap"><table>
+      <tr><th>结算单号</th><th>结算月份</th><th>涉及学校</th><th>班级数</th><th>已确认销课</th><th>应结算金额</th><th>平台服务费</th><th>退款扣减</th><th>机构实收</th><th>状态</th><th>操作</th></tr>
+      ${SETTLES.map((s, i) => `<tr>
+        <td>${s.id}</td><td>${s.month}</td><td class="ell" title="${s.schools}">${s.schools}</td><td>${s.clsCount}</td><td>${s.lessons} 节</td>
+        <td>${money(s.gross)}</td><td>− ${money(s.fee)}</td><td>− ${money(s.refund)}</td>
+        <td><b style="color:var(--primary)">${money(s.net)}</b></td><td>${tag(s.status)}</td>
+        <td><span class="lnk" onclick="settleDetail(${i})">查看详情</span></td>
+      </tr>`).join('')}
+    </table></div>`;
+  },
+
+  /* 消息通知 */
+  notices() {
+    return `<div class="card">
+      ${NOTICES.map((n) => `<div class="notice-item ${n.read ? 'read' : ''}">
+        <span class="dot"></span>
+        <div style="flex:1"><div class="nt">${n.t}</div><div style="font-size:13px;color:#52565e">${n.d}</div><div class="nd">${n.time}</div></div>
+      </div>`).join('')}
+    </div>`;
+  },
+};
+
+/* ---------- 弹窗 ---------- */
+function openModal(title, body, foot) {
+  document.getElementById('mTitle').textContent = title;
+  document.getElementById('mBody').innerHTML = body;
+  document.getElementById('mFoot').innerHTML = foot || `<button class="btn btn-ghost" onclick="closeModal()">关闭</button>`;
+  document.getElementById('mask').classList.add('show');
+  decorateTh(document.getElementById('mBody'));
+}
+function closeModal() { document.getElementById('mask').classList.remove('show'); }
+
+let toastTimer = null;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+/* 老师详情 */
+function teacherDetail(id) {
+  const t = TEACHERS.find((x) => x.id === id);
+  openModal('老师详情 · ' + t.name, `
+    <div class="desc">
+      <div class="k">姓名</div><div class="v">${t.name}</div>
+      <div class="k">手机号</div><div class="v">${t.phone}</div>
+      <div class="k">教授方向</div><div class="v">${t.dir}</div>
+      <div class="k">身份证</div><div class="v">${t.idcard}</div>
+      <div class="k">资质证书</div><div class="v">${t.cert}</div>
+      <div class="k">个人简介</div><div class="v">${t.bio}</div>
+      <div class="k">审核状态</div><div class="v">${tag(t.status)} ${t.status === '待平台审核' ? '<span style="color:var(--muted);font-size:12px">审核通过后方可绑定班级授课</span>' : ''}</div>
+    </div>`);
+}
+/* 老师上课记录 */
+function teacherLessons(id) {
+  const t = TEACHERS.find((x) => x.id === id);
+  const rows = LESSONS.filter((l) => l.tid === id && l.status !== '待上课');
+  openModal(t.name + ' · 上课记录', rows.length ? `
+    <div class="tbl-wrap"><table>
+      <tr><th>班级</th><th>节次</th><th>日期</th><th>应到/实到</th><th>销课状态</th></tr>
+      ${rows.map((l) => `<tr><td>${l.cls}</td><td>第 ${l.no} 节</td><td>${l.date}</td><td>${l.due}/${l.actual}</td><td>${tag(l.status)}</td></tr>`).join('')}
+    </table></div>` : '<div class="empty">暂无上课记录</div>');
+}
+/* 课程详情 */
+function courseDetail(id) {
+  const c = COURSES.find((x) => x.id === id);
+  openModal('课程详情 · ' + c.name, `
+    <div class="desc">
+      <div class="k">课程分类</div><div class="v">${c.cat} · ${c.grade}</div>
+      <div class="k">课时 / 价格</div><div class="v">${c.lessons} 节 · 建议 ${money(c.price)}/期</div>
+      <div class="k">所需场地</div><div class="v">${c.venue}</div>
+      <div class="k">所需设备</div><div class="v">${c.device}</div>
+      <div class="k">关联老师</div><div class="v">${c.teacher}</div>
+      <div class="k">审核状态</div><div class="v">${tag(c.status)} <span style="color:var(--muted);font-size:12px">已分发 ${c.schools} 所学校</span></div>
+      <div class="k">课程介绍</div><div class="v">${c.intro}</div>
+    </div>
+    <h5>课程大纲（每节课标题）</h5>
+    <ol>${c.syllabus.map((s) => `<li>${s}</li>`).join('')}</ol>
+    <h5>审核记录</h5>
+    <ol style="list-style:none;padding-left:4px">${c.audits.map((a) => `<li style="line-height:1.9">· <b>${a.act}</b> <span style="color:var(--muted);font-size:12px">${a.by} · ${a.t}</span></li>`).join('')}</ol>`);
+}
+/* 班级学生 */
+function classStudents(id) {
+  const c = CLASSES.find((x) => x.id === id);
+  const rows = STUDENTS.filter((s) => s.cls === id);
+  openModal(c.name + ' · 学生名单（' + c.enrolled + ' 人，示例展示 ' + rows.length + ' 人）', `
+    <div class="tbl-wrap"><table>
+      <tr><th>学生</th><th>年级班级</th><th>家长手机号</th><th>出勤</th></tr>
+      ${rows.map((s) => `<tr><td><b>${s.name}</b></td><td>${s.grade}</td><td>${s.phone}</td><td>${s.attend}</td></tr>`).join('')}
+    </table></div>`);
+}
+/* 结算详情 */
+function settleDetail(i) {
+  const s = SETTLES[i];
+  openModal('结算明细 · ' + s.id, `
+    <div class="tbl-wrap"><table>
+      <tr><th>班级</th><th>已确认销课</th><th>可结算金额</th></tr>
+      ${s.detail.map((d) => `<tr><td>${d.cls}</td><td>${d.lessons} 节</td><td>${money(d.amount)}</td></tr>`).join('')}
+    </table></div>
+    <h5>结算计算</h5>
+    <div class="desc">
+      <div class="k">应结算金额</div><div class="v">${money(s.gross)}</div>
+      <div class="k">平台服务费</div><div class="v">− ${money(s.fee)}（10%）</div>
+      <div class="k">退款扣减</div><div class="v">− ${money(s.refund)}</div>
+      <div class="k">机构实收</div><div class="v"><b style="color:var(--primary);font-size:15px">${money(s.net)}</b></div>
+      <div class="k">结算状态</div><div class="v">${tag(s.status)}</div>
+    </div>`);
+}
+
+/* 签到交互 */
+function setSign(i, st) {
+  CHECKIN.students[i].st = st;
+  render();
+}
+function submitSign() {
+  CHECKIN.submitted = true;
+  render();
+  toast('签到已提交，等待平台/学校确认');
+}
+
+/* 课堂记录表单 */
+function openRecordForm(id) {
+  const r = RECORDS.find((x) => x.id === id);
+  openModal(`填写课堂记录 · ${r.cls} 第 ${r.no} 节`, `
+    <div class="form-row"><label>本节课内容</label><input id="rcContent" placeholder="如：AI 故事创作"></div>
+    <div class="form-row"><label>课堂情况</label><textarea id="rcMood" rows="2" placeholder="课堂气氛、学生参与度等"></textarea></div>
+    <div class="form-row"><label>课后评语</label><textarea id="rcComment" rows="2" placeholder="给家长/学生的整体评语"></textarea></div>
+    <div class="form-row"><label>备注（选填）</label><input id="rcNote" placeholder="需要机构或平台注意的事项"></div>`,
+    `<button class="btn btn-ghost" onclick="closeModal()">取消</button>
+     <button class="btn btn-primary" onclick="submitRecord('${id}')">提交记录</button>`);
+}
+function submitRecord(id) {
+  const r = RECORDS.find((x) => x.id === id);
+  const content = document.getElementById('rcContent').value.trim();
+  if (!content) return toast('请填写本节课内容');
+  r.content = content;
+  r.mood = document.getElementById('rcMood').value.trim() || '正常';
+  r.comment = document.getElementById('rcComment').value.trim() || '—';
+  r.attend = CHECKIN.students.filter((s) => s.st === '已到' || s.st === '迟到').length;
+  r.absent = CHECKIN.students.length - r.attend;
+  r.status = '已提交';
+  closeModal();
+  render();
+  toast('课堂记录已提交，本节课进入销课流程');
+}
+function viewRecord(id) {
+  const r = RECORDS.find((x) => x.id === id);
+  openModal(`课堂记录 · ${r.cls} 第 ${r.no} 节`, `
+    <div class="desc">
+      <div class="k">上课日期</div><div class="v">${r.date}</div>
+      <div class="k">上课内容</div><div class="v">${r.content}</div>
+      <div class="k">到课 / 缺勤</div><div class="v">${r.attend} 人 / ${r.absent} 人</div>
+      <div class="k">课堂情况</div><div class="v">${r.mood}</div>
+      <div class="k">课后评语</div><div class="v">${r.comment}</div>
+      <div class="k">提交状态</div><div class="v">${tag(r.status)}</div>
+    </div>`);
+}
+
+render();
+</script>
+</body>
+</html>

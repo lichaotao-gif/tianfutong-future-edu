@@ -6,7 +6,7 @@
  * ============================================================ */
 const { useState, useMemo } = React;
 const {
-  Layout, Menu, Table, Tag, Button, Modal, Drawer, Descriptions, Card, Statistic,
+  Layout, Menu, Table: AntTable, Tag, Button, Modal, Drawer, Descriptions, Card, Statistic,
   Row, Col, Space, Input, Select, Steps, message, Tabs, Divider, Form, InputNumber,
   Checkbox, Timeline, Alert, Progress, Radio, Avatar, Tooltip, List,
 } = antd;
@@ -16,7 +16,7 @@ const {
   DashboardOutlined, TeamOutlined, BankOutlined, EnvironmentOutlined, ShopOutlined,
   IdcardOutlined, BookOutlined, SendOutlined, ClusterOutlined, ProfileOutlined,
   CheckSquareOutlined, AccountBookOutlined, CustomerServiceOutlined, FileSearchOutlined,
-  UserOutlined, PlusOutlined, RightOutlined,
+  UserOutlined, PlusOutlined, RightOutlined, QuestionCircleOutlined,
 } = icons;
 
 /* ---------- 状态 → 颜色（全局统一） ---------- */
@@ -32,7 +32,225 @@ const STC: Record<string, string> = {
   待处理: 'orange', 处理中: 'blue', 机构处理中: 'gold', 平台介入: 'purple', 已完成: 'green',
   正常: 'green', 未签到: 'default', 已签到: 'green', 待确认: 'orange', 已确认: 'green',
 };
-const S = ({ v }: { v: string }) => <Tag color={STC[v] || 'default'}>{v}</Tag>;
+/* ---------- 名词解释词典（顶部 ? 查看全量，状态标签悬停即显） ---------- */
+const GLOSSARY: { title: string; items: [string, string][] }[] = [
+  { title: '销课状态（核心流程）', items: [
+    ['待上课', '课程已排期、尚未到上课时间，本节不产生任何费用。'],
+    ['已上课待确认', '老师已完成签到并提交课堂记录，等待平台或学校确认；确认之前本节不计入结算。'],
+    ['已确认销课', '平台/学校已确认本节课真实完成，本节费用进入当月可结算范围。'],
+    ['异常', '本节课数据存疑：如实到人数与签到不符、老师未签到、家长投诉课程未上等，暂停计费。处理方式：机构在 2 个工作日内补充说明或更正记录，平台复核后转为「已确认销课」，或作废本节（不计费）。'],
+    ['已计入结算', '本节课已随月度结算单锁定，金额不再变动。'],
+  ] },
+  { title: '结算状态', items: [
+    ['待生成', '结算周期未结束，结算单尚未生成。'],
+    ['待审核（结算）', '结算单已生成，等待平台财务核对销课明细与各项扣减。'],
+    ['结算中', '财务审核通过，进入打款流程。'],
+    ['已结算', '款项已打至机构结算账户，本期结算完成。'],
+    ['结算异常', '打款失败或明细存在争议（如账户信息错误、退款争议），需财务人工处理。'],
+    ['已驳回', '审核不通过（如销课明细与课堂记录不符），退回重新核对后再提交。'],
+  ] },
+  { title: '结算相关名词', items: [
+    ['应结算金额', '当月所有「已确认销课」节次的金额合计。'],
+    ['平台服务费', '按合作协议比例（Demo 为 10%）从应结算金额中扣除。'],
+    ['学校分成', '涉及学校分成时按约定比例扣除（规则预留，Demo 为 5%）。'],
+    ['退款扣减', '当月发生退款的订单，对应金额从机构结算中扣回。'],
+    ['机构实收', '应结算金额 − 平台服务费 − 学校分成 − 退款扣减。'],
+  ] },
+  { title: '机构状态', items: [
+    ['待审核', '机构已提交入驻资料，平台审核中；审核通过前不能创建老师、发布课程。'],
+    ['审核通过', '入驻审核通过，可创建老师、发布课程。'],
+    ['审核驳回', '资料不符合要求，按驳回原因补充后重新提交。'],
+    ['已暂停', '合作暂停，机构课程停止分发与报名。'],
+    ['已禁用', '因违规或退出合作，账号冻结。'],
+  ] },
+  { title: '老师状态', items: [
+    ['待审核（老师）', '机构已创建老师并提交资质，平台审核中；通过前不能绑定班级授课。'],
+    ['审核通过（老师）', '资质审核通过，可绑定课程与班级授课。'],
+    ['已停用', '老师不再授课，账号停用。'],
+  ] },
+  { title: '课程状态', items: [
+    ['草稿', '机构编辑中，尚未提交平台审核。'],
+    ['待审核（课程）', '课程已提交，平台审核中（重点审核课程内容与资质合规）。'],
+    ['已入课程库', '课程进入平台课程库，由平台分发到指定学校后该校家长方可见；机构不直接对家长上架。'],
+    ['已下架', '课程停止分发与报名。'],
+  ] },
+  { title: '班级状态', items: [
+    ['报名中', '班级已上架，家长可报名。'],
+    ['待成班', '报名人数未达最低成班人数，暂不能开课。'],
+    ['已成班', '达到最低成班人数，可安排排课开课。'],
+    ['已排课', '已确定上课时间、场地与老师。'],
+    ['上课中', '班级正常上课中。'],
+    ['已结课', '全部课时完成，进入结课确认与结算。'],
+    ['已取消', '未成班或其他原因取消，家长已缴费用自动全额退款。'],
+  ] },
+  { title: '订单 / 支付状态', items: [
+    ['待支付', '家长已提交报名，尚未完成付款。'],
+    ['已支付', '费用已进入平台监管账户托管，不直接支付给机构。'],
+    ['已退款', '费用已全额退回家长，对应金额从机构结算中扣减。'],
+    ['部分退款', '按未上课时比例退回部分费用。'],
+    ['已取消', '订单关闭（未支付超时或家长主动取消）。'],
+  ] },
+  { title: '售后状态', items: [
+    ['待处理', '家长已提交售后申请，平台尚未受理。'],
+    ['处理中', '平台客服核实处理中。'],
+    ['机构处理中', '售后已转机构，机构须在时限内（2 个工作日）反馈处理方案，超时平台介入。'],
+    ['平台介入', '机构处理超时或双方有争议，由平台仲裁处理。'],
+    ['已完成', '售后处理完毕结案。'],
+  ] },
+  { title: '学校 / 场地状态', items: [
+    ['待合作', '学校已建档，合作协议未签署，暂不能分发课程。'],
+    ['已合作', '合作中，可向该校分发课程。'],
+    ['暂停合作', '暂停向该校分发新课程，存量班级正常上完。'],
+    ['启用 / 停用', '场地是否可用于排课；停用后不可被新班级选用。'],
+    ['已上架 / 已下架', '课程配置在该校家长端是否可见、可报名。'],
+  ] },
+  { title: '通用名词', items: [
+    ['资金托管', '家长报名费一次性支付后进入平台监管账户，机构按已确认销课的课时逐节累计，按月结算。'],
+    ['销课', '每完成一节课形成一条销课记录，经平台/学校确认后机构累计一节可结算费用。'],
+    ['成班人数', '开班所需的最低报名人数，未达标班级将取消并自动退款。'],
+    ['课程分发', '平台将课程库中的课程配置到指定合作学校，仅被分发学校的家长端可见该课程。'],
+  ] },
+];
+/* 悬停提示：状态 → 解释（带「（xx）」限定的词条映射回原状态名） */
+const TERM_DEF: Record<string, string> = {};
+GLOSSARY.forEach((g) => g.items.forEach(([t, d]) => {
+  const key = t.replace(/（.*?）/g, '').split(' / ')[0];
+  if (!TERM_DEF[key]) TERM_DEF[key] = d;
+}));
+TERM_DEF['已签到'] = '老师已在系统完成本节课签到。';
+TERM_DEF['未签到'] = '老师尚未签到，本节课未开始或存在异常。';
+TERM_DEF['待确认'] = TERM_DEF['已上课待确认'];
+TERM_DEF['已确认'] = '平台/学校已确认本节课真实完成。';
+
+const S = ({ v }: { v: string }) => {
+  const t = <Tag color={STC[v] || 'default'} style={TERM_DEF[v] ? { cursor: 'help' } : {}}>{v}</Tag>;
+  return TERM_DEF[v] ? <Tooltip title={TERM_DEF[v]}>{t}</Tooltip> : t;
+};
+
+/* ---------- 表格字段解释（列名后的 ? 点击查看） ---------- */
+const FIELD_DEF: Record<string, string> = {
+  机构名称: '入驻或合作机构的主体名称，通常与营业执照名称一致。',
+  服务方向: '机构可提供的课程方向，如 AI、编程、科创、美术、体育等。',
+  提交时间: '机构、老师或课程提交给平台审核的时间。',
+  状态: '当前业务状态，点击状态标签或顶部名词解释可查看完整含义。',
+  老师: '负责该班级或课程授课的老师。',
+  老师姓名: '机构提交并由平台审核的授课老师姓名。',
+  机构: '课程、老师、班级、订单或结算所属的服务机构。',
+  所属机构: '老师或课程归属的机构，由机构维护并提交平台审核。',
+  方向: '老师或课程的教学方向。',
+  课程: '平台课程库中的课程或订单报名课程。',
+  课程名称: '课程在平台课程库中的标准名称。',
+  分类: '课程所属类目，如 AI、编程、科学、研学等。',
+  班级: '课程分发到学校后形成的具体上课班级，家长最终报名到班级。',
+  班级名称: '课程在某个学校、时段和场地下形成的具体班级名称。',
+  学校: '课程投放、班级上课、订单学生所属的学校。',
+  投放学校: '课程被平台配置到的学校，只有这些学校的家长端可见。',
+  时间: '固定上课时段或业务发生时间。',
+  上课时间: '班级固定的周期性上课时段。',
+  上课日期: '单节课实际发生的日期。',
+  场地: '学校提供的上课教室或场馆。',
+  类型: '场地或业务对象的分类。',
+  容纳: '场地可承载的学生人数。',
+  容纳人数: '场地可容纳的最大学生人数，用于限制班额。',
+  可用时间: '场地可被排课使用的时间范围。',
+  适合课程: '该场地适合承接的课程类型。',
+  对外开放: '该场地是否允许本校以外学生报名使用。',
+  星期: '场地排课占用对应的星期。',
+  时段: '场地排课占用的具体时间段。',
+  占用班级: '该场地时段已安排的班级。',
+  姓名: '平台账号或学生/家长姓名。',
+  手机号: '账号或联系人手机号，Demo 中做脱敏展示。',
+  角色: '平台账号的权限角色。',
+  角色名称: '后台权限角色的名称。',
+  所属单位: '账号归属的平台、学校或机构。',
+  最近登录: '该账号最近一次登录后台的时间。',
+  说明: '角色或字段的业务说明。',
+  权限点: '该角色拥有的后台功能权限数量。',
+  学校名称: '合作学校的标准名称。',
+  区域: '学校所属行政区域。',
+  地址: '学校详细地址。',
+  联系人: '学校或机构对接联系人。',
+  电话: '对接联系人电话。',
+  合作状态: '学校与平台的合作进度和可用状态。',
+  已配置课程: '已分发到该学校、可在家长端展示的课程数量。',
+  场地名称: '学校场地的名称。',
+  所属学校: '场地归属的学校。',
+  审核状态: '平台审核进度或结果，通过前不能进入下一业务环节。',
+  课程库: '平台审核通过后的课程资源池，课程需分发到学校后家长才可见。',
+  课程数: '机构已维护或已通过审核的课程数量。',
+  老师数: '机构已维护或已通过审核的老师数量。',
+  课程数量: '机构已维护或已通过审核的课程数量。',
+  老师数量: '机构已维护或已通过审核的老师数量。',
+  结算账户: '机构用于接收月度结算款的账户配置状态。',
+  资质类型: '老师提交的资质证书类型，如教师资格证、行业资格证等。',
+  教授方向: '老师主要承担的课程方向。',
+  适合年级: '课程建议报名的学生年级范围。',
+  课时: '一期课程包含的上课节次总数。',
+  建议价格: '机构建议售价，实际报名价以学校课程配置为准。',
+  '成班/上限': '最低成班人数 / 最大报名人数。',
+  所需场地: '课程上课所需的教室或场馆类型。',
+  上课场地: '班级实际使用的学校场地。',
+  报名上限: '班级允许报名的最大人数。',
+  '报名/上限': '当前报名人数 / 班级最大人数。',
+  截止: '家长端报名截止时间。',
+  成班状态: '班级是否达到最低成班人数。',
+  上架状态: '课程配置在家长端是否可见、可报名。',
+  课时进度: '已上课时 / 总课时。',
+  '报名（成班 /上限）': '当前报名人数，以及最低成班人数 / 最大报名人数。',
+  班级状态: '班级从报名到结课的业务状态。',
+  学生: '报名学生姓名。',
+  家长: '报名学生对应家长。',
+  支付: '该报名的支付状态。',
+  订单编号: '家长报名支付后形成的订单编号。',
+  金额: '订单或结算对应的费用金额。',
+  支付方式: '家长完成付款使用的渠道。',
+  支付状态: '订单款项状态，已支付表示资金进入平台监管账户托管。',
+  退款: '订单是否发生退款及退款状态。',
+  下单时间: '家长提交报名订单的时间。',
+  节次: '该班级课程的第几节课。',
+  '应到/实到': '应到为报名人数，实到为本节实际到课人数。',
+  老师签到: '老师是否在系统完成本节课签到。',
+  学校确认: '学校或平台是否确认本节课真实完成。',
+  销课状态: '单节课的计费流转状态，确认后才进入结算。',
+  可结算金额: '本节课确认销课后计入当月结算的金额。',
+  结算单号: '月度结算单编号。',
+  月份: '结算所属月份。',
+  结算月份: '结算所属自然月。',
+  涉及学校: '结算单覆盖的上课学校。',
+  班级数: '结算单涉及的班级数量。',
+  完成课时: '本期已确认可结算的课时数量。',
+  已完成课时: '本期已确认可结算的课时数量。',
+  应结算: '当月所有已确认销课节次的金额合计。',
+  平台服务费: '按合作协议比例从应结算金额中扣除。',
+  学校分成: '按协议预留给学校或场地相关方的分成金额。',
+  退款扣减: '当月退款订单对应金额，从机构结算中扣回。',
+  机构实收: '应结算金额扣除平台服务费、学校分成、退款扣减后的机构到账金额。',
+  日期: '销课明细对应的上课日期。',
+  实到: '本节课实际到课人数。',
+  可结算: '该节课确认后可计入结算的金额。',
+  售后编号: '家长售后申请形成的工单编号。',
+  课程班级: '售后涉及的课程和班级。',
+  问题类型: '家长提交售后时选择的问题分类。',
+  申请时间: '售后工单提交时间。',
+  操作时间: '后台操作发生时间。',
+  操作人: '执行后台操作的账号或人员。',
+  模块: '操作发生的后台功能模块。',
+  操作内容: '本次后台操作的具体内容。',
+  IP: '执行操作时记录的网络地址。',
+  结果: '后台操作执行结果。',
+};
+const explainTitle = (title: any) => {
+  if (typeof title !== 'string') return title;
+  const def = FIELD_DEF[title];
+  if (!def) return title;
+  return <Space size={4}>{title}<Tooltip title={def} trigger="click"><QuestionCircleOutlined style={{ color: '#8a919f', fontSize: 12, cursor: 'pointer' }} onClick={(e: any) => e.stopPropagation()} /></Tooltip></Space>;
+};
+const explainColumns = (cols: any[] = []): any[] => cols.map((c) => ({
+  ...c,
+  title: explainTitle(c.title),
+  children: c.children ? explainColumns(c.children) : c.children,
+}));
+const Table = (props: any) => <AntTable {...props} columns={explainColumns(props.columns)} />;
 
 /* ---------- Mock 数据 ---------- */
 const initDB = {
@@ -799,6 +1017,7 @@ const MENUS = [
 function App() {
   const [nav, setNav] = useState('dash');
   const [db, setDb] = useState(initDB);
+  const [helpOpen, setHelpOpen] = useState(false);
   const title = MENUS.find((m) => m.key === nav)?.label || '';
   const pages: Record<string, any> = {
     dash: <Dashboard db={db} go={setNav} />, user: <UserPage db={db} setDb={setDb} />,
@@ -811,23 +1030,50 @@ function App() {
   };
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      <Sider width={216} theme="dark">
-        <div style={{ color: '#fff', padding: '18px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 34, height: 34, borderRadius: 8, background: '#1677ff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>未</div>
-          <div style={{ lineHeight: 1.25 }}><b>天府通未来教育平台</b><div style={{ fontSize: 11, opacity: .65 }}>后台管理系统 Demo</div></div>
+      <Sider width={216} theme="dark" style={{ height: '100vh', position: 'sticky', top: 0 }}>
+        <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ color: '#fff', padding: '18px 16px', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+            <div style={{ width: 34, height: 34, borderRadius: 8, background: '#1677ff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>未</div>
+            <div style={{ lineHeight: 1.25 }}><b>天府通未来教育平台</b><div style={{ fontSize: 11, opacity: .65 }}>后台管理系统 Demo</div></div>
+          </div>
+          <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+            <Menu theme="dark" mode="inline" selectedKeys={[nav]} items={MENUS} onClick={(e: any) => setNav(e.key)} />
+          </div>
+          <div style={{ flexShrink: 0, padding: '12px 14px 16px', borderTop: '1px solid rgba(255,255,255,.12)', background: '#001529' }}>
+            <div style={{ color: 'rgba(255,255,255,.45)', fontSize: 12, marginBottom: 8 }}>友情链接</div>
+            <Space direction="vertical" size={4} style={{ width: '100%' }}>
+              <a href="../" style={{ color: 'rgba(255,255,255,.82)', fontSize: 13 }}>家长端</a>
+              <a onClick={() => message.info('学校端开发中')} style={{ color: 'rgba(255,255,255,.82)', fontSize: 13 }}>学校端</a>
+              <a href="../org/" style={{ color: 'rgba(255,255,255,.82)', fontSize: 13 }}>机构端 / 老师端</a>
+            </Space>
+          </div>
         </div>
-        <Menu theme="dark" mode="inline" selectedKeys={[nav]} items={MENUS} onClick={(e: any) => setNav(e.key)} />
       </Sider>
       <Layout>
         <Header style={{ background: '#fff', padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 1px 4px rgba(0,21,41,.06)' }}>
           <b style={{ fontSize: 16 }}>{title}</b>
           <Space size={14}>
+            <Button size="small" icon={<QuestionCircleOutlined />} onClick={() => setHelpOpen(true)}>名词解释</Button>
             <Tag color="blue">天府通 · 课后延时服务平台</Tag>
             <Avatar size="small" icon={<UserOutlined />} style={{ background: '#1677ff' }} />
             <span>张运营（平台管理员）</span>
           </Space>
         </Header>
         <Content style={{ margin: 16, overflow: 'auto' }}>{pages[nav]}</Content>
+        <Drawer open={helpOpen} width={560} title="平台名词解释" onClose={() => setHelpOpen(false)}>
+          <Alert type="info" showIcon style={{ marginBottom: 16 }} message="表格中的状态标签，鼠标悬停也会显示对应解释" />
+          {GLOSSARY.map((g) => (
+            <div key={g.title}>
+              <Divider orientation="left" orientationMargin={0} style={{ fontSize: 14, fontWeight: 600 }}>{g.title}</Divider>
+              {g.items.map(([t, d]) => (
+                <div key={t} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginBottom: 10 }}>
+                  <Tag color={STC[t.replace(/（.*?）/g, '').split(' / ')[0]] || 'blue'} style={{ flexShrink: 0, marginTop: 1 }}>{t}</Tag>
+                  <span style={{ fontSize: 13, color: '#555', lineHeight: 1.7 }}>{d}</span>
+                </div>
+              ))}
+            </div>
+          ))}
+        </Drawer>
       </Layout>
     </Layout>
   );

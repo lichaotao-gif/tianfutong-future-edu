@@ -1191,13 +1191,13 @@
     toast('售后申请已提交，平台将在 1-3 个工作日内处理');
   }
 
-  /* 隐藏调试入口：连点页脚「天府通未来教育平台」5 次打开后台管理 */
+  /* 隐藏调试入口：连点页脚「天府通未来教育平台」2 次打开后台管理 */
   let adminTaps = 0, adminTapTimer = null;
   function adminTap() {
     adminTaps += 1;
     clearTimeout(adminTapTimer);
     adminTapTimer = setTimeout(() => { adminTaps = 0; }, 1500);
-    if (adminTaps >= 5) {
+    if (adminTaps >= 2) {
       adminTaps = 0;
       window.open('admin/', '_blank');
     }
