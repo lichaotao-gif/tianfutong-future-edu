@@ -1,5 +1,5 @@
 /* ============================================================
- * 天府通 · 未来教育 — 家长端
+ * 天府通未来教育平台 — 家长端
  * 纯前端 SPA（hash 路由 + 写死 mock 数据），无需后端
  * ============================================================ */
 (function () {
@@ -190,7 +190,6 @@
       const pct = Math.round((c.enrolled / c.maxSeats) * 100);
       return `
       <div class="card course-card mx mt" onclick="location.hash='#/course/${c.id}'">
-        <span class="course-type-badge ${c.type === '研学' ? 'study' : 'ai'}">${esc(c.type || 'AI课')}</span>
         <div class="cc-cover">${coverImg(c.cover, c.name)}</div>
         <div class="cc-body">
           <div class="cc-name">${esc(c.name)}</div>
@@ -277,7 +276,6 @@
       ${navbar('课程详情')}
       <div class="scroll">
         <div class="card mx course-detail-card">
-          <span class="course-type-badge ${c.type === '研学' ? 'study' : 'ai'}">${esc(c.type || 'AI课')}</span>
           <div class="pad">
             <div class="course-detail-head">
               <div class="course-detail-main">
@@ -469,7 +467,7 @@
         <div class="wx-amount"><span class="y">¥</span>${c.price}.00</div>
         <div class="wx-sub">预授权冻结 · 暂不扣款</div>
         <div class="wx-rows">
-          <div class="wx-row"><span class="k">商户</span><span class="v">天府通 · 未来教育</span></div>
+          <div class="wx-row"><span class="k">商户</span><span class="v">天府通未来教育平台</span></div>
           <div class="wx-row"><span class="k">商品</span><span class="v">${esc(c.name)}（报名预授权）</span></div>
           <div class="wx-row"><span class="k">支付方式</span><span class="v wx-method">${wxLogo}零钱</span></div>
         </div>
@@ -797,10 +795,7 @@
           ${cell('#f59b1c', I.help, '帮助中心', '先学后付怎么用？', "App.soonTip()")}
           ${cell('#8a8f99', I.service, '客服与售后', '在线咨询', "App.soonTip()")}
         </div>
-        <div class="card mx mt" style="overflow:hidden">
-          ${cell('#334155', I.gear, '后台管理系统', 'Demo 调试入口 · 平台运营后台', "window.open('admin/', '_blank')")}
-        </div>
-        <div class="mx mt small muted center" style="padding:14px 0">天府通 · 未来教育</div>
+        <div class="mx mt small muted center" style="padding:14px 0;user-select:none" onclick="App.adminTap()">天府通未来教育平台</div>
       </div>
       ${tabbar('me')}
     </div>`);
@@ -1027,7 +1022,7 @@
       <div class="scroll">
         <div class="login-hero">
           <div class="login-logo">${I.cap}</div>
-          <h2>天府通 · 未来教育</h2>
+          <h2>天府通未来教育平台</h2>
           <p class="small muted">校内课后延时服务 · 家长端</p>
         </div>
         <div class="card mx pad">
@@ -1124,6 +1119,18 @@
     toast('售后申请已提交，平台将在 1-3 个工作日内处理');
   }
 
+  /* 隐藏调试入口：连点页脚「天府通未来教育平台」5 次打开后台管理 */
+  let adminTaps = 0, adminTapTimer = null;
+  function adminTap() {
+    adminTaps += 1;
+    clearTimeout(adminTapTimer);
+    adminTapTimer = setTimeout(() => { adminTaps = 0; }, 1500);
+    if (adminTaps >= 5) {
+      adminTaps = 0;
+      window.open('admin/', '_blank');
+    }
+  }
+
   function switchStudent(id) {
     const next = (DB.students || []).find((s) => s.id === routeId(id));
     if (!next) return toast('未找到学生信息');
@@ -1169,7 +1176,7 @@
 
   /* 暴露给内联事件 */
   window.App = {
-    toggleEnrollConfirm, submitEnroll, closeWxpay, confirmWxpay, confirmPay, switchStudent, openSwitchSheet, closeSwitchSheet, soonTip: () => toast('功能开发中'),
+    toggleEnrollConfirm, submitEnroll, closeWxpay, confirmWxpay, confirmPay, switchStudent, openSwitchSheet, closeSwitchSheet, adminTap, soonTip: () => toast('功能开发中'),
     openSkuSheet, closeSkuSheet, selectSku, confirmSku,
     openAftersale, closeAftersale, selectAS, submitAftersale,
     openStudentForm, closeStudentForm, editStudent, saveStudentForm, deleteStudent,

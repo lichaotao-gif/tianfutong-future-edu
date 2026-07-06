@@ -1,5 +1,5 @@
 /* ============================================================
- * 未来教育中心 · 后台管理系统 Demo
+ * 天府通未来教育平台 · 后台管理系统 Demo
  * React 18 + TSX + Ant Design 5（UMD 免构建，mock 数据）
  * 业务闭环：建校/场地 → 审机构 → 审老师 → 审课程 → 课程库
  *          → 分发学校 → 家长报名付费 → 按节销课 → 按月结算
@@ -133,12 +133,12 @@ const initDB = {
     { id: 'SH20260701004', parent: '周先生', student: '周子墨', cls: '创意水彩画课·周一班', type: '其他问题', org: '童心美育', school: '成都天府新区实验小学', time: '2026-07-01 09:12', status: '待处理' },
   ],
   users: [
-    { id: 'u1', name: '张运营', phone: '138****9001', role: '平台管理员', unit: '未来教育中心', status: '启用', last: '2026-07-01 09:12' },
-    { id: 'u2', name: '李敏', phone: '139****9002', role: '审核人员', unit: '未来教育中心', status: '启用', last: '2026-07-01 08:45' },
-    { id: 'u3', name: '王芳', phone: '137****9003', role: '财务人员', unit: '未来教育中心', status: '启用', last: '2026-06-30 17:30' },
+    { id: 'u1', name: '张运营', phone: '138****9001', role: '平台管理员', unit: '天府通未来教育平台', status: '启用', last: '2026-07-01 09:12' },
+    { id: 'u2', name: '李敏', phone: '139****9002', role: '审核人员', unit: '天府通未来教育平台', status: '启用', last: '2026-07-01 08:45' },
+    { id: 'u3', name: '王芳', phone: '137****9003', role: '财务人员', unit: '天府通未来教育平台', status: '启用', last: '2026-06-30 17:30' },
     { id: 'u4', name: '周校长', phone: '138****1001', role: '学校管理员', unit: '成都天府新区实验小学', status: '启用', last: '2026-06-30 16:02' },
     { id: 'u5', name: '王总', phone: '138****2001', role: '机构管理员', unit: '成都智创未来教育科技有限公司', status: '启用', last: '2026-07-01 10:18' },
-    { id: 'u6', name: '测试客服', phone: '135****9006', role: '客服人员', unit: '未来教育中心', status: '禁用', last: '2026-05-20 11:00' },
+    { id: 'u6', name: '测试客服', phone: '135****9006', role: '客服人员', unit: '天府通未来教育平台', status: '禁用', last: '2026-05-20 11:00' },
   ],
   roles: [
     { id: 'r1', name: '平台管理员', desc: '全部权限', perms: 24 }, { id: 'r2', name: '运营人员', desc: '学校 / 课程配置 / 班级', perms: 14 },
@@ -276,7 +276,7 @@ function UserPage({ db, setDb }: any) {
                 <Form.Item label="姓名"><Input placeholder="请输入姓名" /></Form.Item>
                 <Form.Item label="手机号"><Input placeholder="请输入手机号" /></Form.Item>
                 <Form.Item label="角色"><Select placeholder="请选择角色" options={db.roles.map((r: any) => ({ value: r.name, label: r.name }))} /></Form.Item>
-                <Form.Item label="所属单位"><Input placeholder="如：未来教育中心 / 某学校 / 某机构" /></Form.Item>
+                <Form.Item label="所属单位"><Input placeholder="如：天府通未来教育平台 / 某学校 / 某机构" /></Form.Item>
               </Form>
             </Modal>
           </Card>
@@ -814,7 +814,7 @@ function App() {
       <Sider width={216} theme="dark">
         <div style={{ color: '#fff', padding: '18px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{ width: 34, height: 34, borderRadius: 8, background: '#1677ff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>未</div>
-          <div style={{ lineHeight: 1.25 }}><b>未来教育中心</b><div style={{ fontSize: 11, opacity: .65 }}>后台管理系统 Demo</div></div>
+          <div style={{ lineHeight: 1.25 }}><b>天府通未来教育平台</b><div style={{ fontSize: 11, opacity: .65 }}>后台管理系统 Demo</div></div>
         </div>
         <Menu theme="dark" mode="inline" selectedKeys={[nav]} items={MENUS} onClick={(e: any) => setNav(e.key)} />
       </Sider>
