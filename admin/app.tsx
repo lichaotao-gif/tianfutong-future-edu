@@ -183,6 +183,9 @@ const FIELD_DEF: Record<string, string> = {
   老师数量: '机构已维护或已通过审核的老师数量。',
   结算账户: '机构用于接收月度结算款的账户配置状态。',
   资质类型: '老师提交的资质证书类型，如教师资格证、行业资格证等。',
+  材料照片: '老师资质审核所需图片材料，包括老师本人照片和资格证照片。',
+  个人照片: '老师本人照片，用于平台核验老师身份与后续账号资料展示。',
+  资格证照片: '老师资格证或行业资质证书的照片材料，用于平台审核。',
   教授方向: '老师主要承担的课程方向。',
   适合年级: '课程建议报名的学生年级范围。',
   课时: '一期课程包含的上课节次总数。',
@@ -279,15 +282,15 @@ const initDB = {
       audits: [{ t: '2026-06-12 11:00', who: '审核员-李敏', act: '审核驳回', note: '营业执照经营范围不含教育培训，请补充变更后重新提交' }, { t: '2026-06-10 10:15', who: '机构', act: '提交入驻申请', note: '' }] },
   ],
   teachers: [
-    { id: 't1', name: '王思远', org: '成都智创未来教育科技有限公司', phone: '138****3001', dir: 'AI 启蒙', cert: '教师资格证（小学信息技术）', submitAt: '2026-05-20', status: '审核通过', idcard: '5101**********0011', bio: '6 年少儿 AI 教学经验，市级科技社团指导教师。',
+    { id: 't1', name: '王思远', org: '成都智创未来教育科技有限公司', phone: '138****3001', dir: 'AI 启蒙', cert: '教师资格证（小学信息技术）', teacherPhoto: '王思远个人照片.jpg', certPhoto: '王思远教师资格证.jpg', submitAt: '2026-05-20', status: '审核通过', idcard: '5101**********0011', bio: '6 年少儿 AI 教学经验，市级科技社团指导教师。',
       audits: [{ t: '2026-05-22 15:00', who: '审核员-李敏', act: '审核通过', note: '' }] },
-    { id: 't2', name: '陈亦然', org: '成都智创未来教育科技有限公司', phone: '139****3002', dir: '少儿编程', cert: '教师资格证（小学信息技术）', submitAt: '2026-05-20', status: '审核通过', idcard: '5101**********0022', bio: 'Scratch / Python 项目导师，信息科技骨干教师。',
+    { id: 't2', name: '陈亦然', org: '成都智创未来教育科技有限公司', phone: '139****3002', dir: '少儿编程', cert: '教师资格证（小学信息技术）', teacherPhoto: '陈亦然个人照片.jpg', certPhoto: '陈亦然教师资格证.jpg', submitAt: '2026-05-20', status: '审核通过', idcard: '5101**********0022', bio: 'Scratch / Python 项目导师，信息科技骨干教师。',
       audits: [{ t: '2026-05-22 15:05', who: '审核员-李敏', act: '审核通过', note: '' }] },
-    { id: 't3', name: '刘嘉敏', org: '成都智创未来教育科技有限公司', phone: '137****3003', dir: '科学实验', cert: '教师资格证（小学科学）', submitAt: '2026-06-02', status: '审核通过', idcard: '5101**********0033', bio: 'STEAM 实验课程导师，多次承担校级公开课。',
+    { id: 't3', name: '刘嘉敏', org: '成都智创未来教育科技有限公司', phone: '137****3003', dir: '科学实验', cert: '教师资格证（小学科学）', teacherPhoto: '刘嘉敏个人照片.jpg', certPhoto: '刘嘉敏教师资格证.jpg', submitAt: '2026-06-02', status: '审核通过', idcard: '5101**********0033', bio: 'STEAM 实验课程导师，多次承担校级公开课。',
       audits: [{ t: '2026-06-03 09:30', who: '审核员-李敏', act: '审核通过', note: '' }] },
-    { id: 't4', name: '林晓芸', org: '童心美育艺术中心', phone: '135****3004', dir: '少儿美术', cert: '美术教师资格证', submitAt: '2026-06-28', status: '待审核', idcard: '5101**********0044', bio: '10 年少儿美术教学经验，省美协会员。',
+    { id: 't4', name: '林晓芸', org: '童心美育艺术中心', phone: '135****3004', dir: '少儿美术', cert: '美术教师资格证', teacherPhoto: '林晓芸个人照片.jpg', certPhoto: '林晓芸美术教师资格证.jpg', submitAt: '2026-06-28', status: '待审核', idcard: '5101**********0044', bio: '10 年少儿美术教学经验，省美协会员。',
       audits: [] },
-    { id: 't5', name: '赵刚', org: '星辰体育培训中心', phone: '136****3005', dir: '篮球', cert: '社会体育指导员（篮球）', submitAt: '2026-06-30', status: '待审核', idcard: '5101**********0055', bio: '前省青年队队员，青少年篮球教练 8 年。',
+    { id: 't5', name: '赵刚', org: '星辰体育培训中心', phone: '136****3005', dir: '篮球', cert: '社会体育指导员（篮球）', teacherPhoto: '赵刚个人照片.jpg', certPhoto: '赵刚社会体育指导员证.jpg', submitAt: '2026-06-30', status: '待审核', idcard: '5101**********0055', bio: '前省青年队队员，青少年篮球教练 8 年。',
       audits: [] },
   ],
   courses: [
@@ -666,7 +669,12 @@ function TeacherPage({ db, setDb }: any) {
     <Card size="small" title="机构老师审核" extra={<Alert type="info" showIcon message="老师审核通过后，才能被绑定到课程或班级" style={{ padding: '2px 10px' }} />}>
       <Table {...tblProps} dataSource={db.teachers} columns={[
         { title: '老师姓名', dataIndex: 'name' }, { title: '所属机构', dataIndex: 'org', ellipsis: true }, { title: '手机号', dataIndex: 'phone' },
-        { title: '教授方向', dataIndex: 'dir' }, { title: '资质类型', dataIndex: 'cert', ellipsis: true }, { title: '提交时间', dataIndex: 'submitAt' },
+        { title: '教授方向', dataIndex: 'dir' }, { title: '资质类型', dataIndex: 'cert', ellipsis: true },
+        { title: '材料照片', render: (_: any, r: any) => <Space size={4}>
+          <Tag color={r.teacherPhoto ? 'green' : 'default'}>个人照</Tag>
+          <Tag color={r.certPhoto ? 'green' : 'default'}>资格证</Tag>
+        </Space> },
+        { title: '提交时间', dataIndex: 'submitAt' },
         { title: '审核状态', dataIndex: 'status', render: (v: string) => <S v={v} /> },
         { title: '操作', render: (_: any, r: any) => <Space><a onClick={() => setDetail(r)}>查看</a>
           {r.status === '待审核' && <a style={{ color: '#fa8c16' }} onClick={() => setAudit(r)}>审核</a>}
@@ -679,7 +687,9 @@ function TeacherPage({ db, setDb }: any) {
             { key: '1', label: '老师姓名', children: detail.name }, { key: '2', label: '所属机构', children: detail.org },
             { key: '3', label: '手机号', children: detail.phone }, { key: '4', label: '教授方向', children: detail.dir },
             { key: '5', label: '身份证信息', children: detail.idcard }, { key: '6', label: '资质证书', children: detail.cert },
-            { key: '7', label: '个人简介', children: detail.bio }, { key: '8', label: '审核状态', children: <S v={detail.status} /> },
+            { key: '7', label: '个人照片', children: detail.teacherPhoto || '未上传' },
+            { key: '8', label: '资格证照片', children: detail.certPhoto || '未上传' },
+            { key: '9', label: '个人简介', children: detail.bio }, { key: '10', label: '审核状态', children: <S v={detail.status} /> },
           ]} />
           <Divider>审核记录</Divider>
           {(detail.audits || []).length ? <AuditTimeline items={detail.audits} /> : <div style={{ color: '#999' }}>暂无审核记录</div>}
