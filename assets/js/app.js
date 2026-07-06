@@ -292,13 +292,13 @@
             <div class="kv"><span class="k">课时数量</span><span class="v">共 ${c.lessons} 次</span></div>
             <div class="kv"><span class="k">成班人数</span><span class="v">满 ${c.minClass} 人开班 · 最大 ${c.maxSeats} 人</span></div>
             <div class="kv"><span class="k">当前报名</span><span class="v">${c.enrolled} 人 ${full ? '<span class="badge st-muted">已满员</span>' : ''}</span></div>
+            ${c.teacher ? `<div class="kv"><span class="k">任课老师</span><span class="v">${esc(c.teacher.name)} <span class="small muted">· 平台已审核资质</span></span></div>` : ''}
           </div>
         </div>
 
         <div class="card mx mt pad">
           <div class="section-title">课程介绍</div>
           <div class="small" style="color:#52565e;line-height:1.8">${esc(c.intro)}</div>
-          ${teacherCard(c.teacher)}
         </div>
 
         <div class="card mx mt pad">
@@ -322,8 +322,8 @@
 
         <div class="mx mt">
           <div class="notice">
-            <b>先学后付 · 满意后付款</b><br/>
-            报名时仅进行费用<b>预授权</b>，暂不正式扣款。学生完成课程后，老师上传学习成果，家长确认满意后再完成扣款。如在规定时间内未提出异议，系统默认课程完成并扣款。
+            <b>先学后付 · 资金平台托管</b><br/>
+            报名时一次性缴费，资金进入<b>平台监管账户</b>托管，不直接付给机构；机构每完成一节课按课时结算。未达开班人数将<b>自动全额退款</b>并通知家长。
           </div>
         </div>
         <div style="height:14px"></div>
@@ -339,6 +339,24 @@
   }
 
   /* ---------- 班级 / 时段选择弹层（SKU：课后延时服务多班次） ---------- */
+  /* 时间冲突：与已报名（进行中）课程同一天且时段重叠的班次禁止选择 */
+  const parseSlot = (t) => {
+    const d = (String(t).match(/每?周([一二三四五六日])/) || [])[1];
+    const m = String(t).match(/(\d{1,2}):(\d{2})\s*[-–]\s*(\d{1,2}):(\d{2})/);
+    if (!d || !m) return null;
+    return { d, s: +m[1] * 60 + +m[2], e: +m[3] * 60 + +m[4] };
+  };
+  function timeConflict(time) {
+    const a = parseSlot(time);
+    if (!a) return null;
+    for (const o of DB.orders) {
+      if (!['forming', 'formed', 'scheduled', 'ongoing'].includes(o.status)) continue;
+      const b = parseSlot(o.time);
+      if (b && b.d === a.d && a.s < b.e && b.s < a.e) return o.courseName;
+    }
+    return null;
+  }
+
   let skuSel = -1;
   function skuSheet(c) {
     const classes = c.classes || [];
@@ -351,12 +369,13 @@
         <div class="small muted" style="margin-bottom:2px">课后延时服务时段 · 请选择合适的班级和时间</div>
         ${classes.map((k, i) => {
           const isFull = k.enrolled >= k.maxSeats;
+          const conflict = !isFull && timeConflict(k.time);
           const left = k.maxSeats - k.enrolled;
           return `
-          <div class="sku-opt ${isFull ? 'full' : ''}" id="sku${i}" onclick="App.selectSku(${i})">
+          <div class="sku-opt ${isFull || conflict ? 'full' : ''}" id="sku${i}" onclick="App.selectSku(${i})">
             <div class="sku-main">
               <div class="sku-name">${esc(k.name)}<span class="sku-time">${esc(k.time)}</span></div>
-              <div class="sku-sub small muted">${esc(k.place)} · ${isFull ? '已满员' : `余 ${left} 名额`}</div>
+              <div class="sku-sub small muted">${esc(k.place)} · ${isFull ? '已满员' : conflict ? `与已报「${esc(conflict)}」时间冲突` : `余 ${left} 名额`}</div>
             </div>
             <span class="radio"></span>
           </div>`;
@@ -373,7 +392,7 @@
     const c = courseById(cid);
     const classes = (c && c.classes) || [];
     if (!classes.length) { go('#/enroll/' + cid); return; }
-    skuSel = classes.findIndex((k) => k.enrolled < k.maxSeats);
+    skuSel = classes.findIndex((k) => k.enrolled < k.maxSeats && !timeConflict(k.time));
     classes.forEach((_, i) => $('#sku' + i)?.classList.toggle('on', i === skuSel));
     $('#skuMask').classList.add('show');
   }
@@ -390,6 +409,8 @@
     const cls = ((c && c.classes) || [])[skuSel];
     if (!cls) return toast('请选择班级');
     if (cls.enrolled >= cls.maxSeats) return toast('该班级已满员，请选择其他班级');
+    const conflict = timeConflict(cls.time);
+    if (conflict) return toast('与已报「' + conflict + '」上课时间冲突');
     closeSkuSheet();
     go('#/enroll/' + cid + '/' + cls.id);
   }
@@ -408,7 +429,7 @@
       || classes.find((k) => k.enrolled < k.maxSeats) || null;
     const cls = enrollClass;
     enrollConfirmed = false;
-    const ruleText = `我已阅读并同意《课程报名须知》，同意进行 ¥${c.price} 费用预授权；我已知晓未成班将自动取消报名并释放预授权，课程完成后可查看学习成果并确认付款。`;
+    const ruleText = `我已阅读并同意《课程报名须知》，同意支付 ¥${c.price} 课程费用（由平台监管账户托管，按课时结算给机构）；我已知晓未达开班人数将自动全额退款。`;
 
     render(`
     <div class="screen">
@@ -430,7 +451,7 @@
           <div class="kv"><span class="k">报名截止</span><span class="v">2026 年 7 月 8 日</span></div>
           <div class="divider"></div>
           <div class="kv"><span class="k">课程费用</span><span class="v price"><span class="yen">¥</span><span class="num">${c.price}</span></span></div>
-          <div class="kv"><span class="k">预授权金额</span><span class="v"><b style="color:var(--orange-deep)">¥${c.price}</b> <span class="small muted">（暂不扣款）</span></span></div>
+          <div class="kv"><span class="k">支付金额</span><span class="v"><b style="color:var(--orange-deep)">¥${c.price}</b> <span class="small muted">（平台托管）</span></span></div>
         </div>
 
         <div class="card mx mt pad">
@@ -440,11 +461,11 @@
           </div>
         </div>
 
-        <div class="mx mt"><div class="notice"><b>预授权说明：</b>确认后将向你的天府通账户发起 ¥${c.price} 预授权（冻结，不扣款），用于锁定名额；成班并完成课程、你确认满意后才正式扣款。</div></div>
+        <div class="mx mt"><div class="notice"><b>资金托管说明：</b>支付的 ¥${c.price} 将进入平台监管账户托管，不直接付给机构；机构每完成一节课按课时结算。未达开班人数将自动全额退款并通知你。</div></div>
         <div style="height:14px"></div>
       </div>
       <div class="actionbar">
-        <button class="btn btn-primary" id="enrollBtn" disabled onclick="App.submitEnroll('${c.id}')">确认报名并预授权</button>
+        <button class="btn btn-primary" id="enrollBtn" disabled onclick="App.submitEnroll('${c.id}')">确认报名并支付</button>
       </div>
       ${wxpaySheet(c)}
     </div>`);
@@ -456,7 +477,7 @@
     $('#enrollBtn').disabled = !enrollConfirmed;
   }
 
-  /* ---------- 微信支付模拟弹窗（预授权收银台） ---------- */
+  /* ---------- 微信支付模拟弹窗（报名缴费收银台，资金平台托管） ---------- */
   const wxLogo = '<svg width="18" height="18" viewBox="0 0 24 24" fill="#07c160"><path d="M9.5 3C5.4 3 2 5.9 2 9.5c0 2 1 3.8 2.7 5l-.7 2.2 2.5-1.3c.7.2 1.4.4 2.2.4h.4a5.7 5.7 0 0 1-.3-1.8c0-3.5 3.3-6.3 7.3-6.3h.3C15.7 5 12.9 3 9.5 3zM7 8.4a.9.9 0 1 1 0-1.8.9.9 0 0 1 0 1.8zm5 0a.9.9 0 1 1 0-1.8.9.9 0 0 1 0 1.8zM22 14c0-3-2.9-5.4-6.4-5.4S9.2 11 9.2 14s2.9 5.4 6.4 5.4c.7 0 1.3-.1 1.9-.3l2.1 1.1-.6-1.9A5.2 5.2 0 0 0 22 14zm-8.5-.9a.8.8 0 1 1 0-1.6.8.8 0 0 1 0 1.6zm4.2 0a.8.8 0 1 1 0-1.6.8.8 0 0 1 0 1.6z"/></svg>';
 
   function wxpaySheet(c) {
@@ -465,10 +486,10 @@
       <div class="sheet wxpay">
         <div class="wx-head"><span class="wx-close" onclick="App.closeWxpay()">✕</span>微信支付</div>
         <div class="wx-amount"><span class="y">¥</span>${c.price}.00</div>
-        <div class="wx-sub">预授权冻结 · 暂不扣款</div>
+        <div class="wx-sub">资金由平台监管账户托管 · 按课时结算</div>
         <div class="wx-rows">
           <div class="wx-row"><span class="k">商户</span><span class="v">天府通未来教育平台</span></div>
-          <div class="wx-row"><span class="k">商品</span><span class="v">${esc(c.name)}（报名预授权）</span></div>
+          <div class="wx-row"><span class="k">商品</span><span class="v">${esc(c.name)}（课程报名费）</span></div>
           <div class="wx-row"><span class="k">支付方式</span><span class="v wx-method">${wxLogo}零钱</span></div>
         </div>
         <button class="wx-btn" id="wxPayBtn" onclick="App.confirmWxpay('${c.id}')">确认支付</button>
@@ -495,13 +516,13 @@
     btn.disabled = true;
     btn.textContent = '支付中…';
     setTimeout(() => {
-      btn.textContent = '✓ 预授权成功';
+      btn.textContent = '✓ 支付成功';
       setTimeout(() => { closeWxpay(); go('#/preauth/' + id); }, 600);
     }, 900);
   }
 
   /* ============================================================
-   * 屏幕 5：预授权成功页
+   * 屏幕 5：报名缴费成功页（资金托管）
    * ============================================================ */
   function screenPreauth(id) {
     const c = courseById(id) || DB.courses[0];
@@ -514,8 +535,8 @@
       <div class="scroll">
         <div class="result-hero preauth">
           <div class="ok">${I.checkBig}</div>
-          <h2>报名已提交 · 预授权成功</h2>
-          <p>名额已锁定，款项暂未扣除</p>
+          <h2>报名成功 · 费用已托管</h2>
+          <p>名额已锁定 · 资金由平台监管账户托管</p>
         </div>
 
         <div class="card mx mt pad">
@@ -525,8 +546,8 @@
           </div>
           ${cls ? `<div class="kv"><span class="k">报名班级</span><span class="v"><b>${esc(cls.name)}</b> · ${esc(cls.time)}</span></div>
           <div class="kv"><span class="k">上课地点</span><span class="v">${esc(cls.place)}</span></div>` : ''}
-          <div class="kv"><span class="k">预授权金额</span><span class="v"><b style="color:var(--orange-deep)">¥${c.price}</b></span></div>
-          <div class="kv"><span class="k">成班条件</span><span class="v">满 ${c.minClass} 人开班</span></div>
+          <div class="kv"><span class="k">已付金额</span><span class="v"><b style="color:var(--orange-deep)">¥${c.price}</b> <span class="small muted">（托管中）</span></span></div>
+          <div class="kv"><span class="k">成班条件</span><span class="v">满 ${c.minClass} 人开班 · 未成班自动退款</span></div>
           <div class="kv"><span class="k">当前报名</span><span class="v">${enrolledNow} 人 / 最大 ${seatBase.maxSeats} 人</span></div>
           <div class="seat-bar" style="margin-top:4px"><i style="width:${Math.round((enrolledNow / seatBase.maxSeats) * 100)}%"></i></div>
         </div>
@@ -535,10 +556,10 @@
           <div class="section-title">接下来</div>
           <div class="steps">
             <div class="stp done"><div class="dot">${I.check}</div>报名</div>
-            <div class="stp done"><div class="dot">${I.check}</div>预授权</div>
+            <div class="stp done"><div class="dot">${I.check}</div>缴费托管</div>
             <div class="stp cur"><div class="dot">3</div>待成班</div>
             <div class="stp"><div class="dot">4</div>排课上课</div>
-            <div class="stp"><div class="dot">5</div>确认付款</div>
+            <div class="stp"><div class="dot">5</div>结课确认</div>
           </div>
           <div class="small muted" style="line-height:1.7">达到成班人数后，学校 / 运营方将安排老师、教室和上课时间，并通过天府通通知你。</div>
         </div>
@@ -558,6 +579,16 @@
     const card = (o) => {
       const st = DB.statusMap[o.status];
       const isPay = o.status === 'to-confirm';
+      const orderMeta = {
+        'to-preauth': '待支付',
+        preauth: '已缴费（托管中）',
+        forming: `待成班 · ${o.enrolled || 0}/${o.minClass || '-'} 人`,
+        formed: '已成班 · 待排课',
+        scheduled: '已排课 · 请按时上课',
+        ongoing: '上课中 · 按课时记录',
+        done: '已完成',
+        canceled: '已取消',
+      }[o.status] || '已缴费（托管中）';
       return `
       <div class="card mx mt">
         <div class="pad">
@@ -574,7 +605,7 @@
             <div class="small">
               ${isPay
                 ? `<span class="muted">待确认</span> <b style="color:var(--orange-deep)">¥${o.amount}</b> · 老师已上传学习成果`
-                : `<span class="muted">${o.status === 'done' ? '已完成' : '已预授权'}</span> <b>¥${o.amount}</b>`}
+                : `<span class="muted">${orderMeta}</span> <b>¥${o.amount}</b>`}
             </div>
             ${isPay
               ? `<button class="btn btn-primary btn-sm" onclick="location.hash='#/result/${o.id}'">查看并确认</button>`
@@ -590,7 +621,7 @@
       ${navbar('我的报名', { back: false })}
       <div class="scroll">
         ${DB.orders.length ? DB.orders.map(card).join('') : '<div class="empty">还没有报名记录</div>'}
-        <div class="mx mt small muted center" style="padding:8px 0">报名状态：待预授权 / 已预授权 / 待成班 / 已成班 / 已排课 / 上课中 / 待确认付款 / 已完成</div>
+        <div class="mx mt small muted center" style="padding:8px 0">报名状态：待支付 / 已缴费 / 待成班 / 已成班 / 已排课 / 上课中 / 待确认 / 已完成</div>
       </div>
       ${tabbar('orders')}
     </div>`);
@@ -619,7 +650,7 @@
           <div class="kv"><span class="k">开课时间</span><span class="v">${esc(o.startDate || '待定')}</span></div>
         </div>
 
-        <div class="mx mt"><div class="notice"><b>当前状态：${st.label}。</b>课程已完成排课，请按上课时间到「${esc(o.place)}」上课。课程结束后，老师将上传学习成果，请留意天府通通知。</div></div>
+        <div class="mx mt"><div class="notice"><b>当前状态：${st.label}。</b>课程已完成排课，请按上课时间到「${esc(o.place)}」上课。课程结束后，老师将上传学习成果。</div></div>
 
         <div class="card mx mt pad">
           <div class="section-title">课程安排（共 ${o.lessons} 次）</div>
@@ -715,7 +746,7 @@
         <div style="height:14px"></div>
       </div>
       ${done
-        ? `<div class="actionbar"><button class="btn btn-ghost" onclick="location.hash='#/results'">返回学习成果</button></div>`
+        ? ''
         : `<div class="actionbar" style="flex-direction:column;gap:8px">
         <div class="small muted center">若 3 天内未确认，系统将自动确认</div>
         <button class="btn btn-primary" onclick="App.confirmPay('${o.id}')">确认详情</button>
@@ -736,27 +767,60 @@
     const o = orderById(id) || DB.orders[1];
     render(`
     <div class="screen">
-      ${navbar('付款结果', { back: false })}
+      ${navbar('确认结果', { back: false })}
       <div class="scroll">
         <div class="result-hero">
           <div class="ok">${I.checkBig}</div>
-          <h2>付款成功</h2>
-          <p>订单已完成 · 感谢参与未来教育课后延时服务</p>
+          <h2>确认成功</h2>
+          <p>课程已完成 · 托管费用将按课时结算给机构</p>
         </div>
         <div class="card mx mt pad">
           <div class="kv"><span class="k">课程</span><span class="v bold">${esc(o.courseName)}</span></div>
           <div class="kv"><span class="k">学生</span><span class="v">${esc(currentStudent().name)}</span></div>
-          <div class="kv"><span class="k">支付金额</span><span class="v price"><span class="yen">¥</span><span class="num">${o.amount}</span></span></div>
-          <div class="kv"><span class="k">支付方式</span><span class="v">天府通支付</span></div>
+          <div class="kv"><span class="k">课程费用</span><span class="v price"><span class="yen">¥</span><span class="num">${o.amount}</span></span></div>
+          <div class="kv"><span class="k">支付方式</span><span class="v">报名时已支付（平台托管）</span></div>
           <div class="kv"><span class="k">订单状态</span><span class="v"><span class="badge st-done">已完成</span></span></div>
         </div>
+        <div class="mx mt small muted center">对课程有什么想说的？欢迎评价（与付款无关，仅用于课程改进）</div>
         <div style="height:14px"></div>
       </div>
       <div class="actionbar">
-        <button class="btn btn-ghost" style="flex:1" onclick="location.hash='#/orders'">查看订单</button>
-        <button class="btn btn-primary" style="flex:1" onclick="location.hash='#/home'">返回首页</button>
+        <button class="btn btn-ghost" style="flex:1" onclick="location.hash='#/home'">返回首页</button>
+        <button class="btn btn-primary" style="flex:1" onclick="App.openReview()">评价课程</button>
       </div>
+      ${reviewSheet(o)}
     </div>`);
+  }
+
+  /* ---------- 课程评价弹层（与付款解绑，独立提交） ---------- */
+  let reviewStars = 5;
+  function reviewSheet(o) {
+    return `
+    <div class="sheet-mask" id="rvMask" onclick="if(event.target===this)App.closeReview()">
+      <div class="sheet">
+        <div class="handle"></div>
+        <h3>评价课程</h3>
+        <div class="small muted" style="margin-bottom:10px">${esc(o.courseName)} · 评价不影响付款与结算</div>
+        <div class="rv-stars" id="rvStars">
+          ${[1, 2, 3, 4, 5].map((n) => `<span class="rv-star on" onclick="App.setStars(${n})">${I.star}</span>`).join('')}
+        </div>
+        <textarea class="field" rows="3" id="rvText" placeholder="说说孩子的上课感受（选填）"></textarea>
+        <div style="height:14px"></div>
+        <button class="btn btn-primary" onclick="App.submitReview()">提交评价</button>
+        <div style="height:8px"></div>
+        <button class="btn btn-ghost" style="height:42px" onclick="App.closeReview()">暂不评价</button>
+      </div>
+    </div>`;
+  }
+  function openReview() { reviewStars = 5; setStars(5); $('#rvMask').classList.add('show'); }
+  function closeReview() { $('#rvMask')?.classList.remove('show'); }
+  function setStars(n) {
+    reviewStars = n;
+    document.querySelectorAll('#rvStars .rv-star').forEach((el, i) => el.classList.toggle('on', i < n));
+  }
+  function submitReview() {
+    closeReview();
+    toast(`评价已提交（${reviewStars} 星），感谢反馈`);
   }
 
   /* ============================================================
@@ -804,6 +868,9 @@
   /* ============================================================
    * 屏幕 11：学生管理（切换 / 添加 / 编辑 / 删除）
    * ============================================================ */
+  /* 平台合作学校（后台入库名单，学生学校只能从中选择，防止手填虚假信息） */
+  const SCHOOLS = ['成都天府新区实验小学', '成都天府新区第七小学', '成都麓湖小学', '成都华阳实验小学'];
+
   let pendingDeleteId = null;
   function screenStudents() {
     const cur = currentStudent();
@@ -849,7 +916,12 @@
         <h3 id="stuFormTitle">添加孩子</h3>
         <input type="hidden" id="stuFormId" value="">
         <div class="form-row"><label>学生姓名</label><input class="input" id="stuName" placeholder="请输入学生姓名"></div>
-        <div class="form-row"><label>所在学校</label><input class="input" id="stuSchool" placeholder="请输入学校名称"></div>
+        <div class="form-row"><label>所在学校 <span class="muted">（从平台合作学校中选择）</span></label>
+          <select class="input" id="stuSchool">
+            <option value="">请选择学校</option>
+            ${SCHOOLS.map((s) => `<option value="${esc(s)}">${esc(s)}</option>`).join('')}
+          </select>
+        </div>
         <div class="form-row"><label>年级班级</label><input class="input" id="stuGrade" placeholder="如：三年级 2 班"></div>
         <div style="height:16px"></div>
         <button class="btn btn-primary" onclick="App.saveStudentForm()">保存</button>
@@ -1178,6 +1250,7 @@
   window.App = {
     toggleEnrollConfirm, submitEnroll, closeWxpay, confirmWxpay, confirmPay, switchStudent, openSwitchSheet, closeSwitchSheet, adminTap, soonTip: () => toast('功能开发中'),
     openSkuSheet, closeSkuSheet, selectSku, confirmSku,
+    openReview, closeReview, setStars, submitReview,
     openAftersale, closeAftersale, selectAS, submitAftersale,
     openStudentForm, closeStudentForm, editStudent, saveStudentForm, deleteStudent,
     pickAvatar, saveProfile, toggleWxBind, logout, sendCode, doLogin, wxLogin,

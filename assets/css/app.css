@@ -384,6 +384,12 @@ body {
 .wx-btn { display: block; width: calc(100% - 40px); margin: 14px auto 0; height: 46px; border: 0; border-radius: 8px; background: #07c160; color: #fff; font-size: 16px; font-weight: 600; cursor: pointer; transition: opacity .2s; }
 .wx-btn[disabled] { opacity: .75; cursor: default; }
 
+/* 课程评价星级 */
+.rv-stars { display: flex; gap: 10px; justify-content: center; padding: 6px 0 2px; }
+.rv-star { cursor: pointer; color: #e3e5ea; }
+.rv-star svg { width: 34px; height: 34px; }
+.rv-star.on { color: #f5b301; }
+
 /* 班级 / 时段选择（SKU） */
 .sku-opt {
   display: flex; align-items: center; gap: 10px;
