@@ -1,5 +1,5 @@
 /* ============================================================
- * 天府通未来教育平台 — 家长端
+ * 天府通未来教育中心 — 家长端
  * 纯前端 SPA（hash 路由 + 写死 mock 数据），无需后端
  * ============================================================ */
 (function () {
@@ -488,7 +488,7 @@
         <div class="wx-amount"><span class="y">¥</span>${c.price}.00</div>
         <div class="wx-sub">资金由平台监管账户托管 · 按课时结算</div>
         <div class="wx-rows">
-          <div class="wx-row"><span class="k">商户</span><span class="v">天府通未来教育平台</span></div>
+          <div class="wx-row"><span class="k">商户</span><span class="v">天府通未来教育中心</span></div>
           <div class="wx-row"><span class="k">商品</span><span class="v">${esc(c.name)}（课程报名费）</span></div>
           <div class="wx-row"><span class="k">支付方式</span><span class="v wx-method">${wxLogo}零钱</span></div>
         </div>
@@ -859,7 +859,7 @@
           ${cell('#f59b1c', I.help, '帮助中心', '先学后付怎么用？', "App.soonTip()")}
           ${cell('#8a8f99', I.service, '客服与售后', '在线咨询', "App.soonTip()")}
         </div>
-        <div class="mx mt small muted center" style="padding:14px 0;user-select:none" onclick="App.adminTap()">天府通未来教育平台</div>
+        <div class="mx mt small muted center" style="padding:14px 0;user-select:none" onclick="App.adminTap()">天府通未来教育中心</div>
       </div>
       ${tabbar('me')}
     </div>`);
@@ -1094,7 +1094,7 @@
       <div class="scroll">
         <div class="login-hero">
           <div class="login-logo">${I.cap}</div>
-          <h2>天府通未来教育平台</h2>
+          <h2>天府通未来教育中心</h2>
           <p class="small muted">校内课后延时服务 · 家长端</p>
         </div>
         <div class="card mx pad">
@@ -1191,7 +1191,7 @@
     toast('售后申请已提交，平台将在 1-3 个工作日内处理');
   }
 
-  /* 隐藏调试入口：连点页脚「天府通未来教育平台」2 次打开后台管理 */
+  /* 隐藏调试入口：连点页脚「天府通未来教育中心」2 次打开后台管理 */
   let adminTaps = 0, adminTapTimer = null;
   function adminTap() {
     adminTaps += 1;

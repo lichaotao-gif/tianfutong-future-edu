@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>天府通未来教育中心 · 学校端 Demo</title>
+<style>
+  :root {
+    --primary: #0e9f6e; --primary-soft: #e6f7f1;
+    --blue: #1677ff; --blue-soft: #e6f4ff;
+    --green: #52c41a; --green-soft: #f6ffed;
+    --orange: #fa8c16; --orange-soft: #fff7e6;
+    --red: #ff4d4f; --red-soft: #fff1f0;
+    --cyan: #13c2c2; --cyan-soft: #e6fffb;
+    --purple: #722ed1; --purple-soft: #f9f0ff;
+    --text: #1f2329; --muted: #8a919f; --line: #eef0f3; --bg: #f5f6f8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; }
+
+  .layout { display: flex; min-height: 100vh; }
+  .sider { width: 208px; background: #06281c; color: rgba(255,255,255,.72); flex-shrink: 0; display: flex; flex-direction: column; }
+  .sider .menu { flex: 1; }
+  .side-links { flex-shrink: 0; padding: 12px 14px 16px; border-top: 1px solid rgba(255,255,255,.12); }
+  .side-links .side-title { color: rgba(255,255,255,.45); font-size: 12px; margin-bottom: 8px; }
+  .side-links a { display: block; color: rgba(255,255,255,.82); font-size: 13px; text-decoration: none; padding: 3px 0; cursor: pointer; }
+  .side-links a:hover { color: #fff; }
+  .sider .brand { display: flex; align-items: center; gap: 10px; padding: 18px 16px; color: #fff; }
+  .sider .brand .logo { width: 34px; height: 34px; border-radius: 8px; background: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; }
+  .sider .brand b { font-size: 14px; line-height: 1.3; }
+  .sider .brand .sub { font-size: 11px; opacity: .6; font-weight: 400; }
+  .menu { padding: 6px 0; }
+  .menu-item { padding: 11px 20px; cursor: pointer; font-size: 14px; transition: background .15s, color .15s; }
+  .menu-item:hover { color: #fff; }
+  .menu-item.active { background: var(--primary); color: #fff; }
+
+  .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .topbar { height: 56px; background: #fff; box-shadow: 0 1px 4px rgba(0,21,41,.06); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; position: sticky; top: 0; z-index: 20; }
+  .topbar .title { font-size: 16px; font-weight: 700; }
+  .top-right { display: flex; align-items: center; gap: 12px; font-size: 13px; }
+  .top-right .who { color: var(--muted); }
+  .top-right .who b { color: var(--text); }
+  .top-right select { border: 1px solid #d9dce3; border-radius: 6px; padding: 6px 10px; font-size: 13px; font-family: inherit; color: var(--text); background: #fff; cursor: pointer; }
+  .help-btn { border: 1px solid #d9dce3; background: #fff; color: var(--muted); border-radius: 14px; padding: 5px 12px; font-size: 12px; cursor: pointer; font-family: inherit; }
+  .help-btn:hover { color: var(--primary); border-color: var(--primary); }
+
+  .content { padding: 20px 24px; flex: 1; }
+  .page-title { font-size: 15px; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; }
+  .page-title .hint { font-size: 12px; font-weight: 400; color: var(--muted); }
+
+  .card { background: #fff; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,21,41,.05); padding: 16px; }
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 16px; }
+  .stat {
+    position: relative;
+    overflow: hidden;
+    background: var(--stat-bg, #fff);
+    border: 1px solid rgba(255,255,255,.76);
+    border-radius: 10px;
+    box-shadow: 0 8px 22px rgba(28,45,72,.07), 0 1px 3px rgba(0,21,41,.04);
+    padding: 16px;
+    transition: transform .18s ease, box-shadow .18s ease;
+  }
+  .stat::before {
+    content: "";
+    position: absolute;
+    width: 84px;
+    height: 84px;
+    right: -28px;
+    top: -30px;
+    border-radius: 50%;
+    background: var(--stat-glow, rgba(14,159,110,.14));
+  }
+  .stat::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(145deg, rgba(255,255,255,.34), rgba(255,255,255,0) 44%);
+    pointer-events: none;
+  }
+  .stat:hover { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(28,45,72,.11), 0 2px 5px rgba(0,21,41,.05); }
+  .stats .stat:nth-child(1) { --stat-bg: linear-gradient(135deg, #e6f7f1 0%, #ffffff 48%, #e8fff8 100%); --stat-glow: rgba(14,159,110,.18); --stat-value: #0e9f6e; }
+  .stats .stat:nth-child(2) { --stat-bg: linear-gradient(135deg, #eef6ff 0%, #ffffff 48%, #e6fffb 100%); --stat-glow: rgba(22,119,255,.17); --stat-value: #1765d8; }
+  .stats .stat:nth-child(3) { --stat-bg: linear-gradient(135deg, #fff4df 0%, #ffffff 48%, #f6ffed 100%); --stat-glow: rgba(250,140,22,.18); --stat-value: #d46b08; }
+  .stats .stat:nth-child(4) { --stat-bg: linear-gradient(135deg, #f5eeff 0%, #ffffff 48%, #e9f0ff 100%); --stat-glow: rgba(114,46,209,.16); --stat-value: #642ab5; }
+  .stats .stat:nth-child(5) { --stat-bg: linear-gradient(135deg, #fff7e6 0%, #ffffff 48%, #fff1f0 100%); --stat-glow: rgba(250,140,22,.18); --stat-value: #d46b08; }
+  .stats .stat:nth-child(6) { --stat-bg: linear-gradient(135deg, #fff1f0 0%, #ffffff 48%, #fff7e6 100%); --stat-glow: rgba(255,77,79,.16); --stat-value: #cf1322; }
+  .stats .stat:nth-child(7) { --stat-bg: linear-gradient(135deg, #e6fffb 0%, #ffffff 48%, #f0f5ff 100%); --stat-glow: rgba(19,194,194,.18); --stat-value: #08979c; }
+  .stats .stat:nth-child(8) { --stat-bg: linear-gradient(135deg, #f9f0ff 0%, #ffffff 48%, #fff1f0 100%); --stat-glow: rgba(114,46,209,.16); --stat-value: #7c3aed; }
+  .stat .t { position: relative; z-index: 1; color: #5f6673; font-size: 13px; margin-bottom: 6px; }
+  .stat .v { position: relative; z-index: 1; color: var(--stat-value, var(--text)); font-size: 24px; font-weight: 700; }
+  .stat .v small { font-size: 13px; font-weight: 400; color: #697386; margin-left: 2px; }
+  .stat.warn .v { color: var(--orange); }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .mt { margin-top: 14px; }
+  .card h4 { font-size: 14px; margin-bottom: 10px; }
+
+  .flow { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; background: #fff; border-radius: 10px; padding: 12px 16px; box-shadow: 0 1px 3px rgba(0,21,41,.05); margin-bottom: 16px; font-size: 12px; color: var(--muted); }
+  .flow .f { background: var(--primary-soft); color: var(--primary); padding: 4px 10px; border-radius: 12px; font-weight: 600; }
+  .flow .a { color: #c3c9d4; padding: 0 2px; }
+
+  table { width: 100%; border-collapse: collapse; background: #fff; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); font-size: 13px; white-space: nowrap; }
+  th { background: #fafbfc; color: var(--muted); font-weight: 600; }
+  tr:hover td { background: #fafcff; }
+  .tbl-wrap { overflow-x: auto; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,21,41,.05); }
+  .ell { max-width: 180px; overflow: hidden; text-overflow: ellipsis; }
+  .qi { display: inline-flex; align-items: center; justify-content: center; width: 15px; height: 15px; margin-left: 4px; border-radius: 50%; border: 1px solid #d9dce3; color: var(--muted); font-size: 11px; line-height: 1; cursor: help; background: #fff; vertical-align: 1px; }
+  .qi:hover { color: var(--primary); border-color: var(--primary); background: var(--primary-soft); }
+
+  .tag { display: inline-block; font-size: 12px; padding: 2px 10px; border-radius: 10px; font-weight: 500; }
+  .tag[title] { cursor: help; }
+  .tg-blue { background: var(--blue-soft); color: var(--blue); }
+  .tg-green { background: var(--green-soft); color: var(--green); }
+  .tg-orange { background: var(--orange-soft); color: var(--orange); }
+  .tg-red { background: var(--red-soft); color: var(--red); }
+  .tg-cyan { background: var(--cyan-soft); color: var(--cyan); }
+  .tg-purple { background: var(--purple-soft); color: var(--purple); }
+  .tg-gray { background: #f0f1f4; color: var(--muted); }
+
+  .lnk { color: var(--primary); cursor: pointer; margin-right: 10px; font-size: 13px; }
+  .lnk:hover { text-decoration: underline; }
+  .lnk.warn { color: var(--orange); }
+  .lnk.danger { color: var(--red); }
+  .btn { border: 0; border-radius: 6px; padding: 8px 18px; cursor: pointer; font-size: 13px; font-family: inherit; }
+  .btn-primary { background: var(--primary); color: #fff; }
+  .btn-primary:hover { opacity: .9; }
+  .btn-ghost { background: #fff; border: 1px solid #d9dce3; color: var(--text); }
+
+  .mask { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: none; align-items: flex-start; justify-content: center; z-index: 100; padding: 60px 20px 40px; overflow-y: auto; }
+  .mask.show { display: flex; }
+  .modal { background: #fff; border-radius: 10px; width: 620px; max-width: 100%; }
+  .modal .m-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--line); font-weight: 700; }
+  .modal .m-close { cursor: pointer; color: var(--muted); font-size: 16px; padding: 2px 6px; }
+  .modal .m-body { padding: 18px; max-height: 68vh; overflow-y: auto; }
+  .modal .m-foot { padding: 12px 18px; border-top: 1px solid var(--line); display: flex; gap: 10px; justify-content: flex-end; }
+  .desc { display: grid; grid-template-columns: 110px 1fr; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; font-size: 13px; }
+  .desc .k { background: #fafbfc; color: var(--muted); padding: 9px 12px; border-bottom: 1px solid var(--line); }
+  .desc .v { padding: 9px 12px; border-bottom: 1px solid var(--line); }
+  .desc .k:nth-last-child(2), .desc .v:last-child { border-bottom: 0; }
+  .m-body h5 { font-size: 13px; margin: 14px 0 8px; }
+  .m-body ol { padding-left: 20px; color: #52565e; font-size: 13px; line-height: 2; }
+  .form-row { margin-bottom: 12px; }
+  .form-row label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+  .form-row textarea, .form-row input { width: 100%; border: 1px solid #d9dce3; border-radius: 6px; padding: 9px 10px; font-size: 13px; font-family: inherit; resize: vertical; }
+  .form-row textarea:focus, .form-row input:focus { outline: none; border-color: var(--primary); }
+  .m-tip { background: var(--orange-soft); color: #7a4a18; border-radius: 8px; padding: 10px 12px; font-size: 12.5px; line-height: 1.7; margin-top: 12px; }
+
+  .toast { position: fixed; top: 70px; left: 50%; transform: translateX(-50%) translateY(-8px); background: rgba(20,22,30,.88); color: #fff; padding: 10px 20px; border-radius: 8px; font-size: 13px; z-index: 200; opacity: 0; pointer-events: none; transition: all .25s; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .notice-item { display: flex; gap: 12px; padding: 13px 4px; border-bottom: 1px solid var(--line); align-items: flex-start; }
+  .notice-item .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--primary); margin-top: 6px; flex-shrink: 0; }
+  .notice-item.read .dot { background: #d9dce3; }
+  .notice-item .nt { font-weight: 600; margin-bottom: 2px; }
+  .notice-item .nd { color: var(--muted); font-size: 12px; }
+  .empty { text-align: center; color: var(--muted); padding: 40px 0; }
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sider">
+    <div class="brand">
+      <div class="logo">校</div>
+      <b>天府通未来教育中心<div class="sub">学校端 · Demo</div></b>
+    </div>
+    <nav class="menu" id="menu"></nav>
+    <div class="side-links">
+      <div class="side-title">友情链接</div>
+      <a href="../">家长端</a>
+      <a href="../admin/">平台管理后台</a>
+      <a href="../org/">机构端 / 老师端</a>
+    </div>
+  </aside>
+  <div class="main">
+    <header class="topbar">
+      <div class="title" id="pageTitle">首页看板</div>
+      <div class="top-right">
+        <button class="help-btn" onclick="showGlossary()" title="查看平台全部名词与状态解释">？ 名词解释</button>
+        <span class="who">当前学校：</span>
+        <select id="schoolSel" onchange="setSchool(this.value)">
+          <option>天府一小</option><option>天府二小</option><option>天府实验小学</option>
+        </select>
+        <span class="who">当前账号：<b>学校管理员</b></span>
+      </div>
+    </header>
+    <main class="content" id="content"></main>
+  </div>
+</div>
+
+<div class="mask" id="mask" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="m-head"><span id="mTitle"></span><span class="m-close" onclick="closeModal()">✕</span></div>
+    <div class="m-body" id="mBody"></div>
+    <div class="m-foot" id="mFoot"></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+ * 天府通未来教育中心 · 学校端 单文件原型
+ * 学校职责：看本校课程 / 管场地 / 看名单 / 确认排课 / 确认上课销课
+ * 不涉及机构财务与结算金额
+ * ============================================================ */
+
+/* ---------- Mock 数据（按学校隔离，切换学校数据变化） ---------- */
+const DATA = {
+  '天府一小': {
+    info: { name: '天府一小', area: '天府新区', addr: '天府新区麓山大道 66 号', contact: '李主任', phone: '138****8888', status: '已合作', outside: '否', admin: '李主任' },
+    stats: [['本校开放课程', 6, '门'], ['当前开课班级', 4, '个'], ['今日上课班级', 2, '个'], ['本月报名人数', 126, '人'],
+      ['待确认排课', 2, '个', 1], ['待确认销课', 3, '节', 1], ['场地数量', 8, '个'], ['待处理售后', 1, '单', 1]],
+    venues: [
+      { id: 'v1', name: '科技教室', type: '科技类', cap: 30, time: '周三 17:00-18:00', fit: 'AI、编程', open: '不开放', status: '可用' },
+      { id: 'v2', name: '计算机教室', type: '信息技术', cap: 40, time: '周五 17:00-18:00', fit: '编程、AI', open: '不开放', status: '可用' },
+      { id: 'v3', name: '美术教室', type: '艺术类', cap: 35, time: '周二 17:00-18:00', fit: '美术、手工', open: '不开放', status: '已占用' },
+      { id: 'v4', name: '操场', type: '体育类', cap: 60, time: '工作日 17:00-18:30', fit: '足球、体能', open: '可开放', status: '可用' },
+    ],
+    courses: [
+      { id: 'c1', name: '人工智能启蒙课', org: '成都启智未来教育', cat: 'AI科技', grade: '1-3年级', lessons: 10, price: 800, min: 10, max: 30, shelf: '已上架',
+        intro: 'AI 启蒙课程，游戏化认识人工智能，完成个人 AI 小作品。', venue: '科技教室 / 计算机教室', device: '平板、投影', teacher: '王老师（平台已审核资质）', audit: '平台审核通过 · 已入课程库',
+        syllabus: ['认识人工智能', '和 AI 对话', 'AI 画图体验', '训练小模型', 'AI 故事创作', 'AI 音乐体验', 'AI 编程游戏', '综合创作（一）', '综合创作（二）', '成果展示'] },
+      { id: 'c2', name: '少儿编程思维课', org: '成都启智未来教育', cat: '编程', grade: '3-5年级', lessons: 12, price: 960, min: 12, max: 30, shelf: '已上架',
+        intro: '图形化编程入门，培养逻辑思维，独立完成小游戏。', venue: '计算机教室', device: '电脑机房', teacher: '李老师（平台已审核资质）', audit: '平台审核通过 · 已入课程库',
+        syllabus: ['认识编程', '顺序结构', '循环结构', '条件判断', '变量计分', '角色交互', '关卡设计（一）', '关卡设计（二）', '调试优化', '音效界面', '作品完善', '项目展示'] },
+      { id: 'c3', name: '科学实验探索课', org: '星火科学教育', cat: '科学实验', grade: '1-4年级', lessons: 8, price: 640, min: 10, max: 25, shelf: '待确认',
+        intro: '趣味科学实验，在动手中观察、提问、验证。', venue: '科学教室', device: '实验器材包', teacher: '张老师（平台已审核资质）', audit: '平台审核通过 · 已入课程库',
+        syllabus: ['观察与猜想', '浮沉与密度', '磁力探索', '气压与流动', '植物观察', '声音传播', '自制小装置', '实验报告展示'] },
+      { id: 'c4', name: '创意美术课', org: '艺彩教育', cat: '艺术', grade: '1-6年级', lessons: 10, price: 700, min: 10, max: 30, shelf: '已上架',
+        intro: '从色彩感知到独立创作，激发孩子艺术表达。', venue: '美术教室', device: '画材包', teacher: '刘老师（平台已审核资质）', audit: '平台审核通过 · 已入课程库',
+        syllabus: ['色彩认知', '线条练习', '创意涂鸦', '静物写生', '风景创作', '动物主题', '人物入门', '主题创作', '装裱知识', '作品展'] },
+    ],
+    classes: [
+      { id: 'k1', name: '人工智能启蒙课一班', course: '人工智能启蒙课', org: '成都启智未来教育', venue: '科技教室', time: '每周三 17:00-18:00', teacher: '王老师', total: 10, done: 4, enrolled: 28, max: 30, status: '上课中' },
+      { id: 'k2', name: '少儿编程思维课一班', course: '少儿编程思维课', org: '成都启智未来教育', venue: '计算机教室', time: '每周五 17:00-18:00', teacher: '李老师', total: 12, done: 0, enrolled: 24, max: 30, status: '已成班' },
+      { id: 'k3', name: '科学实验探索课一班', course: '科学实验探索课', org: '星火科学教育', venue: '科学教室', time: '每周二 17:00-18:00', teacher: '张老师', total: 8, done: 1, enrolled: 18, max: 25, status: '上课中' },
+      { id: 'k4', name: '创意美术课一班', course: '创意美术课', org: '艺彩教育', venue: '美术教室', time: '每周四 17:00-18:00', teacher: '刘老师', total: 10, done: 0, enrolled: 8, max: 30, status: '报名中' },
+    ],
+    students: [
+      { name: '李小明', grade: '三年级2班', course: '人工智能启蒙课', cls: '一班', phone: '138****8888', payTime: '2026-06-20', pay: '已支付', status: '上课中' },
+      { name: '王小雨', grade: '三年级1班', course: '人工智能启蒙课', cls: '一班', phone: '139****6666', payTime: '2026-06-21', pay: '已支付', status: '上课中' },
+      { name: '张天天', grade: '四年级3班', course: '少儿编程思维课', cls: '一班', phone: '137****9999', payTime: '2026-06-22', pay: '已支付', status: '已成班' },
+      { name: '陈梓涵', grade: '二年级4班', course: '科学实验探索课', cls: '一班', phone: '136****2233', payTime: '2026-06-23', pay: '已支付', status: '上课中' },
+      { name: '黄雨桐', grade: '三年级3班', course: '创意美术课', cls: '一班', phone: '188****9900', payTime: '2026-07-01', pay: '已支付', status: '已报名' },
+      { name: '周子墨', grade: '一年级2班', course: '创意美术课', cls: '一班', phone: '186****1122', payTime: '2026-07-02', pay: '待支付', status: '已报名' },
+    ],
+    schedule: [
+      { id: 's1', cls: '少儿编程思维课一班', course: '少儿编程思维课', org: '成都启智未来教育', time: '每周五 17:00-18:00', venue: '计算机教室', teacher: '李老师', enrolled: 24, max: 30, status: '待确认' },
+      { id: 's2', cls: '创意美术课二班（拟新增）', course: '创意美术课', org: '艺彩教育', time: '每周一 17:00-18:00', venue: '美术教室', teacher: '刘老师', enrolled: 12, max: 30, status: '待确认' },
+      { id: 's3', cls: '人工智能启蒙课一班', course: '人工智能启蒙课', org: '成都启智未来教育', time: '每周三 17:00-18:00', venue: '科技教室', teacher: '王老师', enrolled: 28, max: 30, status: '已确认' },
+    ],
+    records: [
+      { id: 'r1', cls: '人工智能启蒙课一班', course: '人工智能启蒙课', no: 4, date: '2026-07-01', time: '17:00-18:00', venue: '科技教室', teacher: '王老师', due: 28, actual: 27, sign: '已签到', record: '已提交记录', signAt: '16:52', content: '训练自己的小模型', mood: '课堂气氛活跃，动手环节完成度高', comment: '整体掌握良好', note: '' },
+      { id: 'r2', cls: '人工智能启蒙课一班', course: '人工智能启蒙课', no: 5, date: '2026-07-08', time: '17:00-18:00', venue: '科技教室', teacher: '王老师', due: 28, actual: 0, sign: '待上课', record: '待上课', signAt: '—', content: '', mood: '', comment: '', note: '' },
+      { id: 'r3', cls: '科学实验探索课一班', course: '科学实验探索课', no: 1, date: '2026-06-30', time: '17:00-18:00', venue: '科学教室', teacher: '张老师', due: 18, actual: 17, sign: '已签到', record: '已提交记录', signAt: '16:55', content: '观察与猜想', mood: '实验安全规范讲解到位', comment: '学生兴趣浓厚', note: '' },
+      { id: 'r4', cls: '科学实验探索课一班', course: '科学实验探索课', no: 2, date: '2026-07-07', time: '17:00-18:00', venue: '科学教室', teacher: '张老师', due: 18, actual: 16, sign: '已签到', record: '异常', signAt: '17:20', content: '浮沉与密度', mood: '', comment: '', note: '老师迟到 20 分钟，实到人数与签到不符，已上报平台' },
+    ],
+    confirms: [
+      { id: 'x1', cls: '人工智能启蒙课一班', course: '人工智能启蒙课', no: 4, date: '2026-07-01', teacher: '王老师', org: '成都启智未来教育', due: 28, actual: 27, tSubmit: '已提交', school: '待确认', status: '已上课待确认' },
+      { id: 'x2', cls: '科学实验探索课一班', course: '科学实验探索课', no: 1, date: '2026-06-30', teacher: '张老师', org: '星火科学教育', due: 18, actual: 17, tSubmit: '已提交', school: '待确认', status: '已上课待确认' },
+      { id: 'x3', cls: '人工智能启蒙课一班', course: '人工智能启蒙课', no: 3, date: '2026-06-24', teacher: '王老师', org: '成都启智未来教育', due: 28, actual: 28, tSubmit: '已提交', school: '已确认', status: '已确认销课' },
+      { id: 'x4', cls: '科学实验探索课一班', course: '科学实验探索课', no: 2, date: '2026-07-07', teacher: '张老师', org: '星火科学教育', due: 18, actual: 16, tSubmit: '已提交', school: '有异常', status: '异常' },
+      { id: 'x5', cls: '人工智能启蒙课一班', course: '人工智能启蒙课', no: 2, date: '2026-06-17', teacher: '王老师', org: '成都启智未来教育', due: 28, actual: 28, tSubmit: '已提交', school: '已确认', status: '已计入结算' },
+    ],
+    aftersales: [
+      { id: 'SH20260702001', student: '陈梓涵', cls: '科学实验探索课一班', type: '上课时间冲突', status: '需学校协助', opinion: '家长反馈周二与校内社团冲突，请学校确认能否调整场地时段', need: '是' },
+      { id: 'SH20260628002', student: '王小雨', cls: '人工智能启蒙课一班', type: '家长投诉', status: '已完成', opinion: '已与家长沟通说明，投诉撤销', need: '否' },
+    ],
+    notices: [
+      { t: '新课程待确认开放', d: '平台已将「科学实验探索课」分发至本校，请在「本校课程」中确认开放。', time: '2026-07-05 09:12', read: false },
+      { t: '新班级待排课确认', d: '「少儿编程思维课一班」已成班（24 人），请确认教室与上课时间。', time: '2026-07-04 15:30', read: false },
+      { t: '今日上课提醒', d: '今日 17:00「人工智能启蒙课一班」在科技教室上课，任课王老师。', time: '2026-07-08 08:00', read: false },
+      { t: '老师签到提醒', d: '张老师 7 月 7 日签到时间 17:20，迟到 20 分钟，请关注。', time: '2026-07-07 17:25', read: false },
+      { t: '销课待确认', d: '有 3 节课待学校确认，请在「销课确认」中处理。', time: '2026-07-07 18:00', read: false },
+      { t: '售后协同提醒', d: '售后单 SH20260702001 需学校协助，请及时反馈。', time: '2026-07-02 10:05', read: true },
+      { t: '班级满员提醒', d: '「人工智能启蒙课一班」报名 28/30，即将满员。', time: '2026-07-01 12:00', read: true },
+      { t: '未成班提醒', d: '「创意美术课一班」当前报名 8/10（最低成班 10 人），报名截止还有 5 天。', time: '2026-07-06 09:00', read: false },
+    ],
+    today: [
+      { cls: '人工智能启蒙课一班', course: '人工智能启蒙课', time: '17:00-18:00', venue: '科技教室', teacher: '王老师', org: '成都启智未来教育', status: '待上课' },
+      { cls: '科学实验探索课一班', course: '科学实验探索课', time: '17:00-18:00', venue: '科学教室', teacher: '张老师', org: '星火科学教育', status: '待上课' },
+    ],
+  },
+
+  '天府二小': {
+    info: { name: '天府二小', area: '天府新区', addr: '天府新区科学城中路 88 号', contact: '吴主任', phone: '139****1002', status: '已合作', outside: '否', admin: '吴主任' },
+    stats: [['本校开放课程', 2, '门'], ['当前开课班级', 1, '个'], ['今日上课班级', 0, '个'], ['本月报名人数', 24, '人'],
+      ['待确认排课', 1, '个', 1], ['待确认销课', 1, '节', 1], ['场地数量', 3, '个'], ['待处理售后', 0, '单']],
+    venues: [
+      { id: 'v1', name: '科学实验室', type: '科技类', cap: 30, time: '周五 17:00-18:00', fit: 'AI、科学', open: '不开放', status: '可用' },
+      { id: 'v2', name: '多功能室', type: '综合类', cap: 60, time: '工作日 17:00-18:00', fit: '通用', open: '可开放', status: '可用' },
+      { id: 'v3', name: '音乐教室', type: '艺术类', cap: 30, time: '周四 17:00-18:00', fit: '音乐', open: '不开放', status: '可用' },
+    ],
+    courses: [
+      { id: 'c1', name: '人工智能启蒙课', org: '成都启智未来教育', cat: 'AI科技', grade: '1-3年级', lessons: 10, price: 780, min: 10, max: 30, shelf: '已上架',
+        intro: 'AI 启蒙课程（本校配置价 780 元）。', venue: '科学实验室', device: '平板、投影', teacher: '王老师（平台已审核资质）', audit: '平台审核通过 · 已入课程库',
+        syllabus: ['认识人工智能', '和 AI 对话', 'AI 画图体验', '训练小模型', 'AI 故事创作', 'AI 音乐体验', 'AI 编程游戏', '综合创作（一）', '综合创作（二）', '成果展示'] },
+      { id: 'c2', name: '趣味围棋课', org: '弈智教育', cat: '棋类', grade: '1-6年级', lessons: 10, price: 600, min: 8, max: 20, shelf: '待确认',
+        intro: '围棋入门，礼仪与思维训练并重。', venue: '多功能室', device: '棋具', teacher: '赵老师（平台已审核资质）', audit: '平台审核通过 · 已入课程库',
+        syllabus: ['认识棋盘', '气与提子', '基本吃子', '连接与分断', '布局常识', '死活入门', '对局礼仪', '实战（一）', '实战（二）', '结业对局'] },
+    ],
+    classes: [
+      { id: 'k1', name: '人工智能启蒙课一班', course: '人工智能启蒙课', org: '成都启智未来教育', venue: '科学实验室', time: '每周五 17:00-18:00', teacher: '王老师', total: 10, done: 2, enrolled: 24, max: 30, status: '上课中' },
+    ],
+    students: [
+      { name: '刘思彤', grade: '二年级2班', course: '人工智能启蒙课', cls: '一班', phone: '135****3344', payTime: '2026-06-23', pay: '已支付', status: '上课中' },
+      { name: '陈梓航', grade: '三年级4班', course: '人工智能启蒙课', cls: '一班', phone: '136****7788', payTime: '2026-06-22', pay: '已支付', status: '上课中' },
+    ],
+    schedule: [
+      { id: 's1', cls: '趣味围棋课一班', course: '趣味围棋课', org: '弈智教育', time: '每周一 17:00-18:00', venue: '多功能室', teacher: '赵老师', enrolled: 10, max: 20, status: '待确认' },
+    ],
+    records: [
+      { id: 'r1', cls: '人工智能启蒙课一班', course: '人工智能启蒙课', no: 2, date: '2026-07-03', time: '17:00-18:00', venue: '科学实验室', teacher: '王老师', due: 24, actual: 24, sign: '已签到', record: '已提交记录', signAt: '16:50', content: '和 AI 对话', mood: '学生提问踊跃', comment: '课堂参与度高', note: '' },
+    ],
+    confirms: [
+      { id: 'x1', cls: '人工智能启蒙课一班', course: '人工智能启蒙课', no: 2, date: '2026-07-03', teacher: '王老师', org: '成都启智未来教育', due: 24, actual: 24, tSubmit: '已提交', school: '待确认', status: '已上课待确认' },
+    ],
+    aftersales: [],
+    notices: [
+      { t: '新课程待确认开放', d: '平台已将「趣味围棋课」分发至本校，请确认开放。', time: '2026-07-05 10:00', read: false },
+      { t: '销课待确认', d: '7 月 3 日「人工智能启蒙课一班」第 2 节待学校确认。', time: '2026-07-04 09:00', read: false },
+    ],
+    today: [],
+  },
+
+  '天府实验小学': {
+    info: { name: '天府实验小学', area: '天府新区', addr: '天府新区兴隆湖畔 12 号', contact: '郑校长', phone: '137****1003', status: '已合作', outside: '是', admin: '郑校长' },
+    stats: [['本校开放课程', 1, '门'], ['当前开课班级', 1, '个'], ['今日上课班级', 1, '个'], ['本月报名人数', 18, '人'],
+      ['待确认排课', 0, '个'], ['待确认销课', 0, '节'], ['场地数量', 2, '个'], ['待处理售后', 1, '单', 1]],
+    venues: [
+      { id: 'v1', name: '科学教室', type: '科技类', cap: 30, time: '周二/周四 17:00-18:00', fit: '科学实验', open: '不开放', status: '可用' },
+      { id: 'v2', name: '风雨操场', type: '体育类', cap: 80, time: '工作日 17:00-18:30', fit: '球类、体能', open: '可开放', status: '可用' },
+    ],
+    courses: [
+      { id: 'c1', name: '科学实验探索课', org: '星火科学教育', cat: '科学实验', grade: '1-4年级', lessons: 8, price: 640, min: 10, max: 25, shelf: '已上架',
+        intro: '趣味科学实验课程。', venue: '科学教室', device: '实验器材包', teacher: '张老师（平台已审核资质）', audit: '平台审核通过 · 已入课程库',
+        syllabus: ['观察与猜想', '浮沉与密度', '磁力探索', '气压与流动', '植物观察', '声音传播', '自制小装置', '实验报告展示'] },
+    ],
+    classes: [
+      { id: 'k1', name: '科学实验探索课一班', course: '科学实验探索课', org: '星火科学教育', venue: '科学教室', time: '每周二 17:00-18:00', teacher: '张老师', total: 8, done: 3, enrolled: 18, max: 25, status: '上课中' },
+    ],
+    students: [
+      { name: '杨浩然', grade: '三年级2班', course: '科学实验探索课', cls: '一班', phone: '158****6677', payTime: '2026-06-25', pay: '已支付', status: '上课中' },
+      { name: '林一诺', grade: '二年级1班', course: '科学实验探索课', cls: '一班', phone: '159****8899', payTime: '2026-06-26', pay: '已支付', status: '上课中' },
+    ],
+    schedule: [],
+    records: [
+      { id: 'r1', cls: '科学实验探索课一班', course: '科学实验探索课', no: 3, date: '2026-07-07', time: '17:00-18:00', venue: '科学教室', teacher: '张老师', due: 18, actual: 18, sign: '已签到', record: '已提交记录', signAt: '16:48', content: '磁力探索', mood: '分组实验有序', comment: '动手能力提升明显', note: '' },
+    ],
+    confirms: [
+      { id: 'x1', cls: '科学实验探索课一班', course: '科学实验探索课', no: 3, date: '2026-07-07', teacher: '张老师', org: '星火科学教育', due: 18, actual: 18, tSubmit: '已提交', school: '已确认', status: '已确认销课' },
+    ],
+    aftersales: [
+      { id: 'SH20260706003', student: '杨浩然', cls: '科学实验探索课一班', type: '学生无法继续上课', status: '需学校协助', opinion: '家长申请转班，请学校确认本校是否有可转入班级', need: '是' },
+    ],
+    notices: [
+      { t: '今日上课提醒', d: '今日 17:00「科学实验探索课一班」在科学教室上课。', time: '2026-07-08 08:00', read: false },
+      { t: '售后协同提醒', d: '售后单 SH20260706003 需学校协助，请及时反馈。', time: '2026-07-06 11:00', read: false },
+    ],
+    today: [
+      { cls: '科学实验探索课一班', course: '科学实验探索课', time: '17:00-18:00', venue: '科学教室', teacher: '张老师', org: '星火科学教育', status: '待上课' },
+    ],
+  },
+};
+
+/* ---------- 状态 → 标签色 ---------- */
+const TAG = {
+  已合作: 'tg-green', 可用: 'tg-green', 已上架: 'tg-green', 已确认: 'tg-green', 已签到: 'tg-green', 已提交: 'tg-green', 已提交记录: 'tg-green', 已支付: 'tg-green', 已确认销课: 'tg-green', 已完成: 'tg-green', 学校已反馈: 'tg-green',
+  待确认: 'tg-orange', 待支付: 'tg-orange', 已上课待确认: 'tg-orange', 需调整: 'tg-orange', 需学校协助: 'tg-orange', 待平台处理: 'tg-orange', 待上课: 'tg-gray',
+  上课中: 'tg-blue', 已排课: 'tg-cyan', 报名中: 'tg-blue', 已报名: 'tg-blue',
+  已成班: 'tg-green', 待成班: 'tg-orange', 已结课: 'tg-gray', 已取消: 'tg-red', 已退款: 'tg-red',
+  异常: 'tg-red', 有异常: 'tg-red', 已占用: 'tg-orange', 已暂停: 'tg-gray', 已计入结算: 'tg-cyan', 可开放: 'tg-cyan', 不开放: 'tg-gray',
+};
+
+/* ---------- 名词解释词典 ---------- */
+const GLOSSARY = [
+  { title: '学校端职责（先看这里）', items: [
+    ['学校端定位', '学校不审核机构与课程资质（由平台审核），不涉及机构结算金额。学校负责：确认本校课程开放、维护场地、查看报名名单、确认排课、确认上课事实、协同售后。'],
+  ] },
+  { title: '课程上架状态', items: [
+    ['已上架', '课程已在本校家长端开放报名。'],
+    ['待确认', '平台已把课程分发到本校，等待学校确认开放；确认前家长端不可见。'],
+    ['已暂停', '学校暂停开放，家长端不可报名，存量班级正常上完。'],
+  ] },
+  { title: '班级状态', items: [
+    ['报名中', '班级已开放，家长可报名。'],
+    ['待成班', '报名未达最低成班人数，暂不能开课。'],
+    ['已成班', '达到最低成班人数，等待学校确认教室与时间（见「排课确认」）。'],
+    ['已排课', '学校已确认时间、场地与老师。'],
+    ['上课中', '班级正常上课中。'],
+    ['已结课', '全部课时完成。'],
+    ['已取消', '未成班或其他原因取消，家长已缴费用由平台自动退款。'],
+  ] },
+  { title: '排课确认状态', items: [
+    ['待确认', '班级已成班，等待学校确认建议的教室与上课时间。'],
+    ['已确认', '学校已确认排课，班级可按计划开课。'],
+    ['需调整', '学校认为场地或时间有冲突，已退回调整。'],
+  ] },
+  { title: '上课记录状态', items: [
+    ['待上课', '尚未到上课时间。'],
+    ['已签到', '机构老师已到校并在系统完成签到。'],
+    ['已提交记录', '老师已提交本节课堂记录（内容、出勤、评语）。'],
+    ['异常', '本节课存在问题：老师迟到 / 未签到、实到人数与签到不符、课程未正常开展等。处理：学校标记异常并备注 → 平台核实 → 机构 2 个工作日内说明，异常期间本节不计入机构销课。'],
+  ] },
+  { title: '销课确认（学校确认上课事实）', items: [
+    ['已上课待确认', '老师已提交上课记录，等待学校确认本节课真实完成。'],
+    ['已确认销课', '学校已确认本节课真实完成；确认后平台才会将本节计入机构结算（学校端不涉及金额）。'],
+    ['异常', '学校对本节课提出异议（人数不符 / 老师迟到等），暂停计入，由平台跟进处理。'],
+    ['已计入结算', '本节已随平台月度结算锁定（学校端仅作状态展示）。'],
+  ] },
+  { title: '售后协同状态', items: [
+    ['待平台处理', '家长售后申请由平台受理中，暂不需要学校动作。'],
+    ['需学校协助', '涉及本校场地、时间、学生情况，需学校核实反馈（如时间冲突、转班可行性）。'],
+    ['学校已反馈', '学校已提交反馈意见，等待平台后续处理。'],
+    ['已完成', '售后处理完毕结案。'],
+  ] },
+  { title: '通用名词', items: [
+    ['课程分发', '平台把审核通过的课程配置到指定学校；只有被分发学校的家长能看到课程。'],
+    ['成班人数', '开班所需最低报名人数，未达标班级将取消并自动退款。'],
+    ['是否允许外校学生报名', '学校可选择是否开放本校课程给外校学生（默认否）。'],
+    ['对外开放（场地）', '本校场地是否可承接非本校课程使用。'],
+  ] },
+];
+const DEF = {};
+GLOSSARY.forEach((g) => g.items.forEach(([t, d]) => { if (!DEF[t]) DEF[t] = d; }));
+DEF['已提交'] = '老师已提交本节课的上课记录。';
+DEF['已签到'] = '机构老师已到校并完成系统签到。';
+DEF['已支付'] = '家长已缴费，资金由平台监管账户托管。';
+DEF['待支付'] = '家长已报名但尚未完成付款。';
+DEF['有异常'] = DEF['异常'];
+DEF['可用'] = '场地空闲，可用于排课。';
+DEF['已占用'] = '该时段场地已被其他班级/校内活动占用。';
+
+const tag = (v) => `<span class="tag ${TAG[v] || 'tg-gray'}" ${DEF[v] ? `title="${DEF[v].replace(/"/g, '&quot;')}"` : ''}>${v}</span>`;
+
+function showGlossary() {
+  openModal('学校端名词解释', GLOSSARY.map((g) => `
+    <h5 style="margin:14px 0 8px;font-size:13px">${g.title}</h5>
+    ${g.items.map(([t, d]) => `
+      <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:8px">
+        <span style="flex-shrink:0">${tag(t)}</span>
+        <span style="font-size:13px;color:#52565e;line-height:1.7">${d}</span>
+      </div>`).join('')}`).join(''));
+}
+
+/* ---------- 表格字段解释（列名 ? 提示） ---------- */
+const COLDEF = {
+  '所属机构': '提供该课程/老师的培训机构（机构资质由平台审核）。',
+  '课程分类': '课程所属类目。',
+  '适合年级': '建议报名的学生年级范围。',
+  '总课时': '一期课程包含的上课节次总数。',
+  '课程价格': '本校家长报名的实际价格（由平台分发时配置）。',
+  '最低成班人数': '开班所需最低报名人数，未达标将取消并自动退款。',
+  '最大班额': '班级最大容纳报名人数。',
+  '上架状态': '课程在本校家长端是否开放报名；「待确认」需学校确认后才对家长可见。',
+  '场地名称': '本校用于课后服务的教室 / 场馆。',
+  '场地类型': '教室 / 场馆类型，决定可承接的课程。',
+  '容纳人数': '场地最大容纳学生数，限制班级报名上限。',
+  '可用时间': '场地可排课的时间段。',
+  '适合课程': '该场地适合开展的课程类型。',
+  '是否对外开放': '是否允许非本校课程 / 学生使用该场地。',
+  '当前状态': '场地当前可用性。',
+  '上课场地': '班级实际使用的本校场地。',
+  '上课时间': '固定周期的上课时间（课后延时时段）。',
+  '任课老师': '机构派驻的授课老师（资质已由平台审核）。',
+  '已上课时': '已完成的上课节次。',
+  '报名人数': '当前已报名人数。',
+  '最大人数': '班级最大容量。',
+  '班级状态': '班级当前阶段，悬停标签查看含义。',
+  '年级班级': '学生在本校的年级与行政班。',
+  '报名课程': '学生报名的课后服务课程。',
+  '所属班级': '报名后实际上课的班级。',
+  '家长手机号': '家长联系方式，脱敏展示保护隐私。',
+  '报名时间': '家长提交报名的时间。',
+  '支付状态': '已支付 = 费用进入平台监管账户托管；学校端不涉及资金。',
+  '报名状态': '学生当前的报名/上课阶段。',
+  '建议上课时间': '平台/机构建议的上课时间，学校可确认或调整。',
+  '建议场地': '平台/机构建议使用的本校场地，学校可确认或调整。',
+  '当前报名人数': '该班级当前报名人数。',
+  '确认状态': '学校对排课安排的确认状态。',
+  '第几节课': '本班课程的第几节。',
+  '上课日期': '本节课实际上课日期。',
+  '应到人数': '班级报名人数。',
+  '实到人数': '实际到课人数，与签到不符会触发异常。',
+  '老师签到状态': '机构老师是否已到校签到。',
+  '课堂记录状态': '老师是否已提交本节课堂记录。',
+  '老师提交状态': '老师是否已提交本节上课记录。',
+  '学校确认状态': '学校对本节课真实完成的确认；确认后平台才计入机构销课。',
+  '销课状态': '本节课在平台的计费流转状态（学校端不显示金额）。',
+  '售后编号': '售后工单编号。',
+  '问题类型': '家长提交的售后问题分类。',
+  '平台处理意见': '平台对本工单的处理要求或结论。',
+  '是否需要学校协助': '「是」表示需要学校核实场地/时间/学生情况并反馈。',
+  '状态': '当前业务状态，悬停标签或点右上角「名词解释」。',
+};
+function decorateTh(root) {
+  (root || document).querySelectorAll('th').forEach((th) => {
+    if (th.dataset.qi) return;
+    const label = th.textContent.trim();
+    const def = COLDEF[label];
+    if (def) {
+      th.dataset.qi = '1';
+      th.innerHTML = `${label} <span class="qi" title="${def.replace(/"/g, '&quot;')}">?</span>`;
+    }
+  });
+}
+
+/* ---------- 状态 ---------- */
+let school = '天府一小';
+let page = 'dash';
+const D = () => DATA[school];
+
+const MENUS = [
+  ['dash', '首页看板'], ['info', '学校信息'], ['venues', '场地管理'], ['courses', '本校课程'],
+  ['classes', '班级管理'], ['students', '报名名单'], ['schedule', '排课确认'], ['records', '上课记录'],
+  ['confirm', '销课确认'], ['aftersale', '售后协同'], ['notices', '消息通知'],
+];
+
+function setSchool(s) { school = s; render(); }
+function go(p) { page = p; render(); }
+
+function render() {
+  document.getElementById('menu').innerHTML = MENUS
+    .map(([k, label]) => `<div class="menu-item ${page === k ? 'active' : ''}" onclick="go('${k}')">${label}</div>`).join('');
+  document.getElementById('pageTitle').textContent = Object.fromEntries(MENUS)[page] || '';
+  document.getElementById('schoolSel').value = school;
+  document.getElementById('content').innerHTML = PAGES[page]();
+  decorateTh(document.getElementById('content'));
+}
+
+/* ---------- 页面 ---------- */
+const PAGES = {
+  dash() {
+    const d = D();
+    return `<div class="flow">
+      <span class="f">平台分发课程到本校</span><span class="a">→</span><span class="f">学校确认开放</span><span class="a">→</span>
+      <span class="f">家长报名成班</span><span class="a">→</span><span class="f">学校确认教室/排课</span><span class="a">→</span>
+      <span class="f">机构老师到校上课</span><span class="a">→</span><span class="f">学校查看/确认上课</span><span class="a">→</span>
+      <span class="f">配合销课确认</span>
+    </div>
+    <div class="stats">
+      ${d.stats.map(([t, v, u, warn]) => `<div class="stat ${warn ? 'warn' : ''}"><div class="t">${t}</div><div class="v">${v}<small>${u}</small></div></div>`).join('')}
+    </div>
+    <div class="card"><h4>今日上课安排</h4><div class="tbl-wrap"><table>
+      <tr><th>班级名称</th><th>课程名称</th><th>上课时间</th><th>上课场地</th><th>任课老师</th><th>所属机构</th><th>状态</th></tr>
+      ${d.today.length ? d.today.map((t) => `<tr><td><b>${t.cls}</b></td><td>${t.course}</td><td>${t.time}</td><td>${t.venue}</td><td>${t.teacher}</td><td>${t.org}</td><td>${tag(t.status)}</td></tr>`).join('') : '<tr><td colspan="7" class="empty">今日无上课安排</td></tr>'}
+    </table></div></div>
+    <div class="grid2 mt">
+      <div class="card"><h4>待确认排课</h4><div class="tbl-wrap"><table>
+        <tr><th>班级名称</th><th>建议上课时间</th><th>确认状态</th><th>操作</th></tr>
+        ${d.schedule.filter((s) => s.status === '待确认').map((s) => `<tr><td>${s.cls}</td><td>${s.time}</td><td>${tag(s.status)}</td><td><span class="lnk" onclick="go('schedule')">去确认</span></td></tr>`).join('') || '<tr><td colspan="4" class="empty">暂无待确认排课</td></tr>'}
+      </table></div></div>
+      <div class="card"><h4>本校课程报名概览</h4><div class="tbl-wrap"><table>
+        <tr><th>班级名称</th><th>报名人数</th><th>班级状态</th></tr>
+        ${d.classes.map((c) => `<tr><td>${c.name}</td><td>${c.enrolled} / ${c.max}${c.enrolled >= c.max - 2 && c.enrolled < c.max ? ' <span class="tag tg-orange">将满</span>' : ''}</td><td>${tag(c.status)}</td></tr>`).join('')}
+      </table></div></div>
+    </div>`;
+  },
+
+  info() {
+    const i = D().info;
+    return `<div class="card" style="max-width:640px">
+      <h4 style="margin-bottom:14px">学校信息</h4>
+      <div class="desc">
+        <div class="k">学校名称</div><div class="v">${i.name}</div>
+        <div class="k">所属区域</div><div class="v">${i.area}</div>
+        <div class="k">学校地址</div><div class="v">${i.addr}</div>
+        <div class="k">学校联系人</div><div class="v">${i.contact}</div>
+        <div class="k">联系电话</div><div class="v">${i.phone}</div>
+        <div class="k">合作状态</div><div class="v">${tag(i.status)}</div>
+        <div class="k">允许外校学生报名</div><div class="v">${i.outside}</div>
+        <div class="k">学校管理员账号</div><div class="v">${i.admin}</div>
+      </div>
+      <div style="margin-top:16px;display:flex;gap:10px">
+        <button class="btn btn-primary" onclick="editInfo()">编辑学校信息</button>
+        <button class="btn btn-ghost" onclick="toast('Demo：合作记录（2026-05 签署课后服务合作协议）')">查看合作记录</button>
+      </div>
+    </div>`;
+  },
+
+  venues() {
+    return `<div class="page-title"><span></span><span class="hint">学校维护本校场地资源，场地容量限制班级报名上限</span></div>
+    <div class="card" style="padding:12px 16px;margin-bottom:14px;display:flex;justify-content:flex-end">
+      <button class="btn btn-primary" onclick="toast('Demo：新增场地表单')">＋ 新增场地</button>
+    </div>
+    <div class="tbl-wrap"><table>
+      <tr><th>场地名称</th><th>场地类型</th><th>容纳人数</th><th>可用时间</th><th>适合课程</th><th>是否对外开放</th><th>当前状态</th><th>操作</th></tr>
+      ${D().venues.map((v) => `<tr>
+        <td><b>${v.name}</b></td><td>${v.type}</td><td>${v.cap} 人</td><td>${v.time}</td><td>${v.fit}</td>
+        <td>${tag(v.open)}</td><td>${tag(v.status)}</td>
+        <td><span class="lnk" onclick="toast('Demo：编辑场地')">编辑</span>
+            <span class="lnk" onclick="venueSchedule('${v.id}')">查看排课</span>
+            <span class="lnk danger" onclick="toast('Demo：场地已停用，将不可被新班级选用')">停用</span></td>
+      </tr>`).join('')}
+    </table></div>`;
+  },
+
+  courses() {
+    return `<div class="page-title"><span></span><span class="hint">平台分发到本校的课程；机构与课程资质由平台审核，学校只确认本校是否开放</span></div>
+    <div class="tbl-wrap"><table>
+      <tr><th>课程名称</th><th>所属机构</th><th>课程分类</th><th>适合年级</th><th>总课时</th><th>课程价格</th><th>最低成班人数</th><th>最大班额</th><th>上架状态</th><th>操作</th></tr>
+      ${D().courses.map((c) => `<tr>
+        <td><b>${c.name}</b></td><td>${c.org}</td><td>${c.cat}</td><td>${c.grade}</td><td>${c.lessons} 节</td>
+        <td>¥${c.price}</td><td>${c.min} 人</td><td>${c.max} 人</td><td>${tag(c.shelf)}</td>
+        <td><span class="lnk" onclick="courseDetail('${c.id}')">查看详情</span>
+            ${c.shelf === '待确认' ? `<span class="lnk warn" onclick="confirmCourse('${c.id}')">确认开放</span>` : ''}
+            ${c.shelf === '已上架' ? `<span class="lnk danger" onclick="pauseCourse('${c.id}')">暂停开放</span>` : ''}
+            ${c.shelf === '已暂停' ? `<span class="lnk warn" onclick="confirmCourse('${c.id}')">恢复开放</span>` : ''}</td>
+      </tr>`).join('')}
+    </table></div>`;
+  },
+
+  classes() {
+    return `<div class="page-title"><span></span><span class="hint">课程配置到本校后形成具体班级，家长报名的是班级</span></div>
+    <div class="tbl-wrap"><table>
+      <tr><th>班级名称</th><th>课程名称</th><th>所属机构</th><th>上课场地</th><th>上课时间</th><th>任课老师</th><th>总课时</th><th>已上课时</th><th>报名人数</th><th>最大人数</th><th>班级状态</th><th>操作</th></tr>
+      ${D().classes.map((c) => `<tr>
+        <td><b>${c.name}</b></td><td>${c.course}</td><td>${c.org}</td><td>${c.venue}</td><td>${c.time}</td><td>${c.teacher}</td>
+        <td>${c.total} 节</td><td>${c.done} 节</td><td>${c.enrolled}</td><td>${c.max}</td><td>${tag(c.status)}</td>
+        <td><span class="lnk" onclick="classRoster('${c.id}')">查看名单</span>
+            <span class="lnk" onclick="go('schedule')">查看排课</span>
+            <span class="lnk" onclick="go('records')">上课记录</span>
+            <span class="lnk warn" onclick="toast('Demo：已向平台提交新增班级申请，平台协调机构后排班')">申请新增班级</span></td>
+      </tr>`).join('')}
+    </table></div>`;
+  },
+
+  students() {
+    return `<div class="page-title"><span></span><span class="hint">本校学生报名情况 · 家长手机号脱敏展示 · 学校端不涉及订单金额</span></div>
+    <div class="card" style="padding:12px 16px;margin-bottom:14px;display:flex;justify-content:flex-end">
+      <button class="btn btn-ghost" onclick="toast('Demo：名单已导出（Excel）')">导出名单</button>
+    </div>
+    <div class="tbl-wrap"><table>
+      <tr><th>学生姓名</th><th>年级班级</th><th>报名课程</th><th>所属班级</th><th>家长手机号</th><th>报名时间</th><th>支付状态</th><th>报名状态</th><th>操作</th></tr>
+      ${D().students.map((s, i) => `<tr>
+        <td><b>${s.name}</b></td><td>${s.grade}</td><td>${s.course}</td><td>${s.cls}</td><td>${s.phone}</td>
+        <td>${s.payTime}</td><td>${tag(s.pay)}</td><td>${tag(s.status)}</td>
+        <td><span class="lnk" onclick="studentDetail(${i})">查看详情</span></td>
+      </tr>`).join('')}
+    </table></div>`;
+  },
+
+  schedule() {
+    return `<div class="page-title"><span></span><span class="hint">班级成班后，学校确认教室与上课时间；有冲突可调整或退回平台</span></div>
+    <div class="tbl-wrap"><table>
+      <tr><th>班级名称</th><th>课程名称</th><th>所属机构</th><th>建议上课时间</th><th>建议场地</th><th>任课老师</th><th>当前报名人数</th><th>最大人数</th><th>确认状态</th><th>操作</th></tr>
+      ${D().schedule.length ? D().schedule.map((s) => `<tr>
+        <td><b>${s.cls}</b></td><td>${s.course}</td><td>${s.org}</td><td>${s.time}</td><td>${s.venue}</td><td>${s.teacher}</td>
+        <td>${s.enrolled}</td><td>${s.max}</td><td>${tag(s.status)}</td>
+        <td>${s.status === '待确认' ? `<span class="lnk" onclick="confirmSchedule('${s.id}')">确认排课</span>
+            <span class="lnk warn" onclick="adjust('${s.id}','场地')">调整场地</span>
+            <span class="lnk warn" onclick="adjust('${s.id}','时间')">调整时间</span>
+            <span class="lnk danger" onclick="backToPlatform('${s.id}')">退回平台</span>` : '<span style="color:#c3c9d4">—</span>'}</td>
+      </tr>`).join('') : '<tr><td colspan="10" class="empty">暂无排课确认事项</td></tr>'}
+    </table></div>`;
+  },
+
+  records() {
+    return `<div class="page-title"><span></span><span class="hint">本校所有班级上课情况；发现问题可标记异常，异常节次暂停计入机构销课</span></div>
+    <div class="tbl-wrap"><table>
+      <tr><th>班级名称</th><th>课程名称</th><th>第几节课</th><th>上课日期</th><th>上课时间</th><th>上课场地</th><th>任课老师</th><th>应到人数</th><th>实到人数</th><th>老师签到状态</th><th>课堂记录状态</th><th>操作</th></tr>
+      ${D().records.map((r) => `<tr>
+        <td><b>${r.cls}</b></td><td>${r.course}</td><td>第 ${r.no} 节</td><td>${r.date}</td><td>${r.time}</td><td>${r.venue}</td><td>${r.teacher}</td>
+        <td>${r.due}</td><td>${r.actual || '—'}</td><td>${tag(r.sign)}</td><td>${tag(r.record)}</td>
+        <td><span class="lnk" onclick="recordDetail('${r.id}')">查看详情</span>
+            ${r.record !== '异常' && r.record !== '待上课' ? `<span class="lnk danger" onclick="markAbnormal('${r.id}')">标记异常</span>` : ''}</td>
+      </tr>`).join('')}
+    </table></div>`;
+  },
+
+  confirm() {
+    return `<div class="page-title"><span></span><span class="hint">学校只确认上课事实，不涉及机构结算金额；确认后平台方可将该节计入机构销课</span></div>
+    <div class="tbl-wrap"><table>
+      <tr><th>班级名称</th><th>课程名称</th><th>第几节课</th><th>上课日期</th><th>任课老师</th><th>所属机构</th><th>应到人数</th><th>实到人数</th><th>老师提交状态</th><th>学校确认状态</th><th>销课状态</th><th>操作</th></tr>
+      ${D().confirms.map((x) => `<tr>
+        <td><b>${x.cls}</b></td><td>${x.course}</td><td>第 ${x.no} 节</td><td>${x.date}</td><td>${x.teacher}</td><td>${x.org}</td>
+        <td>${x.due}</td><td>${x.actual}</td><td>${tag(x.tSubmit)}</td><td>${tag(x.school)}</td><td>${tag(x.status)}</td>
+        <td>${x.school === '待确认' ? `<span class="lnk" onclick="confirmLesson('${x.id}')">确认完成</span>
+            <span class="lnk danger" onclick="lessonAbnormal('${x.id}')">标记异常</span>` : ''}
+            <span class="lnk" onclick="go('records')">查看详情</span></td>
+      </tr>`).join('')}
+    </table></div>`;
+  },
+
+  aftersale() {
+    return `<div class="page-title"><span></span><span class="hint">学校只处理与本校组织、场地、学生相关的协同事项，售后结论由平台处理</span></div>
+    <div class="tbl-wrap"><table>
+      <tr><th>售后编号</th><th>学生姓名</th><th>课程班级</th><th>问题类型</th><th>当前状态</th><th>平台处理意见</th><th>是否需要学校协助</th><th>操作</th></tr>
+      ${D().aftersales.length ? D().aftersales.map((a) => `<tr>
+        <td>${a.id}</td><td><b>${a.student}</b></td><td>${a.cls}</td>
+        <td><span class="tag tg-red">${a.type}</span></td><td>${tag(a.status)}</td>
+        <td class="ell" style="max-width:240px" title="${a.opinion}">${a.opinion}</td><td>${a.need}</td>
+        <td><span class="lnk" onclick="toast('Demo：售后详情与沟通记录')">查看</span>
+            ${a.status === '需学校协助' ? `<span class="lnk warn" onclick="feedback('${a.id}')">提交学校反馈</span>` : ''}</td>
+      </tr>`).join('') : '<tr><td colspan="8" class="empty">暂无售后协同事项</td></tr>'}
+    </table></div>`;
+  },
+
+  notices() {
+    return `<div class="card">
+      ${D().notices.map((n) => `<div class="notice-item ${n.read ? 'read' : ''}">
+        <span class="dot"></span>
+        <div style="flex:1"><div class="nt">${n.t}</div><div style="font-size:13px;color:#52565e">${n.d}</div><div class="nd">${n.time}</div></div>
+      </div>`).join('')}
+    </div>`;
+  },
+};
+
+/* ---------- 弹窗 / Toast ---------- */
+function openModal(title, body, foot) {
+  document.getElementById('mTitle').textContent = title;
+  document.getElementById('mBody').innerHTML = body;
+  document.getElementById('mFoot').innerHTML = foot || `<button class="btn btn-ghost" onclick="closeModal()">关闭</button>`;
+  document.getElementById('mask').classList.add('show');
+  decorateTh(document.getElementById('mBody'));
+}
+function closeModal() { document.getElementById('mask').classList.remove('show'); }
+let toastTimer = null;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2400);
+}
+
+/* ---------- 交互 ---------- */
+function editInfo() {
+  const i = D().info;
+  openModal('编辑学校信息', `
+    <div class="form-row"><label>学校联系人</label><input value="${i.contact}"></div>
+    <div class="form-row"><label>联系电话</label><input value="${i.phone}"></div>
+    <div class="form-row"><label>学校地址</label><input value="${i.addr}"></div>
+    <div class="form-row"><label>是否允许外校学生报名</label><input value="${i.outside}" placeholder="是 / 否"></div>`,
+    `<button class="btn btn-ghost" onclick="closeModal()">取消</button>
+     <button class="btn btn-primary" onclick="closeModal();toast('Demo：学校信息已保存')">保存</button>`);
+}
+
+function venueSchedule(id) {
+  const v = D().venues.find((x) => x.id === id);
+  const rows = D().classes.filter((c) => c.venue === v.name);
+  openModal('场地排课 · ' + v.name, rows.length ? `
+    <div class="tbl-wrap"><table>
+      <tr><th>班级名称</th><th>上课时间</th><th>任课老师</th><th>班级状态</th></tr>
+      ${rows.map((c) => `<tr><td>${c.name}</td><td>${c.time}</td><td>${c.teacher}</td><td>${tag(c.status)}</td></tr>`).join('')}
+    </table></div>` : '<div class="empty">该场地暂无排课</div>');
+}
+
+function courseDetail(id) {
+  const c = D().courses.find((x) => x.id === id);
+  openModal('课程详情 · ' + c.name, `
+    <div class="desc">
+      <div class="k">所属机构</div><div class="v">${c.org}</div>
+      <div class="k">平台审核状态</div><div class="v"><span class="tag tg-green">${c.audit}</span></div>
+      <div class="k">课程分类</div><div class="v">${c.cat} · ${c.grade}</div>
+      <div class="k">课时 / 价格</div><div class="v">${c.lessons} 节 · ¥${c.price}/期</div>
+      <div class="k">成班 / 班额</div><div class="v">满 ${c.min} 人开班 · 最大 ${c.max} 人</div>
+      <div class="k">所需场地</div><div class="v">${c.venue}</div>
+      <div class="k">所需设备</div><div class="v">${c.device}</div>
+      <div class="k">任课老师</div><div class="v">${c.teacher}</div>
+      <div class="k">课程介绍</div><div class="v">${c.intro}</div>
+    </div>
+    <h5>每节课大纲</h5>
+    <ol>${c.syllabus.map((s) => `<li>${s}</li>`).join('')}</ol>
+    <div class="m-tip">说明：机构与课程资质由<b>平台</b>审核；学校只需确认本校是否开放该课程。</div>`);
+}
+function confirmCourse(id) {
+  const c = D().courses.find((x) => x.id === id);
+  c.shelf = '已上架';
+  render();
+  toast('已确认开放，「' + c.name + '」将在本校家长端展示');
+}
+function pauseCourse(id) {
+  const c = D().courses.find((x) => x.id === id);
+  c.shelf = '已暂停';
+  render();
+  toast('已暂停开放，本校家长端不再展示该课程（存量班级正常上完）');
+}
+
+function classRoster(id) {
+  const c = D().classes.find((x) => x.id === id);
+  const rows = D().students.filter((s) => s.course === c.course);
+  openModal(c.name + ' · 报名名单（' + c.enrolled + ' 人，示例展示 ' + rows.length + ' 人）', rows.length ? `
+    <div class="tbl-wrap"><table>
+      <tr><th>学生姓名</th><th>年级班级</th><th>家长手机号</th><th>支付状态</th></tr>
+      ${rows.map((s) => `<tr><td><b>${s.name}</b></td><td>${s.grade}</td><td>${s.phone}</td><td>${tag(s.pay)}</td></tr>`).join('')}
+    </table></div>` : '<div class="empty">暂无报名学生</div>');
+}
+
+function studentDetail(i) {
+  const s = D().students[i];
+  openModal('报名详情 · ' + s.name, `
+    <div class="desc">
+      <div class="k">学生姓名</div><div class="v">${s.name}</div>
+      <div class="k">年级班级</div><div class="v">${s.grade}</div>
+      <div class="k">报名课程</div><div class="v">${s.course}（${s.cls}）</div>
+      <div class="k">家长手机号</div><div class="v">${s.phone}（脱敏）</div>
+      <div class="k">报名时间</div><div class="v">${s.payTime}</div>
+      <div class="k">支付状态</div><div class="v">${tag(s.pay)} <span style="color:var(--muted);font-size:12px">资金由平台托管，学校端不涉及金额</span></div>
+      <div class="k">报名状态</div><div class="v">${tag(s.status)}</div>
+    </div>`);
+}
+
+function confirmSchedule(id) {
+  const s = D().schedule.find((x) => x.id === id);
+  openModal('确认排课 · ' + s.cls, `
+    <div class="desc">
+      <div class="k">班级名称</div><div class="v">${s.cls}</div>
+      <div class="k">上课时间</div><div class="v">${s.time}</div>
+      <div class="k">上课场地</div><div class="v">${s.venue}</div>
+      <div class="k">任课老师</div><div class="v">${s.teacher}（机构派驻，资质平台已审核）</div>
+      <div class="k">当前报名</div><div class="v">${s.enrolled} / ${s.max} 人</div>
+    </div>
+    <div class="m-tip"><b>注意事项：</b>确认前请核对该时段场地无校内活动冲突；确认后平台将通知机构与家长，按此安排开课。</div>`,
+    `<button class="btn btn-ghost" onclick="closeModal()">取消</button>
+     <button class="btn btn-primary" onclick="doConfirmSchedule('${id}')">确认排课</button>`);
+}
+function doConfirmSchedule(id) {
+  const s = D().schedule.find((x) => x.id === id);
+  s.status = '已确认';
+  closeModal();
+  render();
+  toast('排课已确认，平台将通知机构与家长按此安排开课');
+}
+function adjust(id, what) {
+  const s = D().schedule.find((x) => x.id === id);
+  s.status = '需调整';
+  render();
+  toast('已标记需调整' + what + '，平台将与机构重新协调');
+}
+function backToPlatform(id) {
+  const s = D().schedule.find((x) => x.id === id);
+  s.status = '需调整';
+  render();
+  toast('已退回平台重新安排');
+}
+
+function recordDetail(id) {
+  const r = D().records.find((x) => x.id === id);
+  openModal(`上课详情 · ${r.cls} 第 ${r.no} 节`, `
+    <div class="desc">
+      <div class="k">上课日期</div><div class="v">${r.date} ${r.time}</div>
+      <div class="k">上课场地</div><div class="v">${r.venue}</div>
+      <div class="k">任课老师</div><div class="v">${r.teacher}</div>
+      <div class="k">老师签到时间</div><div class="v">${r.signAt}</div>
+      <div class="k">学生出勤</div><div class="v">应到 ${r.due} 人 · 实到 ${r.actual || '—'} 人</div>
+      <div class="k">课堂记录</div><div class="v">${r.content || '—'}</div>
+      <div class="k">课堂情况</div><div class="v">${r.mood || '—'}</div>
+      <div class="k">课后评语</div><div class="v">${r.comment || '—'}</div>
+      ${r.note ? `<div class="k">异常备注</div><div class="v" style="color:var(--red)">${r.note}</div>` : ''}
+    </div>`);
+}
+function markAbnormal(id) {
+  const r = D().records.find((x) => x.id === id);
+  openModal('标记异常 · ' + r.cls + ' 第 ' + r.no + ' 节', `
+    <div class="form-row"><label>异常类型</label><input placeholder="如：老师迟到 / 实到人数不符 / 课程未正常开展"></div>
+    <div class="form-row"><label>异常说明</label><textarea rows="3" placeholder="请描述具体情况，平台将核实处理"></textarea></div>
+    <div class="m-tip">标记异常后，该节课暂停计入机构销课，平台将要求机构在 2 个工作日内说明。</div>`,
+    `<button class="btn btn-ghost" onclick="closeModal()">取消</button>
+     <button class="btn btn-primary" onclick="doMarkAbnormal('${id}')">提交异常</button>`);
+}
+function doMarkAbnormal(id) {
+  const r = D().records.find((x) => x.id === id);
+  r.record = '异常';
+  const x = D().confirms.find((c) => c.cls === r.cls && c.no === r.no);
+  if (x) { x.school = '有异常'; x.status = '异常'; }
+  closeModal();
+  render();
+  toast('已标记异常并上报平台，该节课暂停计入销课');
+}
+
+function confirmLesson(id) {
+  const x = D().confirms.find((c) => c.id === id);
+  x.school = '已确认';
+  x.status = '已确认销课';
+  render();
+  toast('已确认本节课真实完成，平台将计入机构销课');
+}
+function lessonAbnormal(id) {
+  const x = D().confirms.find((c) => c.id === id);
+  x.school = '有异常';
+  x.status = '异常';
+  render();
+  toast('已标记异常，该节课暂停计入销课，平台将跟进核实');
+}
+
+function feedback(id) {
+  openModal('提交学校反馈 · ' + id, `
+    <div class="form-row"><label>反馈意见</label><textarea rows="4" placeholder="请填写学校核实情况与处理建议（如：可调整至周四多功能室 / 本校暂无可转入班级）"></textarea></div>`,
+    `<button class="btn btn-ghost" onclick="closeModal()">取消</button>
+     <button class="btn btn-primary" onclick="doFeedback('${id}')">提交反馈</button>`);
+}
+function doFeedback(id) {
+  const a = D().aftersales.find((x) => x.id === id);
+  a.status = '学校已反馈';
+  closeModal();
+  render();
+  toast('反馈已提交，平台将根据学校意见继续处理');
+}
+
+render();
+</script>
+</body>
+</html>

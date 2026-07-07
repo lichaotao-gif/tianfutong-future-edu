@@ -1,5 +1,5 @@
 /* ============================================================
- * 天府通未来教育平台 · 后台管理系统 Demo
+ * 天府通未来教育中心 · 后台管理系统 Demo
  * React 18 + TSX + Ant Design 5（UMD 免构建，mock 数据）
  * 业务闭环：建校/场地 → 审机构 → 审老师 → 审课程 → 课程库
  *          → 分发学校 → 家长报名付费 → 按节销课 → 按月结算
@@ -354,12 +354,12 @@ const initDB = {
     { id: 'SH20260701004', parent: '周先生', student: '周子墨', cls: '创意水彩画课·周一班', type: '其他问题', org: '童心美育', school: '成都天府新区实验小学', time: '2026-07-01 09:12', status: '待处理' },
   ],
   users: [
-    { id: 'u1', name: '张运营', phone: '138****9001', role: '平台管理员', unit: '天府通未来教育平台', status: '启用', last: '2026-07-01 09:12' },
-    { id: 'u2', name: '李敏', phone: '139****9002', role: '审核人员', unit: '天府通未来教育平台', status: '启用', last: '2026-07-01 08:45' },
-    { id: 'u3', name: '王芳', phone: '137****9003', role: '财务人员', unit: '天府通未来教育平台', status: '启用', last: '2026-06-30 17:30' },
+    { id: 'u1', name: '张运营', phone: '138****9001', role: '平台管理员', unit: '天府通未来教育中心', status: '启用', last: '2026-07-01 09:12' },
+    { id: 'u2', name: '李敏', phone: '139****9002', role: '审核人员', unit: '天府通未来教育中心', status: '启用', last: '2026-07-01 08:45' },
+    { id: 'u3', name: '王芳', phone: '137****9003', role: '财务人员', unit: '天府通未来教育中心', status: '启用', last: '2026-06-30 17:30' },
     { id: 'u4', name: '周校长', phone: '138****1001', role: '学校管理员', unit: '成都天府新区实验小学', status: '启用', last: '2026-06-30 16:02' },
     { id: 'u5', name: '王总', phone: '138****2001', role: '机构管理员', unit: '成都智创未来教育科技有限公司', status: '启用', last: '2026-07-01 10:18' },
-    { id: 'u6', name: '测试客服', phone: '135****9006', role: '客服人员', unit: '天府通未来教育平台', status: '禁用', last: '2026-05-20 11:00' },
+    { id: 'u6', name: '测试客服', phone: '135****9006', role: '客服人员', unit: '天府通未来教育中心', status: '禁用', last: '2026-05-20 11:00' },
   ],
   roles: [
     { id: 'r1', name: '平台管理员', desc: '全部权限', perms: 24 }, { id: 'r2', name: '运营人员', desc: '学校 / 课程配置 / 班级', perms: 14 },
@@ -383,6 +383,108 @@ const initDB = {
 const patch = (list: any[], id: string, ch: any) => list.map((x) => (x.id === id ? { ...x, ...ch } : x));
 const money = (n: number) => '¥' + n.toLocaleString('zh-CN');
 const tblProps = { size: 'small' as const, rowKey: 'id', pagination: false as const, locale: { emptyText: '暂无数据' }, scroll: { x: 'max-content' } };
+const statThemes = [
+  { bg: 'linear-gradient(135deg, #eef6ff 0%, #ffffff 48%, #e9f0ff 100%)', glow: 'rgba(22,119,255,.18)', value: '#1765d8' },
+  { bg: 'linear-gradient(135deg, #fff4df 0%, #ffffff 48%, #fff0ec 100%)', glow: 'rgba(250,140,22,.18)', value: '#d46b08' },
+  { bg: 'linear-gradient(135deg, #e8fff8 0%, #ffffff 48%, #e6f6ff 100%)', glow: 'rgba(19,194,194,.18)', value: '#08979c' },
+  { bg: 'linear-gradient(135deg, #f5eeff 0%, #ffffff 48%, #f0f5ff 100%)', glow: 'rgba(114,46,209,.17)', value: '#642ab5' },
+  { bg: 'linear-gradient(135deg, #f6ffed 0%, #ffffff 48%, #eafff1 100%)', glow: 'rgba(82,196,26,.18)', value: '#389e0d' },
+  { bg: 'linear-gradient(135deg, #fff1f0 0%, #ffffff 48%, #fff7e6 100%)', glow: 'rgba(255,77,79,.16)', value: '#cf1322' },
+  { bg: 'linear-gradient(135deg, #e6fffb 0%, #ffffff 48%, #f9f0ff 100%)', glow: 'rgba(47,84,235,.16)', value: '#2f54eb' },
+  { bg: 'linear-gradient(135deg, #fff7e6 0%, #ffffff 48%, #fff1f0 100%)', glow: 'rgba(250,84,28,.17)', value: '#d4380d' },
+];
+const statCardStyle = (i: number): React.CSSProperties => ({
+  position: 'relative',
+  overflow: 'hidden',
+  border: '1px solid rgba(255,255,255,.76)',
+  background: statThemes[i % statThemes.length].bg,
+  boxShadow: '0 8px 22px rgba(28,45,72,.07), 0 1px 3px rgba(0,21,41,.04)',
+});
+const statGlowStyle = (i: number): React.CSSProperties => ({
+  position: 'absolute',
+  width: 84,
+  height: 84,
+  right: -28,
+  top: -30,
+  borderRadius: '50%',
+  background: statThemes[i % statThemes.length].glow,
+  pointerEvents: 'none',
+});
+
+/* ---------- 表格字段解释（列名后的 ? 悬停提示） ---------- */
+const COLDEF: Record<string, string> = {
+  '角色': '账号在平台中的角色，决定可见菜单与操作权限。',
+  '所属单位': '账号归属的平台 / 学校 / 机构。',
+  '最近登录': '最近一次登录系统的时间。',
+  '权限点': '该角色拥有的功能权限数量，点「权限分配」查看明细。',
+  '区域': '学校所在行政区域。',
+  '合作状态': '学校与平台的合作签约状态，已合作方可分发课程。',
+  '已配置课程': '已分发到该校并配置班级的课程数量。',
+  '场地': '学校可用于课后服务的场地数量。',
+  '场地类型': '教室 / 场馆类型，决定可承接的课程类别。',
+  '容纳人数': '场地最大容纳学生数，限制班级报名上限。',
+  '可用时间': '场地可排课的时间段（课后延时时段）。',
+  '适合课程': '该场地适合开展的课程类型。',
+  '对外开放': '是否允许非本校课程 / 学生使用该场地。',
+  '服务方向': '机构主营的课程方向。',
+  '提交时间': '提交平台审核的时间。',
+  '审核状态': '平台审核结果，悬停状态标签查看含义。',
+  '结算账户': '机构是否已配置对公收款账户；未配置无法结算打款。',
+  '资质类型': '老师提交的资质证书类型（教师资格证 / 从业证书等）。',
+  '教授方向': '老师主要授课的课程方向。',
+  '分类': '课程所属类目。',
+  '适合年级': '建议报名的学生年级范围。',
+  '课时': '一期课程包含的上课节次总数。',
+  '建议价格': '机构建议售价；实际以分发学校时的配置价为准。',
+  '成班/上限': '最低开班人数 / 班级最大容量。',
+  '所需场地': '开课所需的场地类型。',
+  '投放学校': '课程被分发（配置）到的学校；未分发学校的家长看不到该课程。',
+  '班级': '课程在学校形成的具体班级，家长报名的是班级。',
+  '上课时间': '固定周期的上课时间（课后延时服务时段）。',
+  '报名/上限': '当前报名人数 / 班级最大容量。',
+  '价格': '该校该班的实际报名价格。',
+  '截止': '报名截止时间。',
+  '成班状态': '是否达到最低开班人数（达到后可排课开课）。',
+  '上架状态': '该课程配置在对应学校家长端是否可见、可报名。',
+  '课时进度': '已上节次 / 总节次。',
+  '报名（成班 /上限）': '当前报名人数（最低成班人数 / 最大容量）。',
+  '班级状态': '班级当前阶段，悬停标签查看含义。',
+  '金额': '家长实付金额，进入平台监管账户托管。',
+  '支付方式': '家长付款渠道。',
+  '支付状态': '订单支付流转状态。',
+  '退款': '退款状态。',
+  '下单时间': '家长提交订单的时间。',
+  '上课日期': '本节课实际上课日期。',
+  '节次': '本班课程的第几节课。',
+  '应到/实到': '应到 = 班级报名人数；实到 = 实际到课人数。两者与签到不符会触发销课异常。',
+  '老师签到': '老师是否已在系统完成本节课签到。',
+  '学校确认': '学校对本节课真实完成的确认。',
+  '销课状态': '本节课的计费流转状态（待上课 → 已上课待确认 → 已确认销课 → 已计入结算；异常暂停计费）。',
+  '可结算金额': '本节课确认销课后计入当月结算的金额；待上课 / 异常节次不计费。',
+  '结算单号': '月度结算单编号。',
+  '月份': '结算所属自然月。',
+  '涉及学校': '本结算单包含的上课学校。',
+  '班级数': '本结算单涉及的班级数量。',
+  '完成课时': '当月经确认、可计费的课时数。',
+  '已完成课时': '当月经确认、可计费的课时数。',
+  '应结算': '当月所有已确认销课节次的金额合计。',
+  '应结算金额': '当月所有已确认销课节次的金额合计。',
+  '平台服务费': '按合作协议比例（Demo 为 10%）从应结算金额中扣除。',
+  '学校分成': '涉及学校分成时按约定比例扣除（规则预留，Demo 为 5%）。',
+  '退款扣减': '当月退款订单对应金额，从机构结算中扣回。',
+  '机构实收': '应结算金额 − 平台服务费 − 学校分成 − 退款扣减。',
+  '问题类型': '家长提交的售后问题分类。',
+  '课程班级': '售后涉及的课程与班级。',
+  '操作内容': '本次操作的具体描述。',
+  'IP': '操作来源 IP 地址。',
+  '结果': '操作是否执行成功。',
+  '状态': '当前业务状态，悬停状态标签查看含义，全量见右上角「名词解释」。',
+};
+const colTip = (cols: any[]) => (cols || []).map((c: any) =>
+  typeof c.title === 'string' && COLDEF[c.title]
+    ? { ...c, title: <span>{c.title} <Tooltip title={COLDEF[c.title]}><QuestionCircleOutlined style={{ color: '#b6bcc7', fontSize: 12, cursor: 'help' }} /></Tooltip></span> }
+    : c);
+const Tbl = (props: any) => <Table {...props} columns={colTip(props.columns)} />;
 const now = () => '2026-07-01 ' + new Date().toTimeString().slice(0, 5);
 
 /* ---------- 通用：审核弹窗 ---------- */
@@ -433,7 +535,7 @@ function Dashboard({ db, go }: any) {
   ];
   const mini = (rows: any[], cols: any[], key: string, title: string, tab: string) => (
     <Card size="small" title={title} extra={<a onClick={() => go(tab)}>查看全部 <RightOutlined /></a>} style={{ height: '100%' }}>
-      <Table {...tblProps} rowKey={key} columns={cols} dataSource={rows} />
+      <Tbl {...tblProps} rowKey={key} columns={cols} dataSource={rows} />
     </Card>
   );
   return (
@@ -444,8 +546,14 @@ function Dashboard({ db, go }: any) {
       <Row gutter={[16, 16]}>
         {stat.map((s, i) => (
           <Col span={6} key={i}>
-            <Card size="small" hoverable onClick={() => go(s.k)}>
-              <Statistic title={s.t} value={s.v} suffix={s.u} valueStyle={s.warn ? { color: '#fa8c16' } : {}} />
+            <Card size="small" hoverable onClick={() => go(s.k)} style={statCardStyle(i)} bodyStyle={{ position: 'relative', zIndex: 1 }}>
+              <div style={statGlowStyle(i)} />
+              <Statistic
+                title={<span style={{ color: '#5f6673' }}>{s.t}</span>}
+                value={s.v}
+                suffix={s.u}
+                valueStyle={{ color: s.warn ? '#fa8c16' : statThemes[i % statThemes.length].value, fontWeight: 700 }}
+              />
             </Card>
           </Col>
         ))}
@@ -485,7 +593,7 @@ function UserPage({ db, setDb }: any) {
       {
         key: 'users', label: '用户列表', children: (
           <Card size="small" title="平台账号" extra={<Button type="primary" icon={<PlusOutlined />} onClick={() => setAddOpen(true)}>新增用户</Button>}>
-            <Table {...tblProps} dataSource={db.users} columns={[
+            <Tbl {...tblProps} dataSource={db.users} columns={[
               { title: '姓名', dataIndex: 'name' }, { title: '手机号', dataIndex: 'phone' }, { title: '角色', dataIndex: 'role', render: (v: string) => <Tag color="blue">{v}</Tag> },
               { title: '所属单位', dataIndex: 'unit', ellipsis: true }, { title: '状态', dataIndex: 'status', render: (v: string) => <S v={v} /> }, { title: '最近登录', dataIndex: 'last' },
               { title: '操作', render: (_: any, r: any) => <Space><a onClick={() => message.info('Demo：查看用户 ' + r.name)}>查看</a><a onClick={() => message.info('Demo：编辑用户')}>编辑</a>
@@ -497,7 +605,7 @@ function UserPage({ db, setDb }: any) {
                 <Form.Item label="姓名"><Input placeholder="请输入姓名" /></Form.Item>
                 <Form.Item label="手机号"><Input placeholder="请输入手机号" /></Form.Item>
                 <Form.Item label="角色"><Select placeholder="请选择角色" options={db.roles.map((r: any) => ({ value: r.name, label: r.name }))} /></Form.Item>
-                <Form.Item label="所属单位"><Input placeholder="如：天府通未来教育平台 / 某学校 / 某机构" /></Form.Item>
+                <Form.Item label="所属单位"><Input placeholder="如：天府通未来教育中心 / 某学校 / 某机构" /></Form.Item>
               </Form>
             </Modal>
           </Card>
@@ -506,7 +614,7 @@ function UserPage({ db, setDb }: any) {
       {
         key: 'roles', label: '角色与权限', children: (
           <Card size="small" title="角色管理">
-            <Table {...tblProps} dataSource={db.roles} columns={[
+            <Tbl {...tblProps} dataSource={db.roles} columns={[
               { title: '角色名称', dataIndex: 'name', render: (v: string) => <Tag color="geekblue">{v}</Tag> }, { title: '说明', dataIndex: 'desc' },
               { title: '权限点', dataIndex: 'perms', render: (v: number) => v + ' 项' },
               { title: '操作', render: (_: any, r: any) => <a onClick={() => setPermRole(r)}>权限分配</a> },
@@ -530,7 +638,7 @@ function SchoolPage({ db, setDb, go }: any) {
   const [detail, setDetail] = useState<any>(null);
   return (
     <Card size="small" title="合作学校" extra={<Button type="primary" icon={<PlusOutlined />} onClick={() => setAddOpen(true)}>新增学校</Button>}>
-      <Table {...tblProps} dataSource={db.schools} columns={[
+      <Tbl {...tblProps} dataSource={db.schools} columns={[
         { title: '学校名称', dataIndex: 'name' }, { title: '区域', dataIndex: 'area' }, { title: '地址', dataIndex: 'addr', ellipsis: true },
         { title: '联系人', dataIndex: 'contact' }, { title: '电话', dataIndex: 'phone' },
         { title: '合作状态', dataIndex: 'status', render: (v: string) => <S v={v} /> },
@@ -565,7 +673,7 @@ function SchoolPage({ db, setDb, go }: any) {
             { key: '6', label: '已配置课程', children: detail.courses + ' 门' }, { key: '7', label: '场地数量', children: detail.venues + ' 个' },
           ]} />
           <Divider>本校场地</Divider>
-          <Table {...tblProps} dataSource={db.venues.filter((v: any) => v.school === detail.name)} columns={[
+          <Tbl {...tblProps} dataSource={db.venues.filter((v: any) => v.school === detail.name)} columns={[
             { title: '场地', dataIndex: 'name' }, { title: '类型', dataIndex: 'type' }, { title: '容纳', dataIndex: 'cap' }, { title: '状态', dataIndex: 'status', render: (v: string) => <S v={v} /> },
           ]} />
         </>}
@@ -580,7 +688,7 @@ function VenuePage({ db, setDb }: any) {
   const [schedule, setSchedule] = useState<any>(null);
   return (
     <Card size="small" title="学校场地" extra={<Button type="primary" icon={<PlusOutlined />} onClick={() => setAddOpen(true)}>新增场地</Button>}>
-      <Table {...tblProps} dataSource={db.venues} columns={[
+      <Tbl {...tblProps} dataSource={db.venues} columns={[
         { title: '场地名称', dataIndex: 'name' }, { title: '所属学校', dataIndex: 'school', ellipsis: true },
         { title: '类型', dataIndex: 'type', render: (v: string) => <Tag>{v}</Tag> }, { title: '容纳人数', dataIndex: 'cap' },
         { title: '可用时间', dataIndex: 'time' }, { title: '适合课程', dataIndex: 'fit' }, { title: '对外开放', dataIndex: 'open' },
@@ -602,7 +710,7 @@ function VenuePage({ db, setDb }: any) {
         </Form>
       </Modal>
       <Drawer open={!!schedule} width={480} title={'场地排课：' + (schedule?.name || '')} onClose={() => setSchedule(null)}>
-        <Table {...tblProps} rowKey="k" dataSource={[
+        <Tbl {...tblProps} rowKey="k" dataSource={[
           { k: 1, day: '周一', slot: '16:30-17:30', cls: '创意水彩画课·周一班' },
           { k: 2, day: '周二', slot: '16:30-17:30', cls: '少儿编程思维课·周二班' },
           { k: 3, day: '周三', slot: '16:30-17:30', cls: '人工智能启蒙课·周三班' },
@@ -624,7 +732,7 @@ function OrgPage({ db, setDb }: any) {
   };
   return (
     <Card size="small" title="培训机构入驻">
-      <Table {...tblProps} dataSource={db.orgs} columns={[
+      <Tbl {...tblProps} dataSource={db.orgs} columns={[
         { title: '机构名称', dataIndex: 'name', ellipsis: true }, { title: '联系人', dataIndex: 'contact' }, { title: '电话', dataIndex: 'phone' },
         { title: '服务方向', dataIndex: 'dir' }, { title: '提交时间', dataIndex: 'submitAt' },
         { title: '审核状态', dataIndex: 'status', render: (v: string) => <S v={v} /> },
@@ -667,7 +775,7 @@ function TeacherPage({ db, setDb }: any) {
   };
   return (
     <Card size="small" title="机构老师审核" extra={<Alert type="info" showIcon message="老师审核通过后，才能被绑定到课程或班级" style={{ padding: '2px 10px' }} />}>
-      <Table {...tblProps} dataSource={db.teachers} columns={[
+      <Tbl {...tblProps} dataSource={db.teachers} columns={[
         { title: '老师姓名', dataIndex: 'name' }, { title: '所属机构', dataIndex: 'org', ellipsis: true }, { title: '手机号', dataIndex: 'phone' },
         { title: '教授方向', dataIndex: 'dir' }, { title: '资质类型', dataIndex: 'cert', ellipsis: true },
         { title: '材料照片', render: (_: any, r: any) => <Space size={4}>
@@ -725,8 +833,8 @@ function CoursePage({ db, setDb }: any) {
   return (
     <>
       <Tabs items={[
-        { key: 'audit', label: `课程审核（${pend.filter((c: any) => c.status === '待审核').length} 待审）`, children: <Card size="small"><Table {...tblProps} dataSource={pend} columns={cols(false)} /></Card> },
-        { key: 'lib', label: `课程库（${lib.filter((c: any) => c.status === '已入课程库').length}）`, children: <Card size="small" title="课程库中的课程不直接对家长展示，须分发到学校后其学生方可见"><Table {...tblProps} dataSource={lib} columns={cols(true)} /></Card> },
+        { key: 'audit', label: `课程审核（${pend.filter((c: any) => c.status === '待审核').length} 待审）`, children: <Card size="small"><Tbl {...tblProps} dataSource={pend} columns={cols(false)} /></Card> },
+        { key: 'lib', label: `课程库（${lib.filter((c: any) => c.status === '已入课程库').length}）`, children: <Card size="small" title="课程库中的课程不直接对家长展示，须分发到学校后其学生方可见"><Tbl {...tblProps} dataSource={lib} columns={cols(true)} /></Card> },
       ]} />
       <Drawer open={!!detail} width={640} title="课程详情" onClose={() => setDetail(null)}
         extra={detail?.status === '待审核' && <Button type="primary" onClick={() => setAudit(detail)}>审核</Button>}>
@@ -779,7 +887,7 @@ function DeployPage({ db, setDb }: any) {
   return (
     <Card size="small" title="学校课程配置"
       extra={<Space><Alert type="warning" showIcon message="课程须分发到学校后，该校家长端才可见" style={{ padding: '2px 10px' }} /><Button type="primary" icon={<SendOutlined />} onClick={() => setWizOpen(true)}>分发课程到学校</Button></Space>}>
-      <Table {...tblProps} dataSource={db.deployments} columns={[
+      <Tbl {...tblProps} dataSource={db.deployments} columns={[
         { title: '课程名称', dataIndex: 'course' }, { title: '机构', dataIndex: 'org' }, { title: '投放学校', dataIndex: 'school', ellipsis: true },
         { title: '班级', dataIndex: 'className' }, { title: '上课时间', dataIndex: 'time', ellipsis: true }, { title: '场地', dataIndex: 'venue' }, { title: '老师', dataIndex: 'teacher' },
         { title: '报名/上限', render: (_: any, r: any) => `${r.enrolled} / ${r.max}` },
@@ -844,7 +952,7 @@ function ClassPage({ db, setDb }: any) {
   const [roster, setRoster] = useState<any>(null);
   return (
     <Card size="small" title="班级管理" extra={<Alert type="info" showIcon message="达到最低成班人数可成班；达到上限自动停止报名；未达标可取消 / 延期 / 转班" style={{ padding: '2px 10px' }} />}>
-      <Table {...tblProps} dataSource={db.classes} columns={[
+      <Tbl {...tblProps} dataSource={db.classes} columns={[
         { title: '班级名称', dataIndex: 'name', ellipsis: true }, { title: '机构', dataIndex: 'org' }, { title: '学校', dataIndex: 'school', ellipsis: true },
         { title: '场地', dataIndex: 'venue' }, { title: '时间', dataIndex: 'time', ellipsis: true }, { title: '老师', dataIndex: 'teacher' },
         { title: '课时进度', render: (_: any, r: any) => <Tooltip title={`已上 ${r.done} / 共 ${r.total} 节`}><Progress size="small" style={{ width: 90 }} percent={Math.round((r.done / r.total) * 100)} /></Tooltip> },
@@ -857,7 +965,7 @@ function ClassPage({ db, setDb }: any) {
           <a style={{ color: '#ff4d4f' }} onClick={() => message.info('Demo：关闭报名')}>关闭报名</a></Space> },
       ]} />
       <Drawer open={!!roster} width={480} title={'报名名单：' + (roster?.name || '')} onClose={() => setRoster(null)}>
-        {roster && <Table {...tblProps} rowKey="k" dataSource={Array.from({ length: Math.min(roster.enrolled, 8) }, (_, i) => ({
+        {roster && <Tbl {...tblProps} rowKey="k" dataSource={Array.from({ length: Math.min(roster.enrolled, 8) }, (_, i) => ({
           k: i, student: ['李小明', '张一诺', '陈梓航', '刘思彤', '黄雨桐', '周子墨', '王梓萱', '杨浩然'][i], parent: ['李先生', '张女士', '陈先生', '刘女士', '黄女士', '周先生', '王女士', '杨先生'][i], pay: '已支付',
         }))} columns={[{ title: '学生', dataIndex: 'student' }, { title: '家长', dataIndex: 'parent' }, { title: '支付', dataIndex: 'pay', render: (v: string) => <S v={v} /> }]} />}
         {roster && roster.enrolled > 8 && <div style={{ color: '#999', marginTop: 8 }}>…共 {roster.enrolled} 人（Demo 仅展示部分）</div>}
@@ -871,7 +979,7 @@ function OrderPage({ db, setDb }: any) {
   const [refund, setRefund] = useState<any>(null);
   return (
     <Card size="small" title="订单管理（家长一次性付费，资金进入平台监管账户）">
-      <Table {...tblProps} dataSource={db.orders} columns={[
+      <Tbl {...tblProps} dataSource={db.orders} columns={[
         { title: '订单编号', dataIndex: 'id' }, { title: '家长', dataIndex: 'parent' }, { title: '学生', dataIndex: 'student' },
         { title: '学校', dataIndex: 'school', ellipsis: true }, { title: '课程', dataIndex: 'course' }, { title: '班级', dataIndex: 'cls' },
         { title: '金额', dataIndex: 'amount', render: money }, { title: '支付方式', dataIndex: 'way' },
@@ -897,7 +1005,7 @@ function LessonPage({ db, setDb }: any) {
   const [detail, setDetail] = useState<any>(null);
   return (
     <Card size="small" title="上课销课（老师上完课提交记录 → 平台/学校确认 → 计入可结算）">
-      <Table {...tblProps} dataSource={db.lessons} columns={[
+      <Tbl {...tblProps} dataSource={db.lessons} columns={[
         { title: '班级', dataIndex: 'cls', ellipsis: true }, { title: '机构', dataIndex: 'org' }, { title: '学校', dataIndex: 'school', ellipsis: true },
         { title: '上课日期', dataIndex: 'date' }, { title: '节次', dataIndex: 'no', render: (v: number) => '第 ' + v + ' 节' }, { title: '老师', dataIndex: 'teacher' },
         { title: '应到/实到', render: (_: any, r: any) => `${r.due} / ${r.actual || '—'}` },
@@ -933,7 +1041,7 @@ function SettlePage({ db, setDb }: any) {
   return (
     <Card size="small" title="机构结算（按月：销课累计 − 平台服务费 − 学校分成 − 退款扣减）"
       extra={<Button type="primary" onClick={() => message.success('Demo：已按 2026-07 销课记录生成结算单草稿')}>生成本月结算单</Button>}>
-      <Table {...tblProps} dataSource={db.settlements} columns={[
+      <Tbl {...tblProps} dataSource={db.settlements} columns={[
         { title: '结算单号', dataIndex: 'id' }, { title: '机构名称', dataIndex: 'org', ellipsis: true }, { title: '月份', dataIndex: 'month' },
         { title: '涉及学校', dataIndex: 'schools', ellipsis: true }, { title: '班级数', dataIndex: 'clsCount' }, { title: '完成课时', dataIndex: 'doneLessons' },
         { title: '应结算', dataIndex: 'gross', render: money }, { title: '平台服务费', dataIndex: 'fee', render: money },
@@ -952,7 +1060,7 @@ function SettlePage({ db, setDb }: any) {
             { key: '4', label: '涉及学校', span: 2, children: detail.schools },
           ]} />
           <Divider>销课明细（每节课）</Divider>
-          <Table {...tblProps} dataSource={db.lessons.filter((l: any) => ['已计入结算', '已确认销课'].includes(l.status))} columns={[
+          <Tbl {...tblProps} dataSource={db.lessons.filter((l: any) => ['已计入结算', '已确认销课'].includes(l.status))} columns={[
             { title: '班级', dataIndex: 'cls', ellipsis: true }, { title: '日期', dataIndex: 'date' }, { title: '节次', dataIndex: 'no' },
             { title: '实到', dataIndex: 'actual' }, { title: '可结算', dataIndex: 'amount', render: money }, { title: '状态', dataIndex: 'status', render: (v: string) => <S v={v} /> },
           ]} />
@@ -975,7 +1083,7 @@ function AftersalePage({ db, setDb }: any) {
   const [handle, setHandle] = useState<any>(null);
   return (
     <Card size="small" title="售后管理">
-      <Table {...tblProps} dataSource={db.aftersales} columns={[
+      <Tbl {...tblProps} dataSource={db.aftersales} columns={[
         { title: '售后编号', dataIndex: 'id' }, { title: '家长', dataIndex: 'parent' }, { title: '学生', dataIndex: 'student' },
         { title: '课程班级', dataIndex: 'cls', ellipsis: true }, { title: '问题类型', dataIndex: 'type', render: (v: string) => <Tag color="volcano">{v}</Tag> },
         { title: '机构', dataIndex: 'org' }, { title: '学校', dataIndex: 'school', ellipsis: true }, { title: '申请时间', dataIndex: 'time' },
@@ -997,7 +1105,7 @@ function AftersalePage({ db, setDb }: any) {
 /* 十四、操作日志 */
 const LogPage = ({ db }: any) => (
   <Card size="small" title="操作日志">
-    <Table {...tblProps} rowKey="t" dataSource={db.logs} columns={[
+    <Tbl {...tblProps} rowKey="t" dataSource={db.logs} columns={[
       { title: '操作时间', dataIndex: 't' }, { title: '操作人', dataIndex: 'who' }, { title: '模块', dataIndex: 'mod', render: (v: string) => <Tag>{v}</Tag> },
       { title: '操作内容', dataIndex: 'act' }, { title: 'IP', dataIndex: 'ip' }, { title: '结果', dataIndex: 'ret', render: (v: string) => <Tag color="green">{v}</Tag> },
     ]} />
@@ -1044,7 +1152,7 @@ function App() {
         <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
           <div style={{ color: '#fff', padding: '18px 16px', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
             <div style={{ width: 34, height: 34, borderRadius: 8, background: '#1677ff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>未</div>
-            <div style={{ lineHeight: 1.25 }}><b>天府通未来教育平台</b><div style={{ fontSize: 11, opacity: .65 }}>后台管理系统 Demo</div></div>
+            <div style={{ lineHeight: 1.25 }}><b>天府通未来教育中心</b><div style={{ fontSize: 11, opacity: .65 }}>后台管理系统 Demo</div></div>
           </div>
           <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
             <Menu theme="dark" mode="inline" selectedKeys={[nav]} items={MENUS} onClick={(e: any) => setNav(e.key)} />
@@ -1053,7 +1161,7 @@ function App() {
             <div style={{ color: 'rgba(255,255,255,.45)', fontSize: 12, marginBottom: 8 }}>友情链接</div>
             <Space direction="vertical" size={4} style={{ width: '100%' }}>
               <a href="../" style={{ color: 'rgba(255,255,255,.82)', fontSize: 13 }}>家长端</a>
-              <a onClick={() => message.info('学校端开发中')} style={{ color: 'rgba(255,255,255,.82)', fontSize: 13 }}>学校端</a>
+              <a href="../school/" style={{ color: 'rgba(255,255,255,.82)', fontSize: 13 }}>学校端</a>
               <a href="../org/" style={{ color: 'rgba(255,255,255,.82)', fontSize: 13 }}>机构端 / 老师端</a>
             </Space>
           </div>

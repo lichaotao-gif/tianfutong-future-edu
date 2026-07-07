@@ -3,10 +3,11 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>天府通未来教育平台 · 机构端 Demo</title>
+<title>天府通未来教育中心 · 机构端 Demo</title>
 <style>
   :root {
-    --primary: #1677ff; --primary-soft: #e6f4ff;
+    --primary: #7c3aed; --primary-soft: #f3e8ff;
+    --org-sider: #21133f; --org-sider-deep: #170c2d; --org-sider-active: #7c3aed;
     --green: #52c41a; --green-soft: #f6ffed;
     --orange: #fa8c16; --orange-soft: #fff7e6;
     --red: #ff4d4f; --red-soft: #fff1f0;
@@ -19,16 +20,16 @@
 
   /* ---------- 布局 ---------- */
   .layout { display: flex; min-height: 100vh; }
-  .sider { width: 208px; height: 100vh; position: sticky; top: 0; background: #001529; color: rgba(255,255,255,.72); flex-shrink: 0; display: flex; flex-direction: column; }
+  .sider { width: 208px; height: 100vh; position: sticky; top: 0; background: linear-gradient(180deg, var(--org-sider) 0%, var(--org-sider-deep) 100%); color: rgba(255,255,255,.72); flex-shrink: 0; display: flex; flex-direction: column; }
   .sider .brand { display: flex; align-items: center; gap: 10px; padding: 18px 16px; color: #fff; }
-  .sider .brand .logo { width: 34px; height: 34px; border-radius: 8px; background: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; }
+  .sider .brand .logo { width: 34px; height: 34px; border-radius: 8px; background: linear-gradient(135deg, #8b5cf6, #ec4899); display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; }
   .sider .brand b { font-size: 14px; line-height: 1.3; }
   .sider .brand .sub { font-size: 11px; opacity: .6; font-weight: 400; }
   .menu { padding: 6px 0; flex: 1; min-height: 0; overflow-y: auto; }
   .menu-item { padding: 11px 20px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 14px; transition: background .15s, color .15s; }
   .menu-item:hover { color: #fff; }
-  .menu-item.active { background: var(--primary); color: #fff; }
-  .side-links { flex-shrink: 0; padding: 12px 14px 16px; border-top: 1px solid rgba(255,255,255,.12); background: #001529; }
+  .menu-item.active { background: var(--org-sider-active); color: #fff; box-shadow: inset 3px 0 0 rgba(255,255,255,.5); }
+  .side-links { flex-shrink: 0; padding: 12px 14px 16px; border-top: 1px solid rgba(255,255,255,.12); background: rgba(12,6,27,.32); }
   .side-links .side-title { color: rgba(255,255,255,.45); font-size: 12px; margin-bottom: 8px; }
   .side-links a { display: block; color: rgba(255,255,255,.82); font-size: 13px; text-decoration: none; padding: 3px 0; cursor: pointer; }
   .side-links a:hover { color: #fff; }
@@ -53,10 +54,45 @@
   /* ---------- 卡片 / 统计 ---------- */
   .card { background: #fff; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,21,41,.05); padding: 16px; }
   .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 16px; }
-  .stat { background: #fff; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,21,41,.05); padding: 16px; }
-  .stat .t { color: var(--muted); font-size: 13px; margin-bottom: 6px; }
-  .stat .v { font-size: 24px; font-weight: 700; }
-  .stat .v small { font-size: 13px; font-weight: 400; color: var(--muted); margin-left: 2px; }
+  .stat {
+    position: relative;
+    overflow: hidden;
+    background: var(--stat-bg, #fff);
+    border: 1px solid rgba(255,255,255,.76);
+    border-radius: 10px;
+    box-shadow: 0 8px 22px rgba(28,45,72,.07), 0 1px 3px rgba(0,21,41,.04);
+    padding: 16px;
+    transition: transform .18s ease, box-shadow .18s ease;
+  }
+  .stat::before {
+    content: "";
+    position: absolute;
+    width: 84px;
+    height: 84px;
+    right: -28px;
+    top: -30px;
+    border-radius: 50%;
+    background: var(--stat-glow, rgba(22,119,255,.14));
+  }
+  .stat::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(145deg, rgba(255,255,255,.34), rgba(255,255,255,0) 44%);
+    pointer-events: none;
+  }
+  .stat:hover { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(28,45,72,.11), 0 2px 5px rgba(0,21,41,.05); }
+  .stats .stat:nth-child(1) { --stat-bg: linear-gradient(135deg, #eef6ff 0%, #ffffff 48%, #e9f0ff 100%); --stat-glow: rgba(22,119,255,.18); --stat-value: #1765d8; }
+  .stats .stat:nth-child(2) { --stat-bg: linear-gradient(135deg, #fff4df 0%, #ffffff 48%, #fff0ec 100%); --stat-glow: rgba(250,140,22,.18); --stat-value: #d46b08; }
+  .stats .stat:nth-child(3) { --stat-bg: linear-gradient(135deg, #e8fff8 0%, #ffffff 48%, #e6f6ff 100%); --stat-glow: rgba(19,194,194,.18); --stat-value: #08979c; }
+  .stats .stat:nth-child(4) { --stat-bg: linear-gradient(135deg, #f5eeff 0%, #ffffff 48%, #f0f5ff 100%); --stat-glow: rgba(114,46,209,.17); --stat-value: #642ab5; }
+  .stats .stat:nth-child(5) { --stat-bg: linear-gradient(135deg, #f6ffed 0%, #ffffff 48%, #eafff1 100%); --stat-glow: rgba(82,196,26,.18); --stat-value: #389e0d; }
+  .stats .stat:nth-child(6) { --stat-bg: linear-gradient(135deg, #fff1f0 0%, #ffffff 48%, #fff7e6 100%); --stat-glow: rgba(255,77,79,.16); --stat-value: #cf1322; }
+  .stats .stat:nth-child(7) { --stat-bg: linear-gradient(135deg, #e6fffb 0%, #ffffff 48%, #f9f0ff 100%); --stat-glow: rgba(47,84,235,.16); --stat-value: #2f54eb; }
+  .stats .stat:nth-child(8) { --stat-bg: linear-gradient(135deg, #fff7e6 0%, #ffffff 48%, #fff1f0 100%); --stat-glow: rgba(250,84,28,.17); --stat-value: #d4380d; }
+  .stat .t { position: relative; z-index: 1; color: #5f6673; font-size: 13px; margin-bottom: 6px; }
+  .stat .v { position: relative; z-index: 1; color: var(--stat-value, var(--text)); font-size: 24px; font-weight: 700; }
+  .stat .v small { font-size: 13px; font-weight: 400; color: #697386; margin-left: 2px; }
   .stat.warn .v { color: var(--orange); }
   .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
   .mt { margin-top: 14px; }
@@ -142,14 +178,14 @@
   <aside class="sider">
     <div class="brand">
       <div class="logo">机</div>
-      <b>天府通未来教育平台<div class="sub">机构端 · Demo</div></b>
+      <b>天府通未来教育中心<div class="sub">机构端 · Demo</div></b>
     </div>
     <nav class="menu" id="menu"></nav>
     <div class="side-links">
       <div class="side-title">友情链接</div>
       <a href="../">家长端</a>
       <a href="../admin/">平台管理后台</a>
-      <a onclick="toast('学校端开发中')">学校端</a>
+      <a href="../school/">学校端</a>
     </div>
   </aside>
   <div class="main">
@@ -179,7 +215,7 @@
 
 <script>
 /* ============================================================
- * 天府通未来教育平台 · 机构端 / 老师端 单文件原型
+ * 天府通未来教育中心 · 机构端 / 老师端 单文件原型
  * 角色权限：机构管理员看全部；老师只看自己班级，隐藏财务
  * ============================================================ */
 
@@ -278,12 +314,15 @@ const RECORDS = [
 ];
 
 const LESSONS = [
-  { course: '人工智能启蒙课', cls: '天府一小 - AI启蒙一班', school: '天府一小', no: 4, date: '2026-07-01', teacher: '王老师', tid: 't1', due: 28, actual: 27, tSubmit: '已提交', confirm: '已确认', status: '已确认销课', amount: 2160 },
-  { course: '人工智能启蒙课', cls: '天府一小 - AI启蒙一班', school: '天府一小', no: 3, date: '2026-06-24', teacher: '王老师', tid: 't1', due: 28, actual: 28, tSubmit: '已提交', confirm: '已确认', status: '已计入结算', amount: 2240 },
-  { course: '人工智能启蒙课', cls: '天府一小 - AI启蒙一班', school: '天府一小', no: 5, date: '2026-07-08', teacher: '王老师', tid: 't1', due: 28, actual: 0, tSubmit: '未提交', confirm: '—', status: '待上课', amount: 0 },
-  { course: '人工智能启蒙课', cls: '天府二小 - AI启蒙一班', school: '天府二小', no: 2, date: '2026-07-03', teacher: '王老师', tid: 't1', due: 24, actual: 24, tSubmit: '已提交', confirm: '待确认', status: '已上课待确认', amount: 1920 },
-  { course: '科学实验探索课', cls: '天府实验小学 - 科学探索一班', school: '天府实验小学', no: 1, date: '2026-06-30', teacher: '张老师', tid: 't3', due: 18, actual: 17, tSubmit: '已提交', confirm: '已确认', status: '已确认销课', amount: 1360 },
-  { course: '科学实验探索课', cls: '天府实验小学 - 科学探索一班', school: '天府实验小学', no: 2, date: '2026-07-07', teacher: '张老师', tid: 't3', due: 18, actual: 16, tSubmit: '已提交', confirm: '待确认', status: '异常', amount: 0, note: '实到人数与签到不符，待补充说明' },
+  { course: '人工智能启蒙课', cls: '天府一小 - AI启蒙一班', school: '天府一小', venue: '科技教室', no: 4, date: '2026-07-01', time: '17:00-18:00', teacher: '王老师', tid: 't1', due: 28, actual: 27, sign: '已签到', tSubmit: '已提交', confirm: '已确认', status: '已确认销课', amount: 2160 },
+  { course: '人工智能启蒙课', cls: '天府一小 - AI启蒙一班', school: '天府一小', venue: '科技教室', no: 3, date: '2026-06-24', time: '17:00-18:00', teacher: '王老师', tid: 't1', due: 28, actual: 28, sign: '已签到', tSubmit: '已提交', confirm: '已确认', status: '已计入结算', amount: 2240 },
+  { course: '人工智能启蒙课', cls: '天府一小 - AI启蒙一班', school: '天府一小', venue: '科技教室', no: 5, date: '2026-07-08', time: '17:00-18:00', teacher: '王老师', tid: 't1', due: 28, actual: 0, sign: '未签到', tSubmit: '未提交', confirm: '—', status: '待上课', amount: 0 },
+  { course: '人工智能启蒙课', cls: '天府一小 - AI启蒙一班', school: '天府一小', venue: '科技教室', no: 6, date: '2026-07-15', time: '17:00-18:00', teacher: '王老师', tid: 't1', due: 28, actual: 0, sign: '未签到', tSubmit: '未提交', confirm: '—', status: '待上课', amount: 0 },
+  { course: '人工智能启蒙课', cls: '天府二小 - AI启蒙一班', school: '天府二小', venue: '计算机教室', no: 2, date: '2026-07-03', time: '17:00-18:00', teacher: '王老师', tid: 't1', due: 24, actual: 24, sign: '已签到', tSubmit: '已提交', confirm: '待确认', status: '已上课待确认', amount: 1920 },
+  { course: '人工智能启蒙课', cls: '天府二小 - AI启蒙一班', school: '天府二小', venue: '计算机教室', no: 3, date: '2026-07-10', time: '17:00-18:00', teacher: '王老师', tid: 't1', due: 24, actual: 0, sign: '未签到', tSubmit: '未提交', confirm: '—', status: '待上课', amount: 0 },
+  { course: '科学实验探索课', cls: '天府实验小学 - 科学探索一班', school: '天府实验小学', venue: '科学教室', no: 1, date: '2026-06-30', time: '17:00-18:00', teacher: '张老师', tid: 't3', due: 18, actual: 17, sign: '已签到', tSubmit: '已提交', confirm: '已确认', status: '已确认销课', amount: 1360 },
+  { course: '科学实验探索课', cls: '天府实验小学 - 科学探索一班', school: '天府实验小学', venue: '科学教室', no: 2, date: '2026-07-07', time: '17:00-18:00', teacher: '张老师', tid: 't3', due: 18, actual: 16, sign: '已签到', tSubmit: '已提交', confirm: '待确认', status: '异常', amount: 0, note: '实到人数与签到不符，待补充说明' },
+  { course: '科学实验探索课', cls: '天府实验小学 - 科学探索一班', school: '天府实验小学', venue: '科学教室', no: 3, date: '2026-07-14', time: '17:00-18:00', teacher: '张老师', tid: 't3', due: 18, actual: 0, sign: '未签到', tSubmit: '未提交', confirm: '—', status: '待上课', amount: 0 },
 ];
 
 const AFTERSALES = [
@@ -313,10 +352,10 @@ const NOTICES = [
 
 /* ---------- 状态 → 标签色 ---------- */
 const TAG = {
-  审核通过: 'tg-green', 已进入课程库: 'tg-green', 已确认: 'tg-green', 已提交: 'tg-green', 已报名: 'tg-green', 已完成: 'tg-green', 已到: 'tg-green', 已签到: 'tg-green',
-  待平台审核: 'tg-orange', 待确认: 'tg-orange', 待填写: 'tg-orange', 待审核: 'tg-orange', 待处理: 'tg-orange', 已上课待确认: 'tg-orange', 迟到: 'tg-orange', 机构需反馈: 'tg-orange', 待签到: 'tg-orange',
+  审核通过: 'tg-green', 已进入课程库: 'tg-green', 已确认: 'tg-green', 已提交: 'tg-green', 已报名: 'tg-green', 已完成: 'tg-green', 已到: 'tg-green', 已签到: 'tg-green', 已上: 'tg-green',
+  待平台审核: 'tg-orange', 待确认: 'tg-orange', 待填写: 'tg-orange', 待审核: 'tg-orange', 待处理: 'tg-orange', 已上课待确认: 'tg-orange', 迟到: 'tg-orange', 机构需反馈: 'tg-orange', 待签到: 'tg-orange', 未签到: 'tg-orange', 未提交: 'tg-orange',
   上课中: 'tg-blue', 平台处理中: 'tg-blue', 请假: 'tg-blue', 结算中: 'tg-blue',
-  已确认销课: 'tg-green', 已计入结算: 'tg-cyan', 待上课: 'tg-gray', 未提交: 'tg-gray', 审核驳回: 'tg-red', 异常: 'tg-red', 缺勤: 'tg-red', 已退款: 'tg-red',
+  已确认销课: 'tg-green', 已计入结算: 'tg-cyan', 待上课: 'tg-gray', 未上: 'tg-gray', 审核驳回: 'tg-red', 异常: 'tg-red', 缺勤: 'tg-red', 已退款: 'tg-red',
 };
 /* ---------- 名词解释词典（顶部 ? 可查全量，状态标签悬停即显） ---------- */
 const GLOSSARY = [
@@ -388,10 +427,12 @@ DEF['未提交'] = '老师尚未提交本节课的签到/课堂记录。';
 DEF['待审核'] = DEF['待审核 / 待平台审核'] || DEF['待审核'];
 DEF['待填写'] = '本节课已上完或临近，老师尚未填写课堂记录，请及时填写（销课以课堂记录为依据）。';
 DEF['待签到'] = '本节课尚未完成学生签到，需先签到再填写课堂记录。';
+DEF['未签到'] = DEF['待签到'];
 DEF['已签到'] = '本节课已完成学生签到，下一步填写或查看课堂记录。';
 
 const tag = (v) => `<span class="tag ${TAG[v] || 'tg-gray'}" ${DEF[v] ? `title="${DEF[v].replace(/"/g, '&quot;')}"` : ''}>${v}</span>`;
 const money = (n) => '¥' + n.toLocaleString('zh-CN');
+const esc = (v) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 /* ---------- 表格字段解释（列名后的 ? 悬停提示） ---------- */
 const COLDEF = {
@@ -525,8 +566,35 @@ const myStudents = () => {
 const myRecords = () => role === 'teacher' ? RECORDS.filter((r) => r.tid === 't1') : RECORDS;
 const myLessons = () => role === 'teacher' ? LESSONS.filter((l) => l.tid === 't1') : LESSONS;
 const myCheckins = () => role === 'teacher' ? CHECKINS.filter((c) => c.tid === 't1') : CHECKINS;
-const checkinStatus = (task) => task.submitted ? '已签到' : '待签到';
+const myLessonPlan = () => myLessons().slice().sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+const DEMO_TODAY = '2026-07-08';
+const checkinStatus = (task) => task.submitted ? '已签到' : '未签到';
 const recordOfTask = (task) => RECORDS.find((r) => r.id === task.recordId);
+const recordOfLesson = (lesson) => RECORDS.find((r) => r.tid === lesson.tid && r.no === lesson.no && r.date === lesson.date)
+  || RECORDS.find((r) => r.tid === lesson.tid && r.no === lesson.no && r.cls === lesson.cls);
+const checkinOfRecord = (record) => record ? CHECKINS.find((task) => task.recordId === record.id) : null;
+const checkinOfLesson = (lesson) => checkinOfRecord(recordOfLesson(lesson));
+const lessonStage = (l) => l.status === '待上课' ? '未上' : '已上';
+const lessonRecordStatus = (l) => l.tSubmit === '已提交' ? '已提交' : '未提交';
+const lessonAction = (l) => {
+  if (l.sign === '未签到') return `<button class="btn btn-primary" onclick="openLessonCheckin('${l.tid}', ${l.no}, '${l.date}')">去签到</button>`;
+  const record = recordOfLesson(l);
+  if (lessonRecordStatus(l) === '未提交') {
+    return record ? `<button class="btn btn-primary" onclick="openRecordForm('${record.id}')">填记录</button>` : `<button class="btn btn-primary" onclick="go('records')">填记录</button>`;
+  }
+  return `<button class="btn btn-ghost" onclick="viewLessonDetail('${l.tid}', ${l.no}, '${l.date}')">查看</button>`;
+};
+const lessonPlanTable = (list, showAmount = false) => `<div class="tbl-wrap"><table>
+  <tr><th>上课状态</th><th>课程</th><th>班级</th><th>学校</th><th>场地</th><th>节次</th><th>日期</th><th>时间</th><th>老师</th><th>签到状态</th><th>课堂记录</th><th>销课状态</th>${showAmount ? '<th>可结算金额</th>' : ''}<th>操作</th></tr>
+  ${list.map((l) => `<tr>
+    <td>${tag(lessonStage(l))}</td><td>${l.course}</td><td class="ell" title="${l.cls}">${l.cls}</td><td>${l.school}</td><td>${l.venue || '—'}</td>
+    <td>第 ${l.no} 节</td><td>${l.date}</td><td>${l.time || '—'}</td><td>${l.teacher}</td>
+    <td>${tag(l.sign || '未签到')}</td><td>${tag(lessonRecordStatus(l))}</td>
+    <td>${tag(l.status)}${l.note ? ` <span style="color:var(--muted);font-size:12px" title="${l.note}">ⓘ</span>` : ''}</td>
+    ${showAmount ? `<td>${l.amount ? '<b style="color:var(--green)">' + money(l.amount) + '</b>' : '—'}</td>` : ''}
+    <td>${lessonAction(l)}</td>
+  </tr>`).join('')}
+</table></div>`;
 
 /* ---------- 页面 ---------- */
 const PAGES = {
@@ -541,16 +609,16 @@ const PAGES = {
     </div>`;
     if (role === 'teacher') {
       const tasks = myCheckins();
+      const lessonPlan = myLessonPlan();
       const pendingSign = tasks.filter((t) => !t.submitted).length;
-      const pendingRecord = tasks.filter((t) => {
-        const r = recordOfTask(t);
-        return t.submitted && r && r.status === '待填写';
-      }).length;
-      const stats = [['我的授课班级', 2, '个'], ['今日上课任务', tasks.length, '节'], ['待签到课程', pendingSign, '节'], ['待提交课堂记录', pendingRecord, '份'], ['已完成课时', 6, '节'], ['本周上课安排', 3, '节']];
+      const pendingRecord = lessonPlan.filter((l) => l.sign === '已签到' && lessonRecordStatus(l) === '未提交').length;
+      const upcoming = lessonPlan.filter((l) => lessonStage(l) === '未上').length;
+      const completed = lessonPlan.filter((l) => lessonStage(l) === '已上').length;
+      const stats = [['我的授课班级', myClasses().length, '个'], ['已上课次', completed, '节'], ['未上课次', upcoming, '节'], ['未签到课次', pendingSign, '节'], ['课堂记录未提交', pendingRecord, '份'], ['本周上课安排', upcoming, '节']];
       return flow + `<div class="stats" style="grid-template-columns:repeat(3,1fr)">
         ${stats.map(([t, v, u]) => `<div class="stat"><div class="t">${t}</div><div class="v">${v}<small>${u}</small></div></div>`).join('')}
       </div>
-      <div class="card"><h4>今日上课任务</h4><div class="tbl-wrap"><table>
+      <div class="card"><h4>今日上课待办</h4><div class="tbl-wrap"><table>
         <tr><th>班级</th><th>时间</th><th>地点</th><th>状态</th><th>操作</th></tr>
         ${tasks.map((task) => {
           const r = recordOfTask(task);
@@ -558,12 +626,18 @@ const PAGES = {
           return `<tr><td>${task.className}</td><td>${task.time}</td><td>${task.school} · ${task.venue}</td>
           <td>${tag(checkinStatus(task))}</td><td><button class="btn btn-ghost" onclick="go('checkin')">${action}</button></td></tr>`;
         }).join('')}
-      </table></div></div>`;
+      </table></div></div>
+      <div class="card mt"><h4>我的成班课次安排</h4>${lessonPlanTable(lessonPlan)}</div>`;
     }
+    const lessonPlan = myLessonPlan();
+    const pendingSign = lessonPlan.filter((l) => l.sign === '未签到').length;
+    const pendingRecord = lessonPlan.filter((l) => l.sign === '已签到' && lessonRecordStatus(l) === '未提交').length;
+    const completed = lessonPlan.filter((l) => lessonStage(l) === '已上').length;
+    const upcoming = lessonPlan.filter((l) => lessonStage(l) === '未上').length;
     const stats = [['我的课程', 3, '门'], ['审核中课程', 1, '门'], ['已分发学校', 3, '所'], ['当前开课班级', 4, '个'],
-      ['今日上课班级', 2, '个'], ['本月已销课', 42, '节'], ['本月预估结算', '¥29,440', ''], ['待处理售后', 2, '单']];
+      ['已上课次', completed, '节'], ['未上课次', upcoming, '节'], ['未签到课次', pendingSign, '节'], ['课堂记录未提交', pendingRecord, '份']];
     return flow + `<div class="stats">
-      ${stats.map(([t, v, u], i) => `<div class="stat ${i === 7 || i === 1 ? 'warn' : ''}"><div class="t">${t}</div><div class="v">${v}<small>${u}</small></div></div>`).join('')}
+      ${stats.map(([t, v, u], i) => `<div class="stat ${i === 1 || i >= 6 ? 'warn' : ''}"><div class="t">${t}</div><div class="v">${v}<small>${u}</small></div></div>`).join('')}
     </div>
     <div class="grid2">
       <div class="card"><h4>今日上课安排</h4><div class="tbl-wrap"><table>
@@ -580,7 +654,8 @@ const PAGES = {
       <tr><th>班级</th><th>已确认课时</th><th>可结算金额</th><th>状态</th></tr>
       ${SETTLES[0].detail.map((d) => `<tr><td>${d.cls}</td><td>${d.lessons} 节</td><td>${money(d.amount)}</td><td>${tag('已确认销课')}</td></tr>`).join('')}
       <tr><td><b>合计</b></td><td><b>${SETTLES[0].lessons} 节</b></td><td><b>${money(SETTLES[0].gross)}</b></td><td>${tag('待审核')}</td></tr>
-    </table></div></div>`;
+    </table></div></div>
+    <div class="card mt"><h4>成班课次安排（已上 / 未上）</h4>${lessonPlanTable(lessonPlan, true)}</div>`;
   },
 
   /* 机构信息 */
@@ -662,25 +737,27 @@ const PAGES = {
   /* 上课签到 */
   checkin() {
     const tasks = myCheckins();
-    return `<div class="page-title"><span></span><span class="hint">${role === 'teacher' ? '先选择要上的课次，再进入签到或填写课堂记录' : '机构可查看全部老师今日上课任务'}</span></div>
-    <div class="tbl-wrap"><table>
+    const lessonPlan = myLessonPlan();
+    return `<div class="page-title"><span></span><span class="hint">${role === 'teacher' ? '先处理今天的签到/课堂记录，再查看后续排课' : '机构可查看今日待办，并跟踪全部成班课次'}</span></div>
+    <div class="card"><h4>今日上课待办<span style="color:var(--muted);font-size:12px;font-weight:400;margin-left:8px">今天需要签到、补课堂记录或查看记录的课次</span></h4><div class="tbl-wrap"><table>
       <tr><th>课程</th><th>班级</th><th>学校</th><th>地点</th><th>时间</th><th>老师</th><th>签到状态</th><th>课堂记录</th><th>操作</th></tr>
       ${tasks.map((task) => {
         const r = recordOfTask(task);
         const recordStatus = r ? r.status : '待填写';
         const primary = !task.submitted
-          ? `<button class="btn btn-primary" onclick="openCheckin('${task.id}')">签到</button>`
+          ? `<button class="btn btn-primary" onclick="openCheckin('${task.id}')">去签到</button>`
           : r && r.status === '待填写'
-            ? `<button class="btn btn-primary" onclick="openRecordForm('${r.id}')">填写记录</button>`
+            ? `<button class="btn btn-primary" onclick="openRecordForm('${r.id}')">填记录</button>`
             : r
-              ? `<button class="btn btn-ghost" onclick="viewRecord('${r.id}')">查看记录</button>`
-              : `<button class="btn btn-ghost" onclick="toast('暂无课堂记录')">查看记录</button>`;
+              ? `<button class="btn btn-ghost" onclick="viewLessonDetailByRecord('${r.id}')">查看</button>`
+              : `<button class="btn btn-ghost" onclick="toast('暂无课堂记录')">查看</button>`;
         return `<tr>
           <td>${task.course}</td><td class="ell">${task.className}</td><td>${task.school}</td><td>${task.venue}</td><td>${task.time}</td><td>${task.teacher}</td>
           <td>${tag(checkinStatus(task))}</td><td>${tag(recordStatus)}</td><td>${primary}</td>
         </tr>`;
       }).join('')}
-    </table></div>`;
+    </table></div></div>
+    <div class="card mt"><h4>${role === 'teacher' ? '我的全部课次安排' : '全部成班课次安排'}</h4>${lessonPlanTable(lessonPlan)}</div>`;
   },
 
   /* 课堂记录 */
@@ -688,14 +765,14 @@ const PAGES = {
     const list = myRecords();
     return `<div class="page-title"><span></span><span class="hint">${role === 'teacher' ? '上完课请及时填写课堂记录，销课以记录为依据' : '查看全部老师课堂记录'}</span></div>
     <div class="tbl-wrap"><table>
-      <tr><th>班级名称</th><th>第几节</th><th>上课日期</th><th>上课内容</th><th>到课</th><th>缺勤</th><th>课堂情况</th><th>课后评语</th><th>状态</th>${role === 'teacher' ? '<th>操作</th>' : ''}</tr>
+      <tr><th>班级名称</th><th>第几节</th><th>上课日期</th><th>上课内容</th><th>到课</th><th>缺勤</th><th>课堂情况</th><th>课后评语</th><th>状态</th><th>操作</th></tr>
       ${list.map((r) => `<tr>
         <td class="ell">${r.cls}</td><td>第 ${r.no} 节</td><td>${r.date}</td>
         <td class="ell">${r.content || '<span style="color:#c3c9d4">—</span>'}</td>
         <td>${r.attend || '—'}</td><td>${r.status === '已提交' ? r.absent : '—'}</td>
         <td class="ell" title="${r.mood}">${r.mood || '—'}</td><td class="ell" title="${r.comment}">${r.comment || '—'}</td>
         <td>${tag(r.status)}</td>
-        ${role === 'teacher' ? `<td>${r.status === '待填写' ? `<span class="lnk" onclick="openRecordForm('${r.id}')">填写记录</span>` : `<span class="lnk" onclick="viewRecord('${r.id}')">查看</span>`}</td>` : ''}
+        <td>${r.status === '待填写' ? `<span class="lnk" onclick="openRecordForm('${r.id}')">填记录</span>` : `<span class="lnk" onclick="viewRecord('${r.id}')">查看</span>`}</td>
       </tr>`).join('')}
     </table></div>`;
   },
@@ -704,16 +781,8 @@ const PAGES = {
   lessons() {
     const list = myLessons();
     const isT = role === 'teacher';
-    return `<div class="page-title"><span></span><span class="hint">${isT ? '仅展示我的销课记录（金额由机构与平台结算，老师端不展示）' : '每上一节课生成一条销课记录，平台/学校确认后计入结算'}</span></div>
-    <div class="tbl-wrap"><table>
-      <tr><th>课程</th><th>班级</th><th>学校</th><th>节次</th><th>上课日期</th><th>老师</th><th>应到/实到</th><th>老师提交</th><th>平台/学校确认</th><th>销课状态</th>${isT ? '' : '<th>可结算金额</th>'}</tr>
-      ${list.map((l) => `<tr>
-        <td>${l.course}</td><td class="ell">${l.cls}</td><td>${l.school}</td><td>第 ${l.no} 节</td><td>${l.date}</td><td>${l.teacher}</td>
-        <td>${l.due} / ${l.actual || '—'}</td><td>${tag(l.tSubmit)}</td><td>${l.confirm === '—' ? '—' : tag(l.confirm)}</td>
-        <td>${tag(l.status)}${l.note ? ` <span style="color:var(--muted);font-size:12px" title="${l.note}">ⓘ</span>` : ''}</td>
-        ${isT ? '' : `<td>${l.amount ? '<b style="color:var(--green)">' + money(l.amount) + '</b>' : '—'}</td>`}
-      </tr>`).join('')}
-    </table></div>`;
+    return `<div class="page-title"><span></span><span class="hint">${isT ? '仅展示我的课次和销课状态（老师端不展示金额）' : '已上和未上课次统一展示；平台/学校确认后计入结算'}</span></div>
+    ${lessonPlanTable(list, !isT)}`;
   },
 
   /* 售后管理 */
@@ -834,11 +903,11 @@ function submitTeacherForm() {
 /* 老师上课记录 */
 function teacherLessons(id) {
   const t = TEACHERS.find((x) => x.id === id);
-  const rows = LESSONS.filter((l) => l.tid === id && l.status !== '待上课');
+  const rows = LESSONS.filter((l) => l.tid === id);
   openModal(t.name + ' · 上课记录', rows.length ? `
     <div class="tbl-wrap"><table>
-      <tr><th>班级</th><th>节次</th><th>日期</th><th>应到/实到</th><th>销课状态</th></tr>
-      ${rows.map((l) => `<tr><td>${l.cls}</td><td>第 ${l.no} 节</td><td>${l.date}</td><td>${l.due}/${l.actual}</td><td>${tag(l.status)}</td></tr>`).join('')}
+      <tr><th>班级</th><th>节次</th><th>日期</th><th>时间</th><th>签到</th><th>课堂记录</th><th>应到/实到</th><th>销课状态</th></tr>
+      ${rows.map((l) => `<tr><td>${l.cls}</td><td>第 ${l.no} 节</td><td>${l.date}</td><td>${l.time || '—'}</td><td>${tag(l.sign || '未签到')}</td><td>${tag(lessonRecordStatus(l))}</td><td>${l.due}/${l.actual || '—'}</td><td>${tag(l.status)}</td></tr>`).join('')}
     </table></div>` : '<div class="empty">暂无上课记录</div>');
 }
 /* 课程详情 */
@@ -946,6 +1015,54 @@ function settleDetail(i) {
 }
 
 /* 签到交互 */
+function openLessonCheckin(tid, no, date) {
+  const lesson = LESSONS.find((l) => l.tid === tid && l.no === no && l.date === date);
+  if (!lesson) return toast('未找到课次');
+  if (lesson.date > DEMO_TODAY) return toast(`未到上课时间：${lesson.date} ${lesson.time || ''}，请到课前再签到`);
+  const task = checkinOfLesson(lesson);
+  if (!task) return toast('该课次暂未生成今日签到任务');
+  openCheckin(task.id);
+}
+function viewLessonDetail(tid, no, date) {
+  const lesson = LESSONS.find((l) => l.tid === tid && l.no === no && l.date === date);
+  if (!lesson) return toast('未找到课次');
+  const record = recordOfLesson(lesson);
+  const task = checkinOfLesson(lesson);
+  const rows = task ? task.students.map((s) => `
+    <tr><td>${s.name}</td><td>${tag(s.st)}</td></tr>`).join('') : '';
+  openModal(`课次详情 · ${lesson.cls} 第 ${lesson.no} 节`, `
+    <div class="desc">
+      <div class="k">课程</div><div class="v">${lesson.course}</div>
+      <div class="k">学校 / 场地</div><div class="v">${lesson.school} · ${lesson.venue || '—'}</div>
+      <div class="k">上课时间</div><div class="v">${lesson.date} ${lesson.time || ''}</div>
+      <div class="k">老师</div><div class="v">${lesson.teacher}</div>
+      <div class="k">签到状态</div><div class="v">${tag(lesson.sign || '未签到')}</div>
+      <div class="k">课堂记录</div><div class="v">${tag(record ? record.status : lessonRecordStatus(lesson))}</div>
+      <div class="k">销课状态</div><div class="v">${tag(lesson.status)}${lesson.note ? ` <span style="color:var(--muted);font-size:12px">${lesson.note}</span>` : ''}</div>
+      <div class="k">应到 / 实到</div><div class="v">${lesson.due} 人 / ${lesson.actual || '—'} 人</div>
+    </div>
+    <h5>签到明细</h5>
+    ${task ? `<div class="tbl-wrap"><table><tr><th>学生</th><th>签到状态</th></tr>${rows}</table></div>` : '<div class="empty">暂无签到明细</div>'}
+    <h5>课堂记录</h5>
+    ${record ? `
+      <div class="desc">
+        <div class="k">上课内容</div><div class="v">${record.content || '—'}</div>
+        <div class="k">到课 / 缺勤</div><div class="v">${record.attend || '—'} 人 / ${record.status === '已提交' ? record.absent : '—'} 人</div>
+        <div class="k">课堂情况</div><div class="v">${record.mood || '—'}</div>
+        <div class="k">课后评语</div><div class="v">${record.comment || '—'}</div>
+      </div>` : '<div class="empty">暂无课堂记录</div>'}`,
+    `<button class="btn btn-ghost" onclick="closeModal()">关闭</button>
+     ${task ? `<button class="btn btn-ghost" onclick="openCheckin('${task.id}')">${task.submitted ? '修改签到' : '去签到'}</button>` : ''}
+     ${record ? `<button class="btn btn-primary" onclick="openRecordForm('${record.id}')">${record.status === '已提交' ? '修改记录' : '填写记录'}</button>` : ''}`);
+}
+function viewLessonDetailByRecord(id) {
+  const record = RECORDS.find((r) => r.id === id);
+  if (!record) return toast('未找到课堂记录');
+  const lesson = LESSONS.find((l) => l.tid === record.tid && l.no === record.no && l.date === record.date)
+    || LESSONS.find((l) => l.tid === record.tid && l.no === record.no && l.cls === record.cls);
+  if (!lesson) return viewRecord(id);
+  viewLessonDetail(lesson.tid, lesson.no, lesson.date);
+}
 function openCheckin(id) {
   const task = CHECKINS.find((x) => x.id === id);
   if (!task) return toast('未找到上课任务');
@@ -982,6 +1099,8 @@ function submitSign(id) {
   task.submitted = true;
   const r = recordOfTask(task);
   if (r && r.status !== '已提交') r.status = '待填写';
+  const lesson = r ? LESSONS.find((l) => l.tid === r.tid && l.no === r.no && l.cls === r.cls) : null;
+  if (lesson) lesson.sign = '已签到';
   closeModal();
   render();
   toast('签到已提交，可以继续填写课堂记录');
@@ -990,13 +1109,13 @@ function submitSign(id) {
 /* 课堂记录表单 */
 function openRecordForm(id) {
   const r = RECORDS.find((x) => x.id === id);
-  openModal(`填写课堂记录 · ${r.cls} 第 ${r.no} 节`, `
-    <div class="form-row"><label>本节课内容</label><input id="rcContent" placeholder="如：AI 故事创作"></div>
-    <div class="form-row"><label>课堂情况</label><textarea id="rcMood" rows="2" placeholder="课堂气氛、学生参与度等"></textarea></div>
-    <div class="form-row"><label>课后评语</label><textarea id="rcComment" rows="2" placeholder="给家长/学生的整体评语"></textarea></div>
+  openModal(`${r.status === '已提交' ? '修改' : '填写'}课堂记录 · ${r.cls} 第 ${r.no} 节`, `
+    <div class="form-row"><label>本节课内容</label><input id="rcContent" value="${esc(r.content)}" placeholder="如：AI 故事创作"></div>
+    <div class="form-row"><label>课堂情况</label><textarea id="rcMood" rows="2" placeholder="课堂气氛、学生参与度等">${esc(r.mood)}</textarea></div>
+    <div class="form-row"><label>课后评语</label><textarea id="rcComment" rows="2" placeholder="给家长/学生的整体评语">${esc(r.comment)}</textarea></div>
     <div class="form-row"><label>备注（选填）</label><input id="rcNote" placeholder="需要机构或平台注意的事项"></div>`,
     `<button class="btn btn-ghost" onclick="closeModal()">取消</button>
-     <button class="btn btn-primary" onclick="submitRecord('${id}')">提交记录</button>`);
+     <button class="btn btn-primary" onclick="submitRecord('${id}')">${r.status === '已提交' ? '保存修改' : '提交记录'}</button>`);
 }
 function submitRecord(id) {
   const r = RECORDS.find((x) => x.id === id);
@@ -1014,6 +1133,7 @@ function submitRecord(id) {
   if (task) task.submitted = true;
   const lesson = LESSONS.find((l) => l.tid === r.tid && l.no === r.no && l.cls === r.cls);
   if (lesson) {
+    lesson.sign = '已签到';
     lesson.actual = r.attend;
     lesson.tSubmit = '已提交';
     lesson.confirm = '待确认';
@@ -1021,7 +1141,7 @@ function submitRecord(id) {
   }
   closeModal();
   render();
-  toast('课堂记录已提交，本节课进入销课流程');
+  toast('课堂记录已保存，本节课进入销课流程');
 }
 function viewRecord(id) {
   const r = RECORDS.find((x) => x.id === id);
@@ -1033,7 +1153,9 @@ function viewRecord(id) {
       <div class="k">课堂情况</div><div class="v">${r.mood}</div>
       <div class="k">课后评语</div><div class="v">${r.comment}</div>
       <div class="k">提交状态</div><div class="v">${tag(r.status)}</div>
-    </div>`);
+    </div>`,
+    `<button class="btn btn-ghost" onclick="closeModal()">关闭</button>
+     <button class="btn btn-primary" onclick="openRecordForm('${r.id}')">修改记录</button>`);
 }
 
 render();
