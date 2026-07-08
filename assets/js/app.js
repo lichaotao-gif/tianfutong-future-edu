@@ -347,7 +347,7 @@
     const available = classes.filter((cls) => canBuyClass(c, cls));
     const hasSeat = classes.some((cls) => cls.enrolled < cls.maxSeats && classStatus(c, cls) !== '已满员');
     const displayClass = selectedClass || classes[0];
-    const defaultPlace = selectedClass?.place || (classes.length === 1 ? classes[0].place : '点击立即报名后选择班级和场地') || c.place;
+    const defaultPlace = selectedClass?.place || (classes.length === 1 ? classes[0].place : '点击立即报名后选择班次和场地') || c.place;
     const prices = classes.length ? classes.map((cls) => cls.price || c.price) : [c.price];
     const price = selectedClass?.price || Math.min(...prices);
     const min = selectedClass?.minClass || Math.min(...(classes.length ? classes.map((cls) => cls.minClass || c.minClass) : [c.minClass]));
@@ -379,7 +379,7 @@
             <div class="kv"><span class="k">上课学校</span><span class="v">${esc(currentStudent().school)}</span></div>
             ${selectedClass ? `<div class="kv"><span class="k">报名班级</span><span class="v bold">${esc(selectedClass.name)}</span></div>` : ''}
             <div class="kv"><span class="k">上课地点</span><span class="v">${esc(defaultPlace)}</span></div>
-            <div class="kv"><span class="k">上课时间</span><span class="v">${esc(selectedClass?.time || (classes.length === 1 ? classes[0].time : '点击立即报名后选择班级和时间段') || c.time)}</span></div>
+            <div class="kv"><span class="k">上课时间</span><span class="v">${esc(selectedClass?.time || (classes.length === 1 ? classes[0].time : '点击立即报名后选择班次和时间段') || c.time)}</span></div>
             <div class="kv"><span class="k">课时数量</span><span class="v">共 ${c.lessons} 次</span></div>
             <div class="kv"><span class="k">成班人数</span><span class="v">满 ${min} 人开班${selectedClass ? ` · 最大 ${max} 人` : ''}</span></div>
             ${displayClass ? `<div class="kv"><span class="k">购买时间</span><span class="v">${esc(buyRangeText(c, displayClass))}</span></div>` : ''}
@@ -429,7 +429,7 @@
     </div>`);
   }
 
-  /* ---------- 班级 / 时段选择弹层（SKU：课后延时服务多班次） ---------- */
+  /* ---------- 上课班次选择弹层（SKU：时间 + 场地 + 老师 + 名额） ---------- */
   /* 时间冲突：与已报名（进行中）课程同一天且时段重叠时提醒，家长确认后仍可报名 */
   const parseSlot = (t) => {
     const d = (String(t).match(/每?周([一二三四五六日])/) || [])[1];
@@ -457,7 +457,7 @@
     <div class="sheet-mask" id="skuMask" data-course="${esc(c.id)}" onclick="if(event.target===this)App.closeSkuSheet()">
       <div class="sheet">
         <div class="handle"></div>
-        <h3>选择班级</h3>
+        <h3>选择上课班次</h3>
         ${classes.map((k, i) => {
           const isFull = k.enrolled >= k.maxSeats || classStatus(c, k) === '已满员';
           const win = buyWindow(c, k);
@@ -496,7 +496,7 @@
   function confirmClassEnroll(cid, classId) {
     const c = courseById(cid);
     const cls = c ? schoolClasses(c).find((k) => k.id === routeId(classId || '')) : null;
-    if (!cls) return toast('请选择班级');
+    if (!cls) return toast('请选择上课班次');
     const win = buyWindow(c, cls);
     if (win.state === 'future') return noticeBuyTime(cid, cls.id);
     if (win.state === 'ended') return toast('该班级已过购买结束时间');
@@ -533,7 +533,7 @@
     const c = courseById(cid);
     const classes = c ? schoolClasses(c).filter((k) => parentVisibleClass(c, k)) : [];
     const available = classes.filter((k) => canBuyClass(c, k));
-    if (!classes.length) return toast('当前学校暂无可报名班级');
+    if (!classes.length) return toast('当前学校暂无可报名班次');
     if (classes.length === 1 && available.length === 1) return confirmConflictAndGo(cid, available[0]);
     if (classes.length === 1 && !available.length && buyWindow(c, classes[0]).state === 'future') return noticeBuyTime(cid, classes[0].id);
     if (classes.length === 1 && !available.length) return toast('当前班级暂不能报名');
@@ -551,7 +551,7 @@
     const c = courseById(cid);
     const classes = c ? schoolClasses(c).filter((k) => parentVisibleClass(c, k)) : [];
     const cls = classes[skuSel];
-    if (!cls) return toast('请选择班级');
+    if (!cls) return toast('请选择上课班次');
     const win = buyWindow(c, cls);
     if (win.state === 'future') return noticeBuyTime(cid, cls.id);
     if (win.state === 'ended') return toast('该班级已过购买结束时间');
@@ -563,7 +563,7 @@
    * 屏幕 4：报名确认页
    * ============================================================ */
   let enrollConfirmed = false;
-  let enrollClass = null; // 本次报名所选班级（SKU）
+  let enrollClass = null; // 本次报名所选上课班次（SKU）
   function screenEnroll(id, classId) {
     const c = courseById(id);
     if (!c) return screenHome();

@@ -316,6 +316,7 @@ const initDB = {
   ],
   deployments: [
     { id: 'd1', course: '人工智能启蒙课', org: '智创未来', school: '成都天府新区实验小学', className: '周三班', time: '每周三 16:30-17:30', venue: '科技教室 A', teacher: '王思远', enrolled: 18, max: 30, min: 10, price: 800, signupStart: '2026-07-01', deadline: '2026-07-08', formed: '已成班', shelf: '已上架' },
+    { id: 'd1b', course: '人工智能启蒙课', org: '智创未来', school: '成都天府新区实验小学', className: '周五拓展班', time: '每周五 17:00-18:00', venue: '计算机教室 1', teacher: '王思远', enrolled: 6, max: 24, min: 10, price: 820, signupStart: '2026-07-12', deadline: '2026-07-20', formed: '未到购买时间', shelf: '已上架' },
     { id: 'd2', course: '人工智能启蒙课', org: '智创未来', school: '成都天府新区第七小学', className: '周五班', time: '每周五 16:30-17:30', venue: '科学实验室', teacher: '王思远', enrolled: 8, max: 30, min: 10, price: 780, signupStart: '2026-07-01', deadline: '2026-07-10', formed: '待成班', shelf: '已上架' },
     { id: 'd3', course: '少儿编程思维课', org: '智创未来', school: '成都天府新区实验小学', className: '周二班', time: '每周二 16:30-17:30', venue: '计算机教室 1', teacher: '陈亦然', enrolled: 25, max: 30, min: 12, price: 900, signupStart: '2026-07-02', deadline: '2026-07-12', formed: '已成班', shelf: '已上架' },
     { id: 'd4', course: '少儿编程思维课', org: '智创未来', school: '成都华阳实验小学', className: '周四班', time: '每周四 16:30-17:30', venue: '多功能室', teacher: '陈亦然', enrolled: 5, max: 30, min: 12, price: 850, signupStart: '2026-07-12', deadline: '2026-07-20', formed: '未到购买时间', shelf: '已上架' },
@@ -972,6 +973,7 @@ function CoursePage({ db, setDb }: any) {
 /* 八、学校课程配置（核心：课程分发） */
 function DeployPage({ db, setDb }: any) {
   const [wizOpen, setWizOpen] = useState(false);
+  const [slotDetail, setSlotDetail] = useState<any>(null);
   const [step, setStep] = useState(0);
   const [selCourse, setSelCourse] = useState<string>();
   const [selSchools, setSelSchools] = useState<string[]>([]);
@@ -990,6 +992,23 @@ function DeployPage({ db, setDb }: any) {
   };
   const selectedVenueItems = selSchools.map((sc) => ({ school: sc, venue: venueOf(sc) }));
   const hasMissingVenue = selectedVenueItems.some((x) => !x.venue);
+  const deploymentGroups = Object.values(db.deployments.reduce((acc: any, item: any) => {
+    const key = item.course + '|' + item.school;
+    if (!acc[key]) acc[key] = { key, course: item.course, org: item.org, school: item.school, items: [] };
+    acc[key].items.push(item);
+    return acc;
+  }, {})).map((g: any) => ({
+    ...g,
+    id: g.key,
+    classCount: g.items.length,
+    enrolled: g.items.reduce((sum: number, x: any) => sum + x.enrolled, 0),
+    max: g.items.reduce((sum: number, x: any) => sum + x.max, 0),
+    minPrice: Math.min(...g.items.map((x: any) => x.price)),
+    signupStart: g.items.map((x: any) => x.signupStart).sort()[0],
+    deadline: g.items.map((x: any) => x.deadline).sort().slice(-1)[0],
+    shelf: g.items.every((x: any) => x.shelf === '已下架') ? '已下架' : g.items.some((x: any) => x.shelf === '待确认') ? '待确认' : '已上架',
+    status: g.items.some((x: any) => x.formed === '报名中') ? '报名中' : g.items.some((x: any) => x.formed === '未到购买时间') ? '未到购买时间' : g.items[0]?.formed,
+  }));
   const reset = () => { setWizOpen(false); setStep(0); setSelCourse(undefined); setSelSchools([]); };
   const publish = () => {
     if (hasMissingVenue) return message.warning('请先为每所学校选择已创建且启用的场地');
@@ -1003,26 +1022,26 @@ function DeployPage({ db, setDb }: any) {
       venue: venueOf(sc), time: cfg.time, teacher: course.teacher, total: course.lessons, done: 0, min: cfg.min, max: cfg.max, enrolled: 0, status: '待确认',
     }));
     setDb((d: any) => ({ ...d, deployments: [...rows, ...d.deployments], classes: [...clsRows, ...d.classes] }));
-    message.success(`已将「${course.name}」分发到 ${selSchools.length} 所学校，待学校确认开放后家长端可见`);
+    message.success(`已将「${course.name}」分发到 ${selSchools.length} 所学校，并创建首个上课班次`);
     reset();
   };
   return (
     <Card size="small" title="学校课程配置"
       extra={<Space><Alert type="warning" showIcon message="课程分发后还需学校确认开放和排课，该校家长端才可见" style={{ padding: '2px 10px' }} /><Button type="primary" icon={<SendOutlined />} onClick={() => setWizOpen(true)}>分发课程到学校</Button></Space>}>
-      <Tbl {...tblProps} dataSource={db.deployments} columns={[
+      <Tbl {...tblProps} dataSource={deploymentGroups} columns={[
         { title: '课程名称', dataIndex: 'course' }, { title: '机构', dataIndex: 'org' }, { title: '投放学校', dataIndex: 'school', ellipsis: true },
-        { title: '班级', dataIndex: 'className' }, { title: '上课时间', dataIndex: 'time', ellipsis: true }, { title: '场地', dataIndex: 'venue' }, { title: '教师', dataIndex: 'teacher' },
-        { title: '报名/上限', render: (_: any, r: any) => `${r.enrolled} / ${r.max}` },
-        { title: '价格', dataIndex: 'price', render: money }, { title: '购买时间', render: (_: any, r: any) => `${r.signupStart || '立即'} 至 ${r.deadline}` },
-        { title: '成班状态', dataIndex: 'formed', render: (v: string) => <S v={v} /> },
+        { title: '上课班次', render: (_: any, r: any) => <Space><b>{r.classCount}</b><span style={{ color: '#999' }}>个班次</span></Space> },
+        { title: '总报名/上限', render: (_: any, r: any) => `${r.enrolled} / ${r.max}` },
+        { title: '价格', render: (_: any, r: any) => money(r.minPrice) + ' 起' }, { title: '购买时间', render: (_: any, r: any) => `${r.signupStart || '立即'} 至 ${r.deadline}` },
+        { title: '课程状态', dataIndex: 'status', render: (v: string) => <S v={v} /> },
         { title: '上架状态', dataIndex: 'shelf', render: (v: string) => <S v={v} /> },
-        { title: '操作', render: (_: any, r: any) => <Space><a onClick={() => message.info('Demo：查看配置详情')}>查看</a><a onClick={() => message.info('Demo：编辑配置')}>编辑</a>
+        { title: '操作', render: (_: any, r: any) => <Space><a onClick={() => setSlotDetail(r)}>班次配置</a><a onClick={() => message.info('Demo：添加上课班次')}>添加班次</a>
           {r.shelf === '待确认'
             ? <Tag color="orange">待学校确认</Tag>
-            : <a onClick={() => setDb((d: any) => ({ ...d, deployments: patch(d.deployments, r.id, { shelf: r.shelf === '已上架' ? '已下架' : '已上架' }) }))}>{r.shelf === '已上架' ? '下架' : '上架'}</a>}</Space> },
+            : <a onClick={() => setDb((d: any) => ({ ...d, deployments: d.deployments.map((x: any) => x.course === r.course && x.school === r.school ? { ...x, shelf: r.shelf === '已上架' ? '已下架' : '已上架' } : x) }))}>{r.shelf === '已上架' ? '整体下架' : '整体上架'}</a>}</Space> },
       ]} />
       <Modal open={wizOpen} width={720} title="分发课程到学校" onCancel={reset} footer={null}>
-        <Steps current={step} size="small" style={{ margin: '8px 0 20px' }} items={[{ title: '选择课程' }, { title: '选择学校' }, { title: '配置班级' }, { title: '确认发布' }]} />
+        <Steps current={step} size="small" style={{ margin: '8px 0 20px' }} items={[{ title: '选择课程' }, { title: '选择学校' }, { title: '配置班次' }, { title: '确认发布' }]} />
         {step === 0 && <>
           <Select style={{ width: '100%' }} placeholder="从课程库选择课程" value={selCourse} onChange={setSelCourse}
             options={libCourses.map((c: any) => ({ value: c.name, label: `${c.name} · ${c.org}（${c.lessons} 节 / 建议 ${money(c.price)}）` }))} />
@@ -1036,10 +1055,10 @@ function DeployPage({ db, setDb }: any) {
           <div style={{ textAlign: 'right', marginTop: 20 }}><Space><Button onClick={() => setStep(0)}>上一步</Button><Button type="primary" disabled={!selSchools.length} onClick={() => { fillVenueDefaults(); setStep(2); }}>下一步</Button></Space></div>
         </>}
         {step === 2 && <>
-          <Alert type="info" showIcon style={{ marginBottom: 12 }} message="场地必须从对应学校已创建且启用的场地中选择；同一课程在不同学校可配置不同场地 / 时间 / 价格" />
+          <Alert type="info" showIcon style={{ marginBottom: 12 }} message="这里创建该课程在每所学校的首个上课班次；后续可在主表「班次配置」中继续添加不同时间 / 场地 / 价格的班次" />
           <Form layout="vertical">
             <Row gutter={12}>
-              <Col span={8}><Form.Item label="班级名称"><Input value={cfg.className} onChange={(e: any) => setCfg({ ...cfg, className: e.target.value })} /></Form.Item></Col>
+              <Col span={8}><Form.Item label="班次名称"><Input value={cfg.className} onChange={(e: any) => setCfg({ ...cfg, className: e.target.value })} /></Form.Item></Col>
               <Col span={16}><Form.Item label="上课时间（课后延时时段）"><Input value={cfg.time} onChange={(e: any) => setCfg({ ...cfg, time: e.target.value })} /></Form.Item></Col>
             </Row>
             <Row gutter={12}>
@@ -1073,7 +1092,7 @@ function DeployPage({ db, setDb }: any) {
           <Descriptions column={2} size="small" bordered items={[
             { key: '1', label: '课程', span: 2, children: course.name + '（' + course.org + '）' },
             { key: '2', label: '投放学校', span: 2, children: selSchools.join('、') },
-            { key: '3', label: '班级', children: cfg.className }, { key: '4', label: '时间', children: cfg.time },
+            { key: '3', label: '班次', children: cfg.className }, { key: '4', label: '时间', children: cfg.time },
             { key: '5', label: '场地', span: 2, children: selectedVenueItems.map((x) => `${x.school}：${x.venue}`).join('；') }, { key: '6', label: '价格', children: money(cfg.price) + ' /期' },
             { key: '7', label: '成班/上限', children: cfg.min + ' / ' + cfg.max + ' 人' },
             { key: '8', label: '报名时间', children: cfg.signupStart + ' 至 ' + cfg.deadline }, { key: '9', label: '开课时间', children: cfg.openDate },
@@ -1082,6 +1101,19 @@ function DeployPage({ db, setDb }: any) {
           <div style={{ textAlign: 'right', marginTop: 16 }}><Space><Button onClick={() => setStep(2)}>上一步</Button><Button type="primary" onClick={publish}>确认发布到学校</Button></Space></div>
         </>}
       </Modal>
+      <Drawer open={!!slotDetail} width={820} title={`${slotDetail?.course || ''} · ${slotDetail?.school || ''} · 班次配置`} onClose={() => setSlotDetail(null)}
+        extra={<Button type="primary" onClick={() => message.info('Demo：添加一个新的时间/场地班次')}>添加班次</Button>}>
+        <Alert type="info" showIcon style={{ marginBottom: 12 }} message="一个课程在同一学校下可以配置多个上课班次；家长端点击报名时选择的就是这里的时间 + 场地组合。" />
+        <Tbl {...tblProps} dataSource={slotDetail?.items || []} columns={[
+          { title: '班次', dataIndex: 'className' }, { title: '上课时间', dataIndex: 'time', ellipsis: true }, { title: '上课场地', dataIndex: 'venue' },
+          { title: '教师', dataIndex: 'teacher' }, { title: '价格', dataIndex: 'price', render: money },
+          { title: '报名/上限', render: (_: any, r: any) => `${r.enrolled} / ${r.max}` },
+          { title: '购买时间', render: (_: any, r: any) => `${r.signupStart || '立即'} 至 ${r.deadline}` },
+          { title: '班次状态', dataIndex: 'formed', render: (v: string) => <S v={v} /> },
+          { title: '上架', dataIndex: 'shelf', render: (v: string) => <S v={v} /> },
+          { title: '操作', render: (_: any, r: any) => <Space><a onClick={() => message.info('Demo：编辑班次')}>编辑</a><a onClick={() => setDb((d: any) => ({ ...d, deployments: patch(d.deployments, r.id, { shelf: r.shelf === '已上架' ? '已下架' : '已上架' }) }))}>{r.shelf === '已上架' ? '下架' : '上架'}</a></Space> },
+        ]} />
+      </Drawer>
     </Card>
   );
 }
