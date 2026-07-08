@@ -1014,14 +1014,16 @@ function DeployPage({ db, setDb }: any) {
   }));
   const activeSlotDetail = slotDetail ? deploymentGroups.find((g: any) => g.id === slotDetail.id) || slotDetail : null;
   const reset = () => { setWizOpen(false); setStep(0); setSelCourse(undefined); setSelSchools([]); };
-  const openSlotForm = (group: any) => {
+  const openSlotForm = (group: any, row?: any) => {
     if (!group) return;
-    const base = group.items?.[0] || {};
+    const base = row || group.items?.[0] || {};
     setSlotTarget(group);
     setSlotDraft({
-      className: '',
+      id: row?.id,
+      oldClassName: row?.className,
+      className: row?.className || '',
       time: base.time || '每周三 16:30-17:30',
-      venue: venueOptionsFor(group.school)[0]?.value || base.venue || '',
+      venue: row?.venue || venueOptionsFor(group.school)[0]?.value || base.venue || '',
       teacher: base.teacher || '',
       price: base.price || group.minPrice || 800,
       min: base.min || 10,
@@ -1033,12 +1035,47 @@ function DeployPage({ db, setDb }: any) {
     });
     setSlotFormOpen(true);
   };
-  const createSlot = () => {
+  const saveSlot = () => {
     if (!slotTarget) return;
     if (!slotDraft.className?.trim()) return message.warning('请输入班次名称');
     if (!slotDraft.time?.trim()) return message.warning('请输入上课时间');
     if (!slotDraft.venue) return message.warning('请选择上课场地');
     const courseInfo = db.courses.find((c: any) => c.name === slotTarget.course) || {};
+    if (slotDraft.id) {
+      const nextName = slotTarget.course + '·' + slotDraft.className.trim();
+      const oldName = slotTarget.course + '·' + (slotDraft.oldClassName || slotDraft.className).trim();
+      setDb((d: any) => ({
+        ...d,
+        deployments: patch(d.deployments, slotDraft.id, {
+          className: slotDraft.className.trim(),
+          time: slotDraft.time,
+          venue: slotDraft.venue,
+          teacher: slotDraft.teacher || courseInfo.teacher || '',
+          max: slotDraft.max,
+          min: slotDraft.min,
+          price: slotDraft.price,
+          signupStart: slotDraft.signupStart,
+          deadline: slotDraft.deadline,
+          formed: slotDraft.formed,
+          shelf: slotDraft.shelf,
+        }),
+        classes: d.classes.map((x: any) => x.course === slotTarget.course && x.school === slotTarget.school && x.name === oldName
+          ? {
+            ...x,
+            name: nextName,
+            venue: slotDraft.venue,
+            time: slotDraft.time,
+            teacher: slotDraft.teacher || courseInfo.teacher || '',
+            min: slotDraft.min,
+            max: slotDraft.max,
+            status: slotDraft.formed,
+          }
+          : x),
+      }));
+      message.success('已保存班次');
+      setSlotFormOpen(false);
+      return;
+    }
     const id = 'd' + Date.now();
     const row = {
       id, course: slotTarget.course, org: slotTarget.org, school: slotTarget.school,
@@ -1172,11 +1209,11 @@ function DeployPage({ db, setDb }: any) {
           { title: '购买时间', render: (_: any, r: any) => `${r.signupStart || '立即'} 至 ${r.deadline}` },
           { title: '班次状态', dataIndex: 'formed', render: (v: string) => <S v={v} /> },
           { title: '上架', dataIndex: 'shelf', render: (v: string) => <S v={v} /> },
-          { title: '操作', render: (_: any, r: any) => <Space><a onClick={() => message.info('Demo：编辑班次')}>编辑</a><a onClick={() => setDb((d: any) => ({ ...d, deployments: patch(d.deployments, r.id, { shelf: r.shelf === '已上架' ? '已下架' : '已上架' }) }))}>{r.shelf === '已上架' ? '下架' : '上架'}</a><a style={{ color: '#ff4d4f' }} onClick={() => deleteSlot(r)}>删除</a></Space> },
+          { title: '操作', render: (_: any, r: any) => <Space><a onClick={() => openSlotForm(activeSlotDetail, r)}>编辑</a><a onClick={() => setDb((d: any) => ({ ...d, deployments: patch(d.deployments, r.id, { shelf: r.shelf === '已上架' ? '已下架' : '已上架' }) }))}>{r.shelf === '已上架' ? '下架' : '上架'}</a><a style={{ color: '#ff4d4f' }} onClick={() => deleteSlot(r)}>删除</a></Space> },
         ]} />
       </Drawer>
-      <Modal open={slotFormOpen} width={640} title={`${slotTarget?.course || ''} · 新增上课班次`} okText="创建班次" cancelText="取消"
-        onCancel={() => setSlotFormOpen(false)} onOk={createSlot}>
+      <Modal open={slotFormOpen} width={640} title={`${slotTarget?.course || ''} · ${slotDraft.id ? '编辑上课班次' : '新增上课班次'}`} okText={slotDraft.id ? '保存班次' : '创建班次'} cancelText="取消"
+        onCancel={() => setSlotFormOpen(false)} onOk={saveSlot}>
         <Alert type="info" showIcon style={{ marginBottom: 12 }} message="班次是家长端报名时选择的时间 + 场地组合；每个班次可单独配置价格、名额和购买时间。" />
         <Form layout="vertical">
           <Row gutter={12}>
