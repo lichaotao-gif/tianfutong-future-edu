@@ -974,6 +974,9 @@ function CoursePage({ db, setDb }: any) {
 function DeployPage({ db, setDb }: any) {
   const [wizOpen, setWizOpen] = useState(false);
   const [slotDetail, setSlotDetail] = useState<any>(null);
+  const [slotFormOpen, setSlotFormOpen] = useState(false);
+  const [slotTarget, setSlotTarget] = useState<any>(null);
+  const [slotDraft, setSlotDraft] = useState<any>({});
   const [step, setStep] = useState(0);
   const [selCourse, setSelCourse] = useState<string>();
   const [selSchools, setSelSchools] = useState<string[]>([]);
@@ -1009,7 +1012,65 @@ function DeployPage({ db, setDb }: any) {
     shelf: g.items.every((x: any) => x.shelf === '已下架') ? '已下架' : g.items.some((x: any) => x.shelf === '待确认') ? '待确认' : '已上架',
     status: g.items.some((x: any) => x.formed === '报名中') ? '报名中' : g.items.some((x: any) => x.formed === '未到购买时间') ? '未到购买时间' : g.items[0]?.formed,
   }));
+  const activeSlotDetail = slotDetail ? deploymentGroups.find((g: any) => g.id === slotDetail.id) || slotDetail : null;
   const reset = () => { setWizOpen(false); setStep(0); setSelCourse(undefined); setSelSchools([]); };
+  const openSlotForm = (group: any) => {
+    if (!group) return;
+    const base = group.items?.[0] || {};
+    setSlotTarget(group);
+    setSlotDraft({
+      className: '',
+      time: base.time || '每周三 16:30-17:30',
+      venue: venueOptionsFor(group.school)[0]?.value || base.venue || '',
+      teacher: base.teacher || '',
+      price: base.price || group.minPrice || 800,
+      min: base.min || 10,
+      max: base.max || 30,
+      signupStart: base.signupStart || '2026-07-12',
+      deadline: base.deadline || '2026-07-20',
+      formed: '未到购买时间',
+      shelf: group.shelf === '已下架' ? '已下架' : '已上架',
+    });
+    setSlotFormOpen(true);
+  };
+  const createSlot = () => {
+    if (!slotTarget) return;
+    if (!slotDraft.className?.trim()) return message.warning('请输入班次名称');
+    if (!slotDraft.time?.trim()) return message.warning('请输入上课时间');
+    if (!slotDraft.venue) return message.warning('请选择上课场地');
+    const courseInfo = db.courses.find((c: any) => c.name === slotTarget.course) || {};
+    const id = 'd' + Date.now();
+    const row = {
+      id, course: slotTarget.course, org: slotTarget.org, school: slotTarget.school,
+      className: slotDraft.className.trim(), time: slotDraft.time, venue: slotDraft.venue, teacher: slotDraft.teacher || courseInfo.teacher || '',
+      enrolled: 0, max: slotDraft.max, min: slotDraft.min, price: slotDraft.price,
+      signupStart: slotDraft.signupStart, deadline: slotDraft.deadline, formed: slotDraft.formed, shelf: slotDraft.shelf,
+    };
+    const clsRow = {
+      id: 'cl' + Date.now(), name: slotTarget.course + '·' + row.className, course: slotTarget.course, org: slotTarget.org, school: slotTarget.school,
+      venue: row.venue, time: row.time, teacher: row.teacher, total: courseInfo.lessons || 8, done: 0, min: row.min, max: row.max, enrolled: 0, status: row.formed,
+    };
+    setDb((d: any) => ({ ...d, deployments: [row, ...d.deployments], classes: [clsRow, ...d.classes] }));
+    message.success('已创建上课班次');
+    setSlotFormOpen(false);
+  };
+  const deleteSlot = (row: any) => {
+    Modal.confirm({
+      title: '删除班次',
+      content: `确认删除「${row.className}」？删除后该班次不再出现在家长端报名选择中。`,
+      okText: '确认删除',
+      okButtonProps: { danger: true },
+      cancelText: '取消',
+      onOk: () => {
+        setDb((d: any) => ({
+          ...d,
+          deployments: d.deployments.filter((x: any) => x.id !== row.id),
+          classes: d.classes.filter((x: any) => !(x.course === row.course && x.school === row.school && x.name === row.course + '·' + row.className)),
+        }));
+        message.success('已删除班次');
+      },
+    });
+  };
   const publish = () => {
     if (hasMissingVenue) return message.warning('请先为每所学校选择已创建且启用的场地');
     const rows = selSchools.map((sc, i) => ({
@@ -1035,7 +1096,7 @@ function DeployPage({ db, setDb }: any) {
         { title: '价格', render: (_: any, r: any) => money(r.minPrice) + ' 起' }, { title: '购买时间', render: (_: any, r: any) => `${r.signupStart || '立即'} 至 ${r.deadline}` },
         { title: '课程状态', dataIndex: 'status', render: (v: string) => <S v={v} /> },
         { title: '上架状态', dataIndex: 'shelf', render: (v: string) => <S v={v} /> },
-        { title: '操作', render: (_: any, r: any) => <Space><a onClick={() => setSlotDetail(r)}>班次配置</a><a onClick={() => message.info('Demo：添加上课班次')}>添加班次</a>
+        { title: '操作', render: (_: any, r: any) => <Space><a onClick={() => setSlotDetail(r)}>班次配置</a><a onClick={() => openSlotForm(r)}>添加班次</a>
           {r.shelf === '待确认'
             ? <Tag color="orange">待学校确认</Tag>
             : <a onClick={() => setDb((d: any) => ({ ...d, deployments: d.deployments.map((x: any) => x.course === r.course && x.school === r.school ? { ...x, shelf: r.shelf === '已上架' ? '已下架' : '已上架' } : x) }))}>{r.shelf === '已上架' ? '整体下架' : '整体上架'}</a>}</Space> },
@@ -1101,19 +1162,43 @@ function DeployPage({ db, setDb }: any) {
           <div style={{ textAlign: 'right', marginTop: 16 }}><Space><Button onClick={() => setStep(2)}>上一步</Button><Button type="primary" onClick={publish}>确认发布到学校</Button></Space></div>
         </>}
       </Modal>
-      <Drawer open={!!slotDetail} width={820} title={`${slotDetail?.course || ''} · ${slotDetail?.school || ''} · 班次配置`} onClose={() => setSlotDetail(null)}
-        extra={<Button type="primary" onClick={() => message.info('Demo：添加一个新的时间/场地班次')}>添加班次</Button>}>
+      <Drawer open={!!slotDetail} width={820} title={`${activeSlotDetail?.course || ''} · ${activeSlotDetail?.school || ''} · 班次配置`} onClose={() => setSlotDetail(null)}
+        extra={<Button type="primary" onClick={() => openSlotForm(activeSlotDetail)}>添加班次</Button>}>
         <Alert type="info" showIcon style={{ marginBottom: 12 }} message="一个课程在同一学校下可以配置多个上课班次；家长端点击报名时选择的就是这里的时间 + 场地组合。" />
-        <Tbl {...tblProps} dataSource={slotDetail?.items || []} columns={[
+        <Tbl {...tblProps} dataSource={activeSlotDetail?.items || []} columns={[
           { title: '班次', dataIndex: 'className' }, { title: '上课时间', dataIndex: 'time', ellipsis: true }, { title: '上课场地', dataIndex: 'venue' },
           { title: '教师', dataIndex: 'teacher' }, { title: '价格', dataIndex: 'price', render: money },
           { title: '报名/上限', render: (_: any, r: any) => `${r.enrolled} / ${r.max}` },
           { title: '购买时间', render: (_: any, r: any) => `${r.signupStart || '立即'} 至 ${r.deadline}` },
           { title: '班次状态', dataIndex: 'formed', render: (v: string) => <S v={v} /> },
           { title: '上架', dataIndex: 'shelf', render: (v: string) => <S v={v} /> },
-          { title: '操作', render: (_: any, r: any) => <Space><a onClick={() => message.info('Demo：编辑班次')}>编辑</a><a onClick={() => setDb((d: any) => ({ ...d, deployments: patch(d.deployments, r.id, { shelf: r.shelf === '已上架' ? '已下架' : '已上架' }) }))}>{r.shelf === '已上架' ? '下架' : '上架'}</a></Space> },
+          { title: '操作', render: (_: any, r: any) => <Space><a onClick={() => message.info('Demo：编辑班次')}>编辑</a><a onClick={() => setDb((d: any) => ({ ...d, deployments: patch(d.deployments, r.id, { shelf: r.shelf === '已上架' ? '已下架' : '已上架' }) }))}>{r.shelf === '已上架' ? '下架' : '上架'}</a><a style={{ color: '#ff4d4f' }} onClick={() => deleteSlot(r)}>删除</a></Space> },
         ]} />
       </Drawer>
+      <Modal open={slotFormOpen} width={640} title={`${slotTarget?.course || ''} · 新增上课班次`} okText="创建班次" cancelText="取消"
+        onCancel={() => setSlotFormOpen(false)} onOk={createSlot}>
+        <Alert type="info" showIcon style={{ marginBottom: 12 }} message="班次是家长端报名时选择的时间 + 场地组合；每个班次可单独配置价格、名额和购买时间。" />
+        <Form layout="vertical">
+          <Row gutter={12}>
+            <Col span={8}><Form.Item label="班次名称" required><Input value={slotDraft.className} placeholder="如 周五拓展班" onChange={(e: any) => setSlotDraft({ ...slotDraft, className: e.target.value })} /></Form.Item></Col>
+            <Col span={16}><Form.Item label="上课时间" required><Input value={slotDraft.time} onChange={(e: any) => setSlotDraft({ ...slotDraft, time: e.target.value })} /></Form.Item></Col>
+          </Row>
+          <Row gutter={12}>
+            <Col span={12}><Form.Item label="上课场地" required><Select value={slotDraft.venue || undefined} options={slotTarget ? venueOptionsFor(slotTarget.school) : []} onChange={(v: string) => setSlotDraft({ ...slotDraft, venue: v })} /></Form.Item></Col>
+            <Col span={12}><Form.Item label="任课老师"><Input value={slotDraft.teacher} onChange={(e: any) => setSlotDraft({ ...slotDraft, teacher: e.target.value })} /></Form.Item></Col>
+          </Row>
+          <Row gutter={12}>
+            <Col span={8}><Form.Item label="价格"><InputNumber style={{ width: '100%' }} value={slotDraft.price} onChange={(v: any) => setSlotDraft({ ...slotDraft, price: v })} /></Form.Item></Col>
+            <Col span={8}><Form.Item label="最低成班人数"><InputNumber style={{ width: '100%' }} value={slotDraft.min} onChange={(v: any) => setSlotDraft({ ...slotDraft, min: v })} /></Form.Item></Col>
+            <Col span={8}><Form.Item label="最大报名人数"><InputNumber style={{ width: '100%' }} value={slotDraft.max} onChange={(v: any) => setSlotDraft({ ...slotDraft, max: v })} /></Form.Item></Col>
+          </Row>
+          <Row gutter={12}>
+            <Col span={8}><Form.Item label="购买开始"><Input value={slotDraft.signupStart} onChange={(e: any) => setSlotDraft({ ...slotDraft, signupStart: e.target.value })} /></Form.Item></Col>
+            <Col span={8}><Form.Item label="购买结束"><Input value={slotDraft.deadline} onChange={(e: any) => setSlotDraft({ ...slotDraft, deadline: e.target.value })} /></Form.Item></Col>
+            <Col span={8}><Form.Item label="班次状态"><Select value={slotDraft.formed} options={['未到购买时间', '报名中', '待成班', '已成班'].map((v) => ({ value: v, label: v }))} onChange={(v: string) => setSlotDraft({ ...slotDraft, formed: v })} /></Form.Item></Col>
+          </Row>
+        </Form>
+      </Modal>
     </Card>
   );
 }
