@@ -49,8 +49,36 @@
     if (cls.enrolled >= cls.maxSeats) return '已满员';
     return cls.enrolled >= min ? '已成班' : '报名中';
   };
+  const parseBuyTime = (value, endOfDay = false) => {
+    if (!value) return null;
+    const text = String(value).trim();
+    const normalized = /^\d{4}-\d{2}-\d{2}$/.test(text)
+      ? `${text}T${endOfDay ? '23:59:59' : '00:00:00'}`
+      : text.replace(' ', 'T');
+    const date = new Date(normalized);
+    return Number.isNaN(date.getTime()) ? null : date;
+  };
+  const buyWindow = (course, cls) => {
+    const now = new Date();
+    const start = parseBuyTime(cls.purchaseStart || cls.signupStart || course.purchaseStart || course.signupStart);
+    const end = parseBuyTime(cls.purchaseEnd || cls.deadline || course.purchaseEnd || course.deadline, true);
+    if (start && now < start) return { state: 'future', label: '未到购买时间', start, end };
+    if (end && now > end) return { state: 'ended', label: '已截止', start, end };
+    return { state: 'open', label: '可购买', start, end };
+  };
+  const fmtBuyDate = (date) => date
+    ? `${date.getMonth() + 1}月${date.getDate()}日 ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
+    : '以学校通知为准';
+  const buyRangeText = (course, cls) => {
+    const win = buyWindow(course, cls);
+    return `${fmtBuyDate(win.start)} - ${fmtBuyDate(win.end)}`;
+  };
   const schoolClasses = (course) => (course.classes || []).filter((k) => !k.school || k.school === currentStudent().school);
-  const parentVisibleClass = (course, cls) => ['报名中', '待成班', '已成班', '已排课', '上课中', '已满员'].includes(classStatus(course, cls));
+  const parentVisibleClass = (course, cls) => ['报名中', '待成班', '已成班', '已排课', '已满员'].includes(classStatus(course, cls));
+  const canBuyClass = (course, cls) => parentVisibleClass(course, cls)
+    && buyWindow(course, cls).state === 'open'
+    && cls.enrolled < cls.maxSeats
+    && classStatus(course, cls) !== '已满员';
   const visibleClassItems = () => DB.courses
     .filter((c) => !c.schools || c.schools.includes(currentStudent().school))
     .flatMap((course) => schoolClasses(course).map((cls) => ({ course, cls })))
@@ -214,20 +242,22 @@
         待成班: 'st-warn',
         已成班: 'st-done',
         已排课: 'st-done',
-        上课中: 'st-done',
+        未到购买时间: 'st-warn',
+        已截止: 'st-muted',
         已满员: 'st-muted',
       }[status] || 'st-muted';
       return `<span class="badge ${cls} cc-status">${esc(status)}</span>`;
     };
     const courseCard = ({ course: c, classes }) => {
       const minPrice = Math.min(...classes.map((cls) => cls.price || c.price));
-      const available = classes.some((cls) => cls.enrolled < cls.maxSeats && classStatus(c, cls) !== '已满员');
-      const openClasses = classes.filter((cls) => cls.enrolled < cls.maxSeats && classStatus(c, cls) !== '已满员');
+      const available = classes.some((cls) => canBuyClass(c, cls));
+      const openClasses = classes.filter((cls) => canBuyClass(c, cls));
       const shownClasses = (openClasses.length ? openClasses : classes).slice(0, 2);
       const classSummary = shownClasses.map((cls) => `${cls.name} ${cls.time}`).join(' / ');
       const totalLeft = openClasses.reduce((sum, cls) => sum + Math.max(0, cls.maxSeats - cls.enrolled), 0);
-      const statuses = classes.map((cls) => classStatus(c, cls));
-      const primaryStatus = ['上课中', '已排课', '已成班', '报名中', '待成班', '已满员'].find((x) => statuses.includes(x)) || statuses[0];
+      const statuses = classes.map((cls) => buyWindow(c, cls).label === '可购买' ? classStatus(c, cls) : buyWindow(c, cls).label);
+      const primaryStatus = ['未到购买时间', '报名中', '待成班', '已成班', '已排课', '已截止', '已满员'].find((x) => statuses.includes(x)) || statuses[0];
+      const firstClass = shownClasses[0] || classes[0];
       return `
       <div class="card course-card mx mt" onclick="location.hash='#/course/${c.id}'">
         <div class="cc-cover">${coverImg(c.cover, c.name)}</div>
@@ -236,9 +266,10 @@
           <div style="margin-bottom:4px">${c.tags.map((t, i) => `<span class="tag ${i ? 'gray' : ''}">${esc(t)}</span>`).join('')}</div>
           <div class="cc-meta">${esc(c.gradeRange)} · 共 ${c.lessons} 次课</div>
           <div class="cc-schedule">${esc(classSummary)}${classes.length > shownClasses.length ? ` 等 ${classes.length} 个班` : ''}</div>
+          ${firstClass ? `<div class="small muted" style="margin-top:3px">购买时间：${esc(buyRangeText(c, firstClass))}</div>` : ''}
           <div class="row between" style="margin-top:6px">
             <span class="price"><span class="yen">¥</span><span class="num">${minPrice}</span><span class="small muted"> 起</span></span>
-            ${available ? `<span class="small muted">余 ${totalLeft} 名额</span>` : '<span class="badge st-muted">已满员</span>'}
+            ${available ? `<span class="small muted">余 ${totalLeft} 名额</span>` : `<span class="small muted">${esc(primaryStatus)}</span>`}
           </div>
         </div>
       </div>`;
@@ -313,7 +344,7 @@
     }
     const classes = schoolClasses(c).filter((cls) => parentVisibleClass(c, cls));
     const selectedClass = classId ? classes.find((k) => k.id === routeId(classId || '')) : null;
-    const available = classes.filter((cls) => cls.enrolled < cls.maxSeats && classStatus(c, cls) !== '已满员');
+    const available = classes.filter((cls) => canBuyClass(c, cls));
     const hasSeat = classes.some((cls) => cls.enrolled < cls.maxSeats && classStatus(c, cls) !== '已满员');
     const displayClass = selectedClass || classes[0];
     const defaultPlace = selectedClass?.place || (classes.length === 1 ? classes[0].place : '点击立即报名后选择班级和场地') || c.place;
@@ -323,7 +354,13 @@
     const max = selectedClass?.maxSeats || classes.reduce((sum, cls) => sum + cls.maxSeats, 0) || c.maxSeats;
     const enrolled = selectedClass?.enrolled ?? (classes.reduce((sum, cls) => sum + cls.enrolled, 0) || c.enrolled);
     const full = selectedClass ? enrolled >= max : !hasSeat;
-    const actionLabel = '立即报名';
+    const futureClass = selectedClass || classes.find((cls) => buyWindow(c, cls).state === 'future');
+    const selectedBuy = selectedClass ? buyWindow(c, selectedClass) : (futureClass ? buyWindow(c, futureClass) : null);
+    const beforeBuy = selectedBuy?.state === 'future' && (selectedClass || !available.length);
+    const actionLabel = beforeBuy ? `${fmtBuyDate(selectedBuy.start)} 开始报名` : '立即报名';
+    const actionClick = beforeBuy
+      ? `App.noticeBuyTime('${c.id}', '${futureClass.id}')`
+      : (selectedClass ? `App.confirmClassEnroll('${c.id}', '${selectedClass.id}')` : `App.startEnroll('${c.id}')`);
     render(`
     <div class="screen">
       ${navbar('课程详情')}
@@ -345,6 +382,7 @@
             <div class="kv"><span class="k">上课时间</span><span class="v">${esc(selectedClass?.time || (classes.length === 1 ? classes[0].time : '点击立即报名后选择班级和时间段') || c.time)}</span></div>
             <div class="kv"><span class="k">课时数量</span><span class="v">共 ${c.lessons} 次</span></div>
             <div class="kv"><span class="k">成班人数</span><span class="v">满 ${min} 人开班${selectedClass ? ` · 最大 ${max} 人` : ''}</span></div>
+            ${displayClass ? `<div class="kv"><span class="k">购买时间</span><span class="v">${esc(buyRangeText(c, displayClass))}</span></div>` : ''}
             ${selectedClass ? `<div class="kv"><span class="k">当前报名</span><span class="v">${enrolled} 人 ${full ? '<span class="badge st-muted">已满员</span>' : ''}</span></div>` : ''}
           </div>
         </div>
@@ -385,7 +423,7 @@
         <div class="price" style="margin-right:auto"><span class="yen">¥</span><span class="num">${price}</span><span class="small muted"> /期</span></div>
         ${full
           ? '<button class="btn" disabled style="max-width:200px">已满员，无法报名</button>'
-          : `<button class="btn btn-primary" style="max-width:200px" onclick="${selectedClass ? `App.confirmClassEnroll('${c.id}', '${selectedClass.id}')` : `App.startEnroll('${c.id}')`}">${actionLabel}</button>`}
+          : `<button class="btn btn-primary" style="max-width:200px" onclick="${actionClick}">${actionLabel}</button>`}
       </div>
       ${skuSheet(c)}
     </div>`);
@@ -422,13 +460,15 @@
         <h3>选择班级</h3>
         ${classes.map((k, i) => {
           const isFull = k.enrolled >= k.maxSeats || classStatus(c, k) === '已满员';
-          const conflict = !isFull && timeConflict(k.time);
+          const win = buyWindow(c, k);
+          const locked = win.state !== 'open';
+          const conflict = !isFull && !locked && timeConflict(k.time);
           const left = k.maxSeats - k.enrolled;
           return `
-          <div class="sku-opt ${isFull ? 'full' : conflict ? 'conflict' : ''}" id="sku${i}" onclick="App.selectSku(${i})">
+          <div class="sku-opt ${isFull || locked ? 'full' : conflict ? 'conflict' : ''}" id="sku${i}" onclick="App.selectSku(${i})">
             <div class="sku-main">
               <div class="sku-name">${esc(k.name)}<span class="sku-time">${esc(k.time)}</span></div>
-              <div class="sku-sub small muted">${esc(k.place)} · ¥${k.price || c.price} · ${isFull ? '已满员' : conflict ? `与已报「${esc(conflict)}」时间冲突` : `余 ${left} 名额`}</div>
+              <div class="sku-sub small muted">${esc(k.place)} · ¥${k.price || c.price} · ${locked ? `${win.label}：${fmtBuyDate(win.start)}` : isFull ? '已满员' : conflict ? `与已报「${esc(conflict)}」时间冲突` : `余 ${left} 名额`}</div>
             </div>
             <span class="radio"></span>
           </div>`;
@@ -440,6 +480,10 @@
   }
 
   function confirmConflictAndGo(cid, cls) {
+    const c = courseById(cid);
+    const win = c ? buyWindow(c, cls) : { state: 'open' };
+    if (win.state === 'future') return noticeBuyTime(cid, cls.id);
+    if (win.state === 'ended') return toast('该班级已过购买结束时间');
     const conflict = timeConflict(cls.time);
     if (conflict) {
       const ok = window.confirm(`所选班级存在上课时间冲突，已报名「${conflict}」。是否确认继续报名？`);
@@ -453,23 +497,34 @@
     const c = courseById(cid);
     const cls = c ? schoolClasses(c).find((k) => k.id === routeId(classId || '')) : null;
     if (!cls) return toast('请选择班级');
+    const win = buyWindow(c, cls);
+    if (win.state === 'future') return noticeBuyTime(cid, cls.id);
+    if (win.state === 'ended') return toast('该班级已过购买结束时间');
     if (cls.enrolled >= cls.maxSeats || classStatus(c, cls) === '已满员') return toast('该班级已满员，请选择其他班级');
     confirmConflictAndGo(cid, cls);
+  }
+
+  function noticeBuyTime(cid, classId) {
+    const c = courseById(cid);
+    const cls = c ? schoolClasses(c).find((k) => k.id === routeId(classId || '')) : null;
+    const win = cls ? buyWindow(c, cls) : null;
+    toast(`未到开始购买时间，请在 ${fmtBuyDate(win?.start)} 后再报名`);
   }
 
   function openSkuSheet(cid) {
     const c = courseById(cid);
     const classes = c ? schoolClasses(c).filter((k) => parentVisibleClass(c, k)) : [];
     if (!classes.length) { go('#/enroll/' + cid); return; }
-    const available = classes.filter((k) => k.enrolled < k.maxSeats && classStatus(c, k) !== '已满员');
+    const available = classes.filter((k) => canBuyClass(c, k));
     if (classes.length === 1 && available.length === 1) { confirmConflictAndGo(cid, available[0]); return; }
-    if (classes.length === 1 && !available.length) { toast('当前班级已满员，暂不能报名'); return; }
+    if (classes.length === 1 && !available.length && buyWindow(c, classes[0]).state === 'future') return noticeBuyTime(cid, classes[0].id);
+    if (classes.length === 1 && !available.length) { toast('当前班级暂不能报名'); return; }
     const oldMask = $('#skuMask');
     if (!oldMask || oldMask.dataset.course !== cid) {
       if (oldMask) oldMask.remove();
       app.insertAdjacentHTML('beforeend', skuSheet(c));
     }
-    skuSel = classes.findIndex((k) => k.enrolled < k.maxSeats && classStatus(c, k) !== '已满员');
+    skuSel = classes.findIndex((k) => canBuyClass(c, k));
     classes.forEach((_, i) => $('#sku' + i)?.classList.toggle('on', i === skuSel));
     $('#skuMask').classList.add('show');
   }
@@ -477,10 +532,11 @@
   function startEnroll(cid) {
     const c = courseById(cid);
     const classes = c ? schoolClasses(c).filter((k) => parentVisibleClass(c, k)) : [];
-    const available = classes.filter((k) => k.enrolled < k.maxSeats && classStatus(c, k) !== '已满员');
+    const available = classes.filter((k) => canBuyClass(c, k));
     if (!classes.length) return toast('当前学校暂无可报名班级');
     if (classes.length === 1 && available.length === 1) return confirmConflictAndGo(cid, available[0]);
-    if (classes.length === 1 && !available.length) return toast('当前班级已满员，暂不能报名');
+    if (classes.length === 1 && !available.length && buyWindow(c, classes[0]).state === 'future') return noticeBuyTime(cid, classes[0].id);
+    if (classes.length === 1 && !available.length) return toast('当前班级暂不能报名');
     openSkuSheet(cid);
   }
 
@@ -496,6 +552,9 @@
     const classes = c ? schoolClasses(c).filter((k) => parentVisibleClass(c, k)) : [];
     const cls = classes[skuSel];
     if (!cls) return toast('请选择班级');
+    const win = buyWindow(c, cls);
+    if (win.state === 'future') return noticeBuyTime(cid, cls.id);
+    if (win.state === 'ended') return toast('该班级已过购买结束时间');
     if (cls.enrolled >= cls.maxSeats) return toast('该班级已满员，请选择其他班级');
     confirmConflictAndGo(cid, cls);
   }
@@ -513,6 +572,14 @@
     enrollClass = classes.find((k) => k.id === routeId(classId || ''))
       || classes.find((k) => k.enrolled < k.maxSeats) || null;
     const cls = enrollClass;
+    if (cls && buyWindow(c, cls).state === 'future') {
+      noticeBuyTime(c.id, cls.id);
+      return screenCourse(c.id, cls.id);
+    }
+    if (cls && buyWindow(c, cls).state === 'ended') {
+      toast('该班级已过购买结束时间');
+      return screenCourse(c.id, cls.id);
+    }
     const price = cls?.price || c.price;
     const min = cls?.minClass || c.minClass;
     enrollConfirmed = false;
@@ -535,7 +602,7 @@
           ${cls ? `<div class="kv"><span class="k">报名班级</span><span class="v"><b>${esc(cls.name)}</b> <span class="small muted">（余 ${cls.maxSeats - cls.enrolled} 名额）</span></span></div>` : ''}
           <div class="kv"><span class="k">上课时间</span><span class="v">${esc(cls ? cls.time : c.time)}</span></div>
           <div class="kv"><span class="k">上课地点</span><span class="v">${esc(cls ? cls.place : c.place)}</span></div>
-          <div class="kv"><span class="k">报名截止</span><span class="v">${esc(cls?.deadline || '以学校通知为准')}</span></div>
+          <div class="kv"><span class="k">购买时间</span><span class="v">${esc(cls ? buyRangeText(c, cls) : '以学校通知为准')}</span></div>
           <div class="divider"></div>
           <div class="kv"><span class="k">课程费用</span><span class="v price"><span class="yen">¥</span><span class="num">${price}</span></span></div>
           <div class="kv"><span class="k">支付金额</span><span class="v"><b style="color:var(--orange-deep)">¥${price}</b> <span class="small muted">（平台托管）</span></span></div>
@@ -1229,9 +1296,6 @@
         </div>
         <div style="height:14px"></div>
       </div>
-      <div class="actionbar">
-        <button class="btn btn-primary" onclick="App.openProfileForm()">编辑家长信息</button>
-      </div>
       ${profileFormSheet()}
     </div>`);
   }
@@ -1485,7 +1549,7 @@
   /* 暴露给内联事件 */
   window.App = {
     toggleEnrollConfirm, submitEnroll, closeWxpay, confirmWxpay, confirmPay, switchStudent, openSwitchSheet, closeSwitchSheet, adminTap, soonTip: () => toast('功能开发中'),
-    openSkuSheet, closeSkuSheet, selectSku, confirmSku, startEnroll, confirmClassEnroll,
+    openSkuSheet, closeSkuSheet, selectSku, confirmSku, startEnroll, confirmClassEnroll, noticeBuyTime,
     openReview, closeReview, setStars, submitReview,
     confirmLesson, openDispute, closeDispute, selectDispute, submitDispute,
     openAftersale, closeAftersale, selectAS, submitAftersale,

@@ -24,7 +24,7 @@ const STC: Record<string, string> = {
   待审核: 'orange', 审核通过: 'green', 审核驳回: 'red', 已暂停: 'default', 已禁用: 'red',
   草稿: 'default', 已入课程库: 'green', 已下架: 'default',
   待合作: 'orange', 已合作: 'green', 暂停合作: 'gold', 已停用: 'default',
-  启用: 'green', 禁用: 'red', 已上架: 'green',
+  启用: 'green', 禁用: 'red', 已上架: 'green', 未到购买时间: 'gold',
   报名中: 'blue', 待成班: 'orange', 已成班: 'green', 已排课: 'cyan', 上课中: 'processing', 已结课: 'default', 已取消: 'red',
   待支付: 'orange', 已支付: 'green', 已退款: 'red', 部分退款: 'gold',
   待上课: 'default', 已上课待确认: 'orange', 已确认销课: 'green', 异常: 'red', 已计入结算: 'cyan',
@@ -315,10 +315,10 @@ const initDB = {
       outcome: '掌握基础篮球技能', audits: [] },
   ],
   deployments: [
-    { id: 'd1', course: '人工智能启蒙课', org: '智创未来', school: '成都天府新区实验小学', className: '周三班', time: '每周三 16:30-17:30', venue: '科技教室 A', teacher: '王思远', enrolled: 18, max: 30, min: 10, price: 800, deadline: '2026-07-08', formed: '已成班', shelf: '已上架' },
-    { id: 'd2', course: '人工智能启蒙课', org: '智创未来', school: '成都天府新区第七小学', className: '周五班', time: '每周五 16:30-17:30', venue: '科学实验室', teacher: '王思远', enrolled: 8, max: 30, min: 10, price: 780, deadline: '2026-07-10', formed: '待成班', shelf: '已上架' },
-    { id: 'd3', course: '少儿编程思维课', org: '智创未来', school: '成都天府新区实验小学', className: '周二班', time: '每周二 16:30-17:30', venue: '计算机教室 1', teacher: '陈亦然', enrolled: 25, max: 30, min: 12, price: 900, deadline: '2026-07-05', formed: '已成班', shelf: '已上架' },
-    { id: 'd4', course: '少儿编程思维课', org: '智创未来', school: '成都华阳实验小学', className: '周四班', time: '每周四 16:30-17:30', venue: '多功能室', teacher: '陈亦然', enrolled: 5, max: 30, min: 12, price: 850, deadline: '2026-07-12', formed: '待成班', shelf: '已下架' },
+    { id: 'd1', course: '人工智能启蒙课', org: '智创未来', school: '成都天府新区实验小学', className: '周三班', time: '每周三 16:30-17:30', venue: '科技教室 A', teacher: '王思远', enrolled: 18, max: 30, min: 10, price: 800, signupStart: '2026-07-01', deadline: '2026-07-08', formed: '已成班', shelf: '已上架' },
+    { id: 'd2', course: '人工智能启蒙课', org: '智创未来', school: '成都天府新区第七小学', className: '周五班', time: '每周五 16:30-17:30', venue: '科学实验室', teacher: '王思远', enrolled: 8, max: 30, min: 10, price: 780, signupStart: '2026-07-01', deadline: '2026-07-10', formed: '待成班', shelf: '已上架' },
+    { id: 'd3', course: '少儿编程思维课', org: '智创未来', school: '成都天府新区实验小学', className: '周二班', time: '每周二 16:30-17:30', venue: '计算机教室 1', teacher: '陈亦然', enrolled: 25, max: 30, min: 12, price: 900, signupStart: '2026-07-02', deadline: '2026-07-12', formed: '已成班', shelf: '已上架' },
+    { id: 'd4', course: '少儿编程思维课', org: '智创未来', school: '成都华阳实验小学', className: '周四班', time: '每周四 16:30-17:30', venue: '多功能室', teacher: '陈亦然', enrolled: 5, max: 30, min: 12, price: 850, signupStart: '2026-07-12', deadline: '2026-07-20', formed: '未到购买时间', shelf: '已上架' },
   ],
   classes: [
     { id: 'cl1', name: '人工智能启蒙课·周三班', course: '人工智能启蒙课', org: '智创未来', school: '成都天府新区实验小学', venue: '科技教室 A', time: '每周三 16:30-17:30', teacher: '王思远', total: 10, done: 4, min: 10, max: 30, enrolled: 18, status: '上课中' },
@@ -996,7 +996,7 @@ function DeployPage({ db, setDb }: any) {
     const rows = selSchools.map((sc, i) => ({
       id: 'd' + Date.now() + i, course: course.name, org: course.org.slice(2, 6), school: sc,
       className: cfg.className, time: cfg.time, venue: venueOf(sc), teacher: course.teacher,
-      enrolled: 0, max: cfg.max, min: cfg.min, price: cfg.price, deadline: cfg.deadline, formed: '待成班', shelf: '待确认',
+      enrolled: 0, max: cfg.max, min: cfg.min, price: cfg.price, signupStart: cfg.signupStart, deadline: cfg.deadline, formed: '未到购买时间', shelf: '待确认',
     }));
     const clsRows = selSchools.map((sc, i) => ({
       id: 'cl' + Date.now() + i, name: course.name + '·' + cfg.className, course: course.name, org: course.org.slice(2, 6), school: sc,
@@ -1013,7 +1013,7 @@ function DeployPage({ db, setDb }: any) {
         { title: '课程名称', dataIndex: 'course' }, { title: '机构', dataIndex: 'org' }, { title: '投放学校', dataIndex: 'school', ellipsis: true },
         { title: '班级', dataIndex: 'className' }, { title: '上课时间', dataIndex: 'time', ellipsis: true }, { title: '场地', dataIndex: 'venue' }, { title: '教师', dataIndex: 'teacher' },
         { title: '报名/上限', render: (_: any, r: any) => `${r.enrolled} / ${r.max}` },
-        { title: '价格', dataIndex: 'price', render: money }, { title: '截止', dataIndex: 'deadline' },
+        { title: '价格', dataIndex: 'price', render: money }, { title: '购买时间', render: (_: any, r: any) => `${r.signupStart || '立即'} 至 ${r.deadline}` },
         { title: '成班状态', dataIndex: 'formed', render: (v: string) => <S v={v} /> },
         { title: '上架状态', dataIndex: 'shelf', render: (v: string) => <S v={v} /> },
         { title: '操作', render: (_: any, r: any) => <Space><a onClick={() => message.info('Demo：查看配置详情')}>查看</a><a onClick={() => message.info('Demo：编辑配置')}>编辑</a>

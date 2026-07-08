@@ -67,9 +67,9 @@ window.DB = {
       time: '每周三 16:30-17:30',
       place: '科技教室 A',
       classes: [
-        { id: 'wed', school: '成都天府新区实验小学', name: '周三班', time: '每周三 16:30-17:30', place: '科技教室 A', price: 399, minClass: 10, enrolled: 18, maxSeats: 30, deadline: '2026-07-08', status: '报名中' },
-        { id: 'fri', school: '成都天府新区第七小学', name: '周五班', time: '每周五 16:30-17:30', place: '科学实验室', price: 380, minClass: 10, enrolled: 27, maxSeats: 30, deadline: '2026-07-10', status: '报名中' },
-        { id: 'mon', school: '成都天府新区实验小学', name: '周一班', time: '每周一 17:00-18:00', place: '计算机教室 1', price: 399, minClass: 10, enrolled: 30, maxSeats: 30, deadline: '2026-07-06', status: '已满员' },
+        { id: 'wed', school: '成都天府新区实验小学', name: '周三班', time: '每周三 16:30-17:30', place: '科技教室 A', price: 399, minClass: 10, enrolled: 18, maxSeats: 30, purchaseStart: '2026-07-01 10:00', purchaseEnd: '2026-07-08 23:59', deadline: '2026-07-08', status: '报名中' },
+        { id: 'fri', school: '成都天府新区第七小学', name: '周五班', time: '每周五 16:30-17:30', place: '科学实验室', price: 380, minClass: 10, enrolled: 27, maxSeats: 30, purchaseStart: '2026-07-01 10:00', purchaseEnd: '2026-07-10 23:59', deadline: '2026-07-10', status: '报名中' },
+        { id: 'mon', school: '成都天府新区实验小学', name: '周一班', time: '每周一 17:00-18:00', place: '计算机教室 1', price: 399, minClass: 10, enrolled: 30, maxSeats: 30, purchaseStart: '2026-07-01 10:00', purchaseEnd: '2026-07-06 23:59', deadline: '2026-07-06', status: '已满员' },
       ],
       lessons: 8,
       minClass: 10,
@@ -117,8 +117,8 @@ window.DB = {
       time: '每周五 16:30-17:30',
       place: '计算机教室 1',
       classes: [
-        { id: 'tue', school: '成都天府新区实验小学', name: '周二班', time: '每周二 16:30-17:30', place: '计算机教室 1', price: 499, minClass: 12, enrolled: 22, maxSeats: 30, deadline: '2026-07-12', status: '报名中' },
-        { id: 'fri', school: '成都天府新区实验小学', name: '周五班', time: '每周五 16:30-17:30', place: '计算机教室 1', price: 499, minClass: 12, enrolled: 25, maxSeats: 30, deadline: '2026-07-12', status: '报名中' },
+        { id: 'tue', school: '成都天府新区实验小学', name: '周二班', time: '每周二 16:30-17:30', place: '计算机教室 1', price: 499, minClass: 12, enrolled: 22, maxSeats: 30, purchaseStart: '2026-07-02 10:00', purchaseEnd: '2026-07-12 23:59', deadline: '2026-07-12', status: '报名中' },
+        { id: 'fri', school: '成都天府新区实验小学', name: '周五班', time: '每周五 16:30-17:30', place: '计算机教室 1', price: 499, minClass: 12, enrolled: 25, maxSeats: 30, purchaseStart: '2026-07-02 10:00', purchaseEnd: '2026-07-12 23:59', deadline: '2026-07-12', status: '报名中' },
       ],
       lessons: 8,
       minClass: 12,
@@ -161,8 +161,8 @@ window.DB = {
       time: '每周二 16:30-17:30',
       place: '科学教室',
       classes: [
-        { id: 'tue', school: '成都天府新区实验小学', name: '周二班', time: '每周二 16:30-17:30', place: '科学教室', price: 399, minClass: 10, enrolled: 30, maxSeats: 30, deadline: '2026-07-05', status: '已满员' },
-        { id: 'thu', school: '成都麓湖小学', name: '周四班', time: '每周四 16:30-17:30', place: '科学教室', price: 420, minClass: 10, enrolled: 30, maxSeats: 30, deadline: '2026-07-09', status: '已满员' },
+        { id: 'tue', school: '成都天府新区实验小学', name: '周二班', time: '每周二 16:30-17:30', place: '科学教室', price: 399, minClass: 10, enrolled: 30, maxSeats: 30, purchaseStart: '2026-07-01 10:00', purchaseEnd: '2026-07-05 23:59', deadline: '2026-07-05', status: '已满员' },
+        { id: 'thu', school: '成都麓湖小学', name: '周四班', time: '每周四 16:30-17:30', place: '科学教室', price: 420, minClass: 10, enrolled: 30, maxSeats: 30, purchaseStart: '2026-07-01 10:00', purchaseEnd: '2026-07-09 23:59', deadline: '2026-07-09', status: '已满员' },
       ],
       lessons: 8,
       minClass: 10,
@@ -204,7 +204,7 @@ window.DB = {
       time: '每周四 16:30-17:30',
       place: '心理活动室',
       classes: [
-        { id: 'thu', school: '成都天府新区实验小学', name: '周四班', time: '每周四 16:30-17:30', place: '心理活动室', price: 360, minClass: 10, enrolled: 6, maxSeats: 24, deadline: '2026-07-16', status: '待成班' },
+        { id: 'thu', school: '成都天府新区实验小学', name: '周四班', time: '每周四 16:30-17:30', place: '心理活动室', price: 360, minClass: 10, enrolled: 6, maxSeats: 24, purchaseStart: '2026-07-12 10:00', purchaseEnd: '2026-07-16 23:59', deadline: '2026-07-16', status: '待成班' },
       ],
       lessons: 6,
       minClass: 10,
@@ -243,7 +243,7 @@ window.DB = {
       time: '每周一 16:30-17:30',
       place: '美术教室',
       classes: [
-        { id: 'mon', school: '成都天府新区实验小学', name: '周一班', time: '每周一 16:30-17:30', place: '美术教室', price: 420, minClass: 8, enrolled: 12, maxSeats: 28, deadline: '2026-07-18', status: '已成班' },
+        { id: 'mon', school: '成都天府新区实验小学', name: '周一班', time: '每周一 16:30-17:30', place: '美术教室', price: 420, minClass: 8, enrolled: 12, maxSeats: 28, purchaseStart: '2026-07-03 10:00', purchaseEnd: '2026-07-18 23:59', deadline: '2026-07-18', status: '已成班' },
       ],
       lessons: 8,
       minClass: 8,
@@ -284,7 +284,7 @@ window.DB = {
       time: '每周三 17:10-18:10',
       place: '科技教室 A',
       classes: [
-        { id: 'wed', school: '成都天府新区实验小学', name: '周三进阶班', time: '每周三 17:10-18:10', place: '科技教室 A', price: 680, minClass: 10, enrolled: 20, maxSeats: 26, deadline: '2026-07-20', status: '已排课' },
+        { id: 'wed', school: '成都天府新区实验小学', name: '周三进阶班', time: '每周三 17:10-18:10', place: '科技教室 A', price: 680, minClass: 10, enrolled: 20, maxSeats: 26, purchaseStart: '2026-07-04 10:00', purchaseEnd: '2026-07-20 23:59', deadline: '2026-07-20', status: '已排课' },
       ],
       lessons: 10,
       minClass: 10,
@@ -328,7 +328,7 @@ window.DB = {
       time: '每周五 17:00-18:00',
       place: '操场东侧',
       classes: [
-        { id: 'fri', school: '成都天府新区实验小学', name: '周五班', time: '每周五 17:00-18:00', place: '操场东侧', price: 300, minClass: 12, enrolled: 24, maxSeats: 30, deadline: '2026-07-01', status: '上课中' },
+        { id: 'fri', school: '成都天府新区实验小学', name: '周五班', time: '每周五 17:00-18:00', place: '操场东侧', price: 300, minClass: 12, enrolled: 24, maxSeats: 30, purchaseStart: '2026-06-20 10:00', purchaseEnd: '2026-07-01 23:59', deadline: '2026-07-01', status: '上课中' },
       ],
       lessons: 8,
       minClass: 12,
