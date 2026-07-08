@@ -124,6 +124,16 @@ body {
 .st-warn { background: var(--orange-soft); color: var(--orange-deep); }
 .st-done { background: #e8f8ef; color: var(--green); }
 .st-muted { background: #f1f2f4; color: var(--muted); }
+.st-red { background: #ffefee; color: var(--red); }
+
+/* 课时确认列表 */
+.ls-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.ls-row:last-child { border-bottom: 0; padding-bottom: 4px; }
+.ls-row .ls-main { flex: 1; min-width: 0; }
+.ls-row .ls-t { font-size: 14px; font-weight: 600; }
+.ls-row .ls-right { flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+.ls-row .ls-btns { display: flex; gap: 6px; }
+.ls-row .ls-btns .btn-sm { height: 30px; font-size: 12px; padding: 0 13px; }
 
 /* ---------- 按钮 ---------- */
 .btn {
@@ -264,7 +274,15 @@ body {
 .course-card .cc-cover { width: 92px; height: 92px; border-radius: 12px; overflow: hidden; flex-shrink: 0; }
 .course-card .cc-body { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .course-card .cc-name { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+.course-card .cc-title-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.course-card .cc-title-row .cc-name { min-width: 0; }
+.course-card .cc-status { flex-shrink: 0; margin-top: 1px; }
 .course-card .cc-meta { font-size: 12px; color: var(--muted); }
+.course-card .cc-schedule {
+  margin-top: 6px; color: #3f4652; font-size: 12px; line-height: 1.45;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden;
+}
 .course-type-badge {
   position: absolute; top: 10px; right: 10px; z-index: 2;
   height: 22px; padding: 0 8px; border-radius: 999px;
@@ -393,16 +411,18 @@ body {
 /* 班级 / 时段选择（SKU） */
 .sku-opt {
   display: flex; align-items: center; gap: 10px;
-  border: 1.5px solid var(--line); border-radius: 14px; padding: 12px 14px; margin-top: 10px;
+  border: 1.5px solid var(--line); border-radius: 14px; padding: 14px; margin-top: 12px;
   cursor: pointer; transition: border-color .15s, background .15s;
 }
+.sku-opt:first-of-type { margin-top: 0; }
 .sku-opt.on { border-color: var(--orange); background: var(--orange-soft); }
 .sku-opt.full { opacity: .55; pointer-events: none; }
+.sku-opt.conflict { border-color: #f0c36a; background: #fffaf0; }
 .sku-opt .sku-main { flex: 1; min-width: 0; }
 .sku-opt .sku-name { font-weight: 700; font-size: 15px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .sku-opt .sku-time { font-size: 12px; font-weight: 600; color: var(--orange-deep); background: rgba(18,169,196,.1); padding: 2px 8px; border-radius: 8px; }
 .sku-opt.full .sku-time { color: var(--muted); background: #f1f2f4; }
-.sku-opt .sku-sub { margin-top: 4px; }
+.sku-opt .sku-sub { margin-top: 5px; }
 .sku-opt .radio { width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid #cfd3da; flex-shrink: 0; }
 .sku-opt.on .radio { border: 6px solid var(--orange); }
 

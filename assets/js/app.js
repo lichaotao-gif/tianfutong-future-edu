@@ -1,5 +1,5 @@
 /* ============================================================
- * 天府通未来教育中心 — 家长端
+ * 天府未来教育中心 — 家长端
  * 纯前端 SPA（hash 路由 + 写死 mock 数据），无需后端
  * ============================================================ */
 (function () {
@@ -43,6 +43,22 @@
     DB.student = currentStudent();
     return DB.student;
   };
+  const classStatus = (course, cls) => {
+    const min = cls.minClass || course.minClass;
+    if (cls.status) return cls.status;
+    if (cls.enrolled >= cls.maxSeats) return '已满员';
+    return cls.enrolled >= min ? '已成班' : '报名中';
+  };
+  const schoolClasses = (course) => (course.classes || []).filter((k) => !k.school || k.school === currentStudent().school);
+  const parentVisibleClass = (course, cls) => ['报名中', '待成班', '已成班', '已排课', '上课中', '已满员'].includes(classStatus(course, cls));
+  const visibleClassItems = () => DB.courses
+    .filter((c) => !c.schools || c.schools.includes(currentStudent().school))
+    .flatMap((course) => schoolClasses(course).map((cls) => ({ course, cls })))
+    .filter(({ course, cls }) => course.status !== 'hidden' && parentVisibleClass(course, cls));
+  const visibleCourseItems = () => DB.courses
+    .filter((course) => course.status !== 'hidden')
+    .map((course) => ({ course, classes: schoolClasses(course).filter((cls) => parentVisibleClass(course, cls)) }))
+    .filter(({ classes }) => classes.length);
   const courseById = (id) => DB.courses.find((c) => c.id === routeId(id));
   const orderById = (id) => DB.orders.find((o) => o.id === routeId(id));
   const coverImages = {
@@ -185,23 +201,37 @@
    * ============================================================ */
   function screenHome() {
     const s = currentStudent();
-    const courseCard = (c) => {
-      const full = c.status === 'full';
-      const pct = Math.round((c.enrolled / c.maxSeats) * 100);
+    const statusBadge = (status) => {
+      const cls = {
+        报名中: 'st-info',
+        待成班: 'st-warn',
+        已成班: 'st-done',
+        已排课: 'st-done',
+        上课中: 'st-done',
+        已满员: 'st-muted',
+      }[status] || 'st-muted';
+      return `<span class="badge ${cls} cc-status">${esc(status)}</span>`;
+    };
+    const courseCard = ({ course: c, classes }) => {
+      const minPrice = Math.min(...classes.map((cls) => cls.price || c.price));
+      const available = classes.some((cls) => cls.enrolled < cls.maxSeats && classStatus(c, cls) !== '已满员');
+      const openClasses = classes.filter((cls) => cls.enrolled < cls.maxSeats && classStatus(c, cls) !== '已满员');
+      const shownClasses = (openClasses.length ? openClasses : classes).slice(0, 2);
+      const classSummary = shownClasses.map((cls) => `${cls.name} ${cls.time}`).join(' / ');
+      const totalLeft = openClasses.reduce((sum, cls) => sum + Math.max(0, cls.maxSeats - cls.enrolled), 0);
+      const statuses = classes.map((cls) => classStatus(c, cls));
+      const primaryStatus = ['上课中', '已排课', '已成班', '报名中', '待成班', '已满员'].find((x) => statuses.includes(x)) || statuses[0];
       return `
       <div class="card course-card mx mt" onclick="location.hash='#/course/${c.id}'">
         <div class="cc-cover">${coverImg(c.cover, c.name)}</div>
         <div class="cc-body">
-          <div class="cc-name">${esc(c.name)}</div>
+          <div class="cc-title-row"><div class="cc-name">${esc(c.name)}</div>${statusBadge(primaryStatus)}</div>
           <div style="margin-bottom:4px">${c.tags.map((t, i) => `<span class="tag ${i ? 'gray' : ''}">${esc(t)}</span>`).join('')}</div>
-          <div class="cc-meta">${esc(c.gradeRange)} · ${esc(c.time)}</div>
-          <div class="cc-meta">${esc(c.place)}</div>
-          <div class="seat-bar"><i style="width:${pct}%;${full ? 'background:#c5c9d1' : ''}"></i></div>
+          <div class="cc-meta">${esc(c.gradeRange)} · 共 ${c.lessons} 次课</div>
+          <div class="cc-schedule">${esc(classSummary)}${classes.length > shownClasses.length ? ` 等 ${classes.length} 个班` : ''}</div>
           <div class="row between" style="margin-top:6px">
-            <span class="price"><span class="yen">¥</span><span class="num">${c.price}</span></span>
-            ${full
-              ? '<span class="badge st-muted">已满员 30/30</span>'
-              : `<span class="small muted">余 ${c.maxSeats - c.enrolled} / ${c.maxSeats} 名额</span>`}
+            <span class="price"><span class="yen">¥</span><span class="num">${minPrice}</span><span class="small muted"> 起</span></span>
+            ${available ? `<span class="small muted">余 ${totalLeft} 名额</span>` : '<span class="badge st-muted">已满员</span>'}
           </div>
         </div>
       </div>`;
@@ -229,7 +259,7 @@
         </div>
 
         <div class="mx mt"><div class="section-title">本校可报名课程</div></div>
-        ${DB.courses.map(courseCard).join('')}
+        ${visibleCourseItems().map(courseCard).join('') || '<div class="empty">当前学校暂无开放报名课程</div>'}
       </div>
       ${tabbar('home')}
       ${switchSheet()}
@@ -267,10 +297,26 @@
   /* ============================================================
    * 屏幕 3：课程详情页
    * ============================================================ */
-  function screenCourse(id) {
+  function screenCourse(id, classId) {
     const c = courseById(id);
     if (!c) return screenHome();
-    const full = c.status === 'full';
+    if (c.schools && !c.schools.includes(currentStudent().school)) {
+      toast('该课程未开放到当前学校');
+      return screenHome();
+    }
+    const classes = schoolClasses(c).filter((cls) => parentVisibleClass(c, cls));
+    const selectedClass = classId ? classes.find((k) => k.id === routeId(classId || '')) : null;
+    const available = classes.filter((cls) => cls.enrolled < cls.maxSeats && classStatus(c, cls) !== '已满员');
+    const hasSeat = classes.some((cls) => cls.enrolled < cls.maxSeats && classStatus(c, cls) !== '已满员');
+    const displayClass = selectedClass || classes[0];
+    const defaultPlace = selectedClass?.place || (classes.length === 1 ? classes[0].place : '点击立即报名后选择班级和场地') || c.place;
+    const prices = classes.length ? classes.map((cls) => cls.price || c.price) : [c.price];
+    const price = selectedClass?.price || Math.min(...prices);
+    const min = selectedClass?.minClass || Math.min(...(classes.length ? classes.map((cls) => cls.minClass || c.minClass) : [c.minClass]));
+    const max = selectedClass?.maxSeats || classes.reduce((sum, cls) => sum + cls.maxSeats, 0) || c.maxSeats;
+    const enrolled = selectedClass?.enrolled ?? (classes.reduce((sum, cls) => sum + cls.enrolled, 0) || c.enrolled);
+    const full = selectedClass ? enrolled >= max : !hasSeat;
+    const actionLabel = '立即报名';
     render(`
     <div class="screen">
       ${navbar('课程详情')}
@@ -281,18 +327,18 @@
               <div class="course-detail-main">
                 <h1 class="course-detail-name">${esc(c.name)}</h1>
                 <div class="course-detail-tags">${c.tags.map((t, i) => `<span class="tag ${i ? 'gray' : ''}">${esc(t)}</span>`).join('')}<span class="tag blue">${esc(c.gradeRange)}</span></div>
-                <div class="price course-detail-price"><span class="yen">¥</span><span class="num">${c.price}</span><span class="small muted"> /期</span></div>
+                <div class="price course-detail-price"><span class="yen">¥</span><span class="num">${price}</span><span class="small muted"> /期</span></div>
               </div>
               <div class="course-detail-cover">${coverImg(c.cover, c.name)}</div>
             </div>
             <div class="divider"></div>
             <div class="kv"><span class="k">上课学校</span><span class="v">${esc(currentStudent().school)}</span></div>
-            <div class="kv"><span class="k">上课地点</span><span class="v">${esc(c.place)}</span></div>
-            <div class="kv"><span class="k">上课时间</span><span class="v">${(c.classes || []).length > 1 ? `共 ${c.classes.length} 个班次可选（报名时选择）` : esc(c.time)}</span></div>
+            ${selectedClass ? `<div class="kv"><span class="k">报名班级</span><span class="v bold">${esc(selectedClass.name)}</span></div>` : ''}
+            <div class="kv"><span class="k">上课地点</span><span class="v">${esc(defaultPlace)}</span></div>
+            <div class="kv"><span class="k">上课时间</span><span class="v">${esc(selectedClass?.time || (classes.length === 1 ? classes[0].time : '点击立即报名后选择班级和时间段') || c.time)}</span></div>
             <div class="kv"><span class="k">课时数量</span><span class="v">共 ${c.lessons} 次</span></div>
-            <div class="kv"><span class="k">成班人数</span><span class="v">满 ${c.minClass} 人开班 · 最大 ${c.maxSeats} 人</span></div>
-            <div class="kv"><span class="k">当前报名</span><span class="v">${c.enrolled} 人 ${full ? '<span class="badge st-muted">已满员</span>' : ''}</span></div>
-            ${c.teacher ? `<div class="kv"><span class="k">任课老师</span><span class="v">${esc(c.teacher.name)} <span class="small muted">· 平台已审核资质</span></span></div>` : ''}
+            <div class="kv"><span class="k">成班人数</span><span class="v">满 ${min} 人开班${selectedClass ? ` · 最大 ${max} 人` : ''}</span></div>
+            ${selectedClass ? `<div class="kv"><span class="k">当前报名</span><span class="v">${enrolled} 人 ${full ? '<span class="badge st-muted">已满员</span>' : ''}</span></div>` : ''}
           </div>
         </div>
 
@@ -322,24 +368,24 @@
 
         <div class="mx mt">
           <div class="notice">
-            <b>先学后付 · 资金平台托管</b><br/>
+            <b>先付后学 · 资金平台托管</b><br/>
             报名时一次性缴费，资金进入<b>平台监管账户</b>托管，不直接付给机构；机构每完成一节课按课时结算。未达开班人数将<b>自动全额退款</b>并通知家长。
           </div>
         </div>
         <div style="height:14px"></div>
       </div>
       <div class="actionbar">
-        <div class="price" style="margin-right:auto"><span class="yen">¥</span><span class="num">${c.price}</span><span class="small muted"> /期</span></div>
+        <div class="price" style="margin-right:auto"><span class="yen">¥</span><span class="num">${price}</span><span class="small muted"> /期</span></div>
         ${full
           ? '<button class="btn" disabled style="max-width:200px">已满员，无法报名</button>'
-          : `<button class="btn btn-primary" style="max-width:200px" onclick="App.openSkuSheet('${c.id}')">立即报名</button>`}
+          : `<button class="btn btn-primary" style="max-width:200px" onclick="${selectedClass ? `App.confirmClassEnroll('${c.id}', '${selectedClass.id}')` : `App.startEnroll('${c.id}')`}">${actionLabel}</button>`}
       </div>
       ${skuSheet(c)}
     </div>`);
   }
 
   /* ---------- 班级 / 时段选择弹层（SKU：课后延时服务多班次） ---------- */
-  /* 时间冲突：与已报名（进行中）课程同一天且时段重叠的班次禁止选择 */
+  /* 时间冲突：与已报名（进行中）课程同一天且时段重叠时提醒，家长确认后仍可报名 */
   const parseSlot = (t) => {
     const d = (String(t).match(/每?周([一二三四五六日])/) || [])[1];
     const m = String(t).match(/(\d{1,2}):(\d{2})\s*[-–]\s*(\d{1,2}):(\d{2})/);
@@ -351,6 +397,7 @@
     if (!a) return null;
     for (const o of DB.orders) {
       if (!['forming', 'formed', 'scheduled', 'ongoing'].includes(o.status)) continue;
+      if (o.school && o.school !== currentStudent().school) continue;
       const b = parseSlot(o.time);
       if (b && b.d === a.d && a.s < b.e && b.s < a.e) return o.courseName;
     }
@@ -359,42 +406,75 @@
 
   let skuSel = -1;
   function skuSheet(c) {
-    const classes = c.classes || [];
+    const classes = schoolClasses(c).filter((k) => parentVisibleClass(c, k));
     if (!classes.length) return '';
     return `
-    <div class="sheet-mask" id="skuMask" onclick="if(event.target===this)App.closeSkuSheet()">
+    <div class="sheet-mask" id="skuMask" data-course="${esc(c.id)}" onclick="if(event.target===this)App.closeSkuSheet()">
       <div class="sheet">
         <div class="handle"></div>
         <h3>选择班级</h3>
-        <div class="small muted" style="margin-bottom:2px">课后延时服务时段 · 请选择合适的班级和时间</div>
         ${classes.map((k, i) => {
-          const isFull = k.enrolled >= k.maxSeats;
+          const isFull = k.enrolled >= k.maxSeats || classStatus(c, k) === '已满员';
           const conflict = !isFull && timeConflict(k.time);
           const left = k.maxSeats - k.enrolled;
           return `
-          <div class="sku-opt ${isFull || conflict ? 'full' : ''}" id="sku${i}" onclick="App.selectSku(${i})">
+          <div class="sku-opt ${isFull ? 'full' : conflict ? 'conflict' : ''}" id="sku${i}" onclick="App.selectSku(${i})">
             <div class="sku-main">
               <div class="sku-name">${esc(k.name)}<span class="sku-time">${esc(k.time)}</span></div>
-              <div class="sku-sub small muted">${esc(k.place)} · ${isFull ? '已满员' : conflict ? `与已报「${esc(conflict)}」时间冲突` : `余 ${left} 名额`}</div>
+              <div class="sku-sub small muted">${esc(k.place)} · ¥${k.price || c.price} · ${isFull ? '已满员' : conflict ? `与已报「${esc(conflict)}」时间冲突` : `余 ${left} 名额`}</div>
             </div>
             <span class="radio"></span>
           </div>`;
         }).join('')}
-        <div class="row between" style="margin-top:14px;margin-bottom:10px">
-          <span class="price"><span class="yen">¥</span><span class="num">${c.price}</span><span class="small muted"> /期 · 先学后付</span></span>
-        </div>
+        <div style="height:20px"></div>
         <button class="btn btn-primary" onclick="App.confirmSku('${c.id}')">确认，去报名</button>
       </div>
     </div>`;
   }
 
+  function confirmConflictAndGo(cid, cls) {
+    const conflict = timeConflict(cls.time);
+    if (conflict) {
+      const ok = window.confirm(`所选班级存在上课时间冲突，已报名「${conflict}」。是否确认继续报名？`);
+      if (!ok) return;
+    }
+    closeSkuSheet();
+    go('#/enroll/' + cid + '/' + cls.id);
+  }
+
+  function confirmClassEnroll(cid, classId) {
+    const c = courseById(cid);
+    const cls = c ? schoolClasses(c).find((k) => k.id === routeId(classId || '')) : null;
+    if (!cls) return toast('请选择班级');
+    if (cls.enrolled >= cls.maxSeats || classStatus(c, cls) === '已满员') return toast('该班级已满员，请选择其他班级');
+    confirmConflictAndGo(cid, cls);
+  }
+
   function openSkuSheet(cid) {
     const c = courseById(cid);
-    const classes = (c && c.classes) || [];
+    const classes = c ? schoolClasses(c).filter((k) => parentVisibleClass(c, k)) : [];
     if (!classes.length) { go('#/enroll/' + cid); return; }
-    skuSel = classes.findIndex((k) => k.enrolled < k.maxSeats && !timeConflict(k.time));
+    const available = classes.filter((k) => k.enrolled < k.maxSeats && classStatus(c, k) !== '已满员');
+    if (classes.length === 1 && available.length === 1) { confirmConflictAndGo(cid, available[0]); return; }
+    if (classes.length === 1 && !available.length) { toast('当前班级已满员，暂不能报名'); return; }
+    const oldMask = $('#skuMask');
+    if (!oldMask || oldMask.dataset.course !== cid) {
+      if (oldMask) oldMask.remove();
+      app.insertAdjacentHTML('beforeend', skuSheet(c));
+    }
+    skuSel = classes.findIndex((k) => k.enrolled < k.maxSeats && classStatus(c, k) !== '已满员');
     classes.forEach((_, i) => $('#sku' + i)?.classList.toggle('on', i === skuSel));
     $('#skuMask').classList.add('show');
+  }
+
+  function startEnroll(cid) {
+    const c = courseById(cid);
+    const classes = c ? schoolClasses(c).filter((k) => parentVisibleClass(c, k)) : [];
+    const available = classes.filter((k) => k.enrolled < k.maxSeats && classStatus(c, k) !== '已满员');
+    if (!classes.length) return toast('当前学校暂无可报名班级');
+    if (classes.length === 1 && available.length === 1) return confirmConflictAndGo(cid, available[0]);
+    if (classes.length === 1 && !available.length) return toast('当前班级已满员，暂不能报名');
+    openSkuSheet(cid);
   }
 
   function closeSkuSheet() { $('#skuMask')?.classList.remove('show'); }
@@ -406,13 +486,11 @@
 
   function confirmSku(cid) {
     const c = courseById(cid);
-    const cls = ((c && c.classes) || [])[skuSel];
+    const classes = c ? schoolClasses(c).filter((k) => parentVisibleClass(c, k)) : [];
+    const cls = classes[skuSel];
     if (!cls) return toast('请选择班级');
     if (cls.enrolled >= cls.maxSeats) return toast('该班级已满员，请选择其他班级');
-    const conflict = timeConflict(cls.time);
-    if (conflict) return toast('与已报「' + conflict + '」上课时间冲突');
-    closeSkuSheet();
-    go('#/enroll/' + cid + '/' + cls.id);
+    confirmConflictAndGo(cid, cls);
   }
 
   /* ============================================================
@@ -424,12 +502,14 @@
     const c = courseById(id);
     if (!c) return screenHome();
     const s = currentStudent();
-    const classes = c.classes || [];
+    const classes = (c.classes || []).filter((k) => !k.school || k.school === currentStudent().school);
     enrollClass = classes.find((k) => k.id === routeId(classId || ''))
       || classes.find((k) => k.enrolled < k.maxSeats) || null;
     const cls = enrollClass;
+    const price = cls?.price || c.price;
+    const min = cls?.minClass || c.minClass;
     enrollConfirmed = false;
-    const ruleText = `我已阅读并同意《课程报名须知》，同意支付 ¥${c.price} 课程费用（由平台监管账户托管，按课时结算给机构）；我已知晓未达开班人数将自动全额退款。`;
+    const ruleText = `我已阅读并同意《课程报名须知》，同意支付 ¥${price} 课程费用（由平台监管账户托管，按课时结算给机构）；我已知晓未达开班人数将自动全额退款。`;
 
     render(`
     <div class="screen">
@@ -448,10 +528,10 @@
           ${cls ? `<div class="kv"><span class="k">报名班级</span><span class="v"><b>${esc(cls.name)}</b> <span class="small muted">（余 ${cls.maxSeats - cls.enrolled} 名额）</span></span></div>` : ''}
           <div class="kv"><span class="k">上课时间</span><span class="v">${esc(cls ? cls.time : c.time)}</span></div>
           <div class="kv"><span class="k">上课地点</span><span class="v">${esc(cls ? cls.place : c.place)}</span></div>
-          <div class="kv"><span class="k">报名截止</span><span class="v">2026 年 7 月 8 日</span></div>
+          <div class="kv"><span class="k">报名截止</span><span class="v">${esc(cls?.deadline || '以学校通知为准')}</span></div>
           <div class="divider"></div>
-          <div class="kv"><span class="k">课程费用</span><span class="v price"><span class="yen">¥</span><span class="num">${c.price}</span></span></div>
-          <div class="kv"><span class="k">支付金额</span><span class="v"><b style="color:var(--orange-deep)">¥${c.price}</b> <span class="small muted">（平台托管）</span></span></div>
+          <div class="kv"><span class="k">课程费用</span><span class="v price"><span class="yen">¥</span><span class="num">${price}</span></span></div>
+          <div class="kv"><span class="k">支付金额</span><span class="v"><b style="color:var(--orange-deep)">¥${price}</b> <span class="small muted">（平台托管）</span></span></div>
         </div>
 
         <div class="card mx mt pad">
@@ -461,7 +541,7 @@
           </div>
         </div>
 
-        <div class="mx mt"><div class="notice"><b>资金托管说明：</b>支付的 ¥${c.price} 将进入平台监管账户托管，不直接付给机构；机构每完成一节课按课时结算。未达开班人数将自动全额退款并通知你。</div></div>
+        <div class="mx mt"><div class="notice"><b>资金托管说明：</b>支付的 ¥${price} 将进入平台监管账户托管，不直接付给机构；机构每完成一节课按课时结算。未达开班人数将自动全额退款并通知你。</div></div>
         <div style="height:14px"></div>
       </div>
       <div class="actionbar">
@@ -481,14 +561,15 @@
   const wxLogo = '<svg width="18" height="18" viewBox="0 0 24 24" fill="#07c160"><path d="M9.5 3C5.4 3 2 5.9 2 9.5c0 2 1 3.8 2.7 5l-.7 2.2 2.5-1.3c.7.2 1.4.4 2.2.4h.4a5.7 5.7 0 0 1-.3-1.8c0-3.5 3.3-6.3 7.3-6.3h.3C15.7 5 12.9 3 9.5 3zM7 8.4a.9.9 0 1 1 0-1.8.9.9 0 0 1 0 1.8zm5 0a.9.9 0 1 1 0-1.8.9.9 0 0 1 0 1.8zM22 14c0-3-2.9-5.4-6.4-5.4S9.2 11 9.2 14s2.9 5.4 6.4 5.4c.7 0 1.3-.1 1.9-.3l2.1 1.1-.6-1.9A5.2 5.2 0 0 0 22 14zm-8.5-.9a.8.8 0 1 1 0-1.6.8.8 0 0 1 0 1.6zm4.2 0a.8.8 0 1 1 0-1.6.8.8 0 0 1 0 1.6z"/></svg>';
 
   function wxpaySheet(c) {
+    const price = enrollClass?.price || c.price;
     return `
     <div class="sheet-mask" id="wxMask" onclick="if(event.target===this)App.closeWxpay()">
       <div class="sheet wxpay">
         <div class="wx-head"><span class="wx-close" onclick="App.closeWxpay()">✕</span>微信支付</div>
-        <div class="wx-amount"><span class="y">¥</span>${c.price}.00</div>
+        <div class="wx-amount"><span class="y">¥</span>${price}.00</div>
         <div class="wx-sub">资金由平台监管账户托管 · 按课时结算</div>
         <div class="wx-rows">
-          <div class="wx-row"><span class="k">商户</span><span class="v">天府通未来教育中心</span></div>
+          <div class="wx-row"><span class="k">商户</span><span class="v">天府未来教育中心</span></div>
           <div class="wx-row"><span class="k">商品</span><span class="v">${esc(c.name)}（课程报名费）</span></div>
           <div class="wx-row"><span class="k">支付方式</span><span class="v wx-method">${wxLogo}零钱</span></div>
         </div>
@@ -528,6 +609,8 @@
     const c = courseById(id) || DB.courses[0];
     const cls = enrollClass && (c.classes || []).includes(enrollClass) ? enrollClass : null;
     const seatBase = cls || c;
+    const price = cls?.price || c.price;
+    const min = cls?.minClass || c.minClass;
     const enrolledNow = seatBase.enrolled + 1;
     render(`
     <div class="screen">
@@ -546,8 +629,8 @@
           </div>
           ${cls ? `<div class="kv"><span class="k">报名班级</span><span class="v"><b>${esc(cls.name)}</b> · ${esc(cls.time)}</span></div>
           <div class="kv"><span class="k">上课地点</span><span class="v">${esc(cls.place)}</span></div>` : ''}
-          <div class="kv"><span class="k">已付金额</span><span class="v"><b style="color:var(--orange-deep)">¥${c.price}</b> <span class="small muted">（托管中）</span></span></div>
-          <div class="kv"><span class="k">成班条件</span><span class="v">满 ${c.minClass} 人开班 · 未成班自动退款</span></div>
+          <div class="kv"><span class="k">已付金额</span><span class="v"><b style="color:var(--orange-deep)">¥${price}</b> <span class="small muted">（托管中）</span></span></div>
+          <div class="kv"><span class="k">成班条件</span><span class="v">满 ${min} 人开班 · 未成班自动退款</span></div>
           <div class="kv"><span class="k">当前报名</span><span class="v">${enrolledNow} 人 / 最大 ${seatBase.maxSeats} 人</span></div>
           <div class="seat-bar" style="margin-top:4px"><i style="width:${Math.round((enrolledNow / seatBase.maxSeats) * 100)}%"></i></div>
         </div>
@@ -676,6 +759,7 @@
       const st = DB.statusMap[o.status];
       const isPay = o.status === 'to-confirm';
       const r = o.result;
+      const pend = (r.lessons || []).filter((l) => l.state === 'pending').length;
       return `
       <div class="card mx mt" onclick="location.hash='#/result/${o.id}'">
         <div class="pad">
@@ -684,17 +768,17 @@
             <div style="flex:1;min-width:0">
               <div class="row between"><div class="bold">${esc(o.courseName)}</div><span class="badge ${st.cls}">${st.label}</span></div>
               <div class="small muted" style="margin-top:3px">${esc(r.studentName)} · 完成 ${r.finished}/${r.total} 课时</div>
-              <div class="small muted">作品：${esc(r.work.title)}</div>
+              <div class="small ${pend ? '' : 'muted'}" style="${pend ? 'color:var(--warn)' : ''}">${pend ? `${pend} 节课时待确认` : '课时已全部确认'}</div>
             </div>
           </div>
           <div class="divider"></div>
           <div class="row between">
             <div class="small">
               ${isPay
-                ? `<span class="muted">待付款</span> <b style="color:var(--orange-deep)">¥${o.amount}</b>`
+                ? `<span class="muted">待确认</span> <b style="color:var(--orange-deep)">${pend} 节</b>`
                 : `<span class="muted">已完成</span> <b>¥${o.amount}</b>`}
             </div>
-            <span class="btn ${isPay ? 'btn-primary' : 'btn-line'} btn-sm">${isPay ? '查看并付款' : '查看成果'}</span>
+            <span class="btn ${isPay ? 'btn-primary' : 'btn-line'} btn-sm">${isPay ? '去确认课时' : '查看详情'}</span>
           </div>
         </div>
       </div>`;
@@ -704,7 +788,7 @@
       ${navbar('学习成果')}
       <div class="scroll">
         ${list.length ? list.map(card).join('') : '<div class="empty">还没有学习成果</div>'}
-        <div class="mx mt small muted center" style="padding:8px 0">老师上传学习成果后，可在此按课程查看作品与评价并确认付款</div>
+        <div class="mx mt small muted center" style="padding:8px 0">每节课上完后请逐节确认；3 天内未确认将自动确认</div>
       </div>
     </div>`);
   }
@@ -712,12 +796,46 @@
   /* ============================================================
    * 屏幕 8：学习成果详情页
    * ============================================================ */
+  /* 课时确认状态 / 考勤标签 */
+  const LESSON_STATE = {
+    pending: { label: '待确认', cls: 'st-warn' },
+    confirmed: { label: '已确认', cls: 'st-done' },
+    auto: { label: '已自动确认', cls: 'st-muted' },
+    disputed: { label: '有异议', cls: 'st-red' },
+  };
+  const ATTEND_CLS = { 已到: 'st-done', 缺勤: 'st-red' };
+  const attendTag = (a) => `<span class="badge ${ATTEND_CLS[a] || 'st-muted'}" style="font-size:11px;padding:2px 8px">${esc(a)}</span>`;
+
   function screenResult(id) {
     const o = orderById(id);
     if (!o || !o.result) { toast('暂无学习成果'); return screenOrders(); }
     const r = o.result;
     const st = DB.statusMap[o.status] || DB.statusMap.done;
     const done = o.status === 'done';
+    const lessons = r.lessons || [];
+    const pend = lessons.filter((l) => l.state === 'pending').length;
+    const confirmedCount = lessons.length - pend - lessons.filter((l) => l.state === 'disputed').length;
+
+    const lessonRow = (l, i) => {
+      const ls = LESSON_STATE[l.state] || LESSON_STATE.pending;
+      return `
+      <div class="ls-row">
+        <div class="ls-main">
+          <div class="ls-t">第 ${l.no} 节 · ${esc(l.title)}</div>
+          <div class="small muted" style="margin-top:2px">${esc(l.date)} · 考勤 ${attendTag(l.attend)}</div>
+          ${l.state === 'pending' && l.deadline ? `<div class="small" style="color:var(--warn);margin-top:2px">${esc(l.deadline)} 前未确认将自动确认</div>` : ''}
+          ${l.state === 'disputed' ? `<div class="small" style="color:var(--red);margin-top:2px">异议已提交，平台核实中（该节暂停计入结算）</div>` : ''}
+        </div>
+        <div class="ls-right">
+          ${l.state === 'pending' ? `
+          <div class="ls-btns">
+            <button class="btn btn-primary btn-sm" onclick="App.confirmLesson('${o.id}', ${i})">确认</button>
+            <button class="btn btn-ghost btn-sm" onclick="App.openDispute('${o.id}', ${i})">有异议</button>
+          </div>` : `<span class="badge ${ls.cls}">${ls.label}</span>`}
+        </div>
+      </div>`;
+    };
+
     render(`
     <div class="screen">
       ${navbar('学习成果')}
@@ -729,31 +847,92 @@
           <div class="stat3">
             <div class="s"><div class="n">${r.finished}/${r.total}</div><div class="l">完成课时</div></div>
             <div class="s"><div class="n">${r.attendance}</div><div class="l">出勤次数</div></div>
-            <div class="s"><div class="n">${r.leave}</div><div class="l">请假次数</div></div>
+            <div class="s"><div class="n">${r.leave}</div><div class="l">缺勤次数</div></div>
           </div>
         </div>
 
         <div class="card mx mt pad">
-          <div class="section-title">老师评语</div>
-          <div class="comment-text small">
-            ${String(r.teacherComment).split('\n').map((p) => `<p>${esc(p)}</p>`).join('')}
+          <div class="row between">
+            <div class="section-title" style="margin-bottom:0">课时确认</div>
+            <span class="small muted">已确认 ${confirmedCount} / ${lessons.length} 节</span>
           </div>
-          ${(r.commentImages || []).length ? `
-          <div class="comment-pics">
-            ${r.commentImages.map((src) => `<div class="cp"><img src="${src}" alt="课堂图片" loading="lazy"></div>`).join('')}
-          </div>` : ''}
+          <div class="small muted" style="margin:6px 0 4px;line-height:1.6">请逐节核对孩子是否上了该节课（考勤为老师标注）。${done ? '本课程课时已全部确认。' : '确认一节即消课一节，按月计入机构结算；有异议的课时暂不计入。3 天内未处理将自动确认。'}</div>
+          ${lessons.map(lessonRow).join('')}
         </div>
         <div style="height:14px"></div>
       </div>
-      ${done
-        ? ''
-        : `<div class="actionbar" style="flex-direction:column;gap:8px">
-        <div class="small muted center">若 3 天内未确认，系统将自动确认</div>
-        <button class="btn btn-primary" onclick="App.confirmPay('${o.id}')">确认详情</button>
-        <button class="btn btn-ghost" style="height:40px" onclick="App.openAftersale()">有问题，发起售后</button>
-      </div>
-      ${aftersaleSheet()}`}
+      ${disputeSheet()}
     </div>`);
+  }
+
+  /* ---------- 课时确认 / 异议 ---------- */
+  function confirmLesson(orderId, idx) {
+    const o = orderById(orderId);
+    const l = o?.result?.lessons?.[idx];
+    if (!l || l.state !== 'pending') return;
+    /* 确认一节 = 消课一节：该节即计入机构当月结算池（有异议的单节除外），不等整期学完 */
+    l.state = 'confirmed';
+    const left = o.result.lessons.filter((x) => x.state === 'pending').length;
+    if (left === 0 && !o.result.lessons.some((x) => x.state === 'disputed')) {
+      o.status = 'done';
+      screenResult(orderId);
+      toast('全部课时已确认，课程完成');
+    } else {
+      screenResult(orderId);
+      toast(`第 ${l.no} 节已确认消课，计入机构本月结算`);
+    }
+  }
+
+  let disputeTarget = null; // { orderId, idx }
+  let disputeSel = -1;
+  const DISPUTE_REASONS = [
+    '孩子当天缺勤，没有上这节课',
+    '这节课没有开课 / 被取消',
+    '考勤记录与实际不符',
+    '其他问题',
+  ];
+  function disputeSheet() {
+    return `
+    <div class="sheet-mask" id="dsMask" onclick="if(event.target===this)App.closeDispute()">
+      <div class="sheet">
+        <div class="handle"></div>
+        <h3>课时异议</h3>
+        <div class="small muted" style="margin-bottom:8px" id="dsSub">请选择异议原因（主要核对该节课是否实际上课）</div>
+        ${DISPUTE_REASONS.map((t, i) => `
+          <div class="opt" id="dsOpt${i}" onclick="App.selectDispute(${i})"><span>${esc(t)}</span><span class="radio"></span></div>`).join('')}
+        <textarea class="field" rows="2" id="dsNote" placeholder="补充说明（选填）"></textarea>
+        <div style="height:14px"></div>
+        <button class="btn btn-primary" onclick="App.submitDispute()">提交异议</button>
+        <div style="height:8px"></div>
+        <button class="btn btn-ghost" style="height:42px" onclick="App.closeDispute()">取消</button>
+      </div>
+    </div>`;
+  }
+  function openDispute(orderId, idx) {
+    const o = orderById(orderId);
+    const l = o?.result?.lessons?.[idx];
+    if (!l) return;
+    disputeTarget = { orderId, idx };
+    disputeSel = -1;
+    DISPUTE_REASONS.forEach((_, j) => $('#dsOpt' + j)?.classList.remove('on'));
+    const note = $('#dsNote'); if (note) note.value = '';
+    $('#dsSub').textContent = `第 ${l.no} 节 · ${l.title}（${l.date}，老师标注考勤：${l.attend}）`;
+    $('#dsMask').classList.add('show');
+  }
+  function closeDispute() { $('#dsMask')?.classList.remove('show'); }
+  function selectDispute(i) {
+    disputeSel = i;
+    DISPUTE_REASONS.forEach((_, j) => $('#dsOpt' + j).classList.toggle('on', i === j));
+  }
+  function submitDispute() {
+    if (disputeSel < 0) return toast('请选择异议原因');
+    const o = orderById(disputeTarget.orderId);
+    const l = o.result.lessons[disputeTarget.idx];
+    l.state = 'disputed';
+    l.disputeReason = DISPUTE_REASONS[disputeSel];
+    closeDispute();
+    screenResult(disputeTarget.orderId);
+    toast('异议已提交，平台将核实该节课时，核实期间暂停计入机构结算');
   }
 
   function confirmPay(id) {
@@ -856,10 +1035,10 @@
           </div>
         </div>
         <div class="card mx mt" style="overflow:hidden">
-          ${cell('#f59b1c', I.help, '帮助中心', '先学后付怎么用？', "App.soonTip()")}
+          ${cell('#f59b1c', I.help, '帮助中心', '先付后学怎么用？', "App.soonTip()")}
           ${cell('#8a8f99', I.service, '客服与售后', '在线咨询', "App.soonTip()")}
         </div>
-        <div class="mx mt small muted center" style="padding:14px 0;user-select:none" onclick="App.adminTap()">天府通未来教育中心</div>
+        <div class="mx mt small muted center" style="padding:14px 0;user-select:none" onclick="App.adminTap()">天府未来教育中心</div>
       </div>
       ${tabbar('me')}
     </div>`);
@@ -1094,7 +1273,7 @@
       <div class="scroll">
         <div class="login-hero">
           <div class="login-logo">${I.cap}</div>
-          <h2>天府通未来教育中心</h2>
+          <h2>天府未来教育中心</h2>
           <p class="small muted">校内课后延时服务 · 家长端</p>
         </div>
         <div class="card mx pad">
@@ -1191,7 +1370,7 @@
     toast('售后申请已提交，平台将在 1-3 个工作日内处理');
   }
 
-  /* 隐藏调试入口：连点页脚「天府通未来教育中心」2 次打开后台管理 */
+  /* 隐藏调试入口：连点页脚「天府未来教育中心」2 次打开后台管理 */
   let adminTaps = 0, adminTapTimer = null;
   function adminTap() {
     adminTaps += 1;
@@ -1220,6 +1399,7 @@
    * ============================================================ */
   const routes = [
     [/^#\/?$|^#\/home$|^#\/tft$/, screenHome],
+    [/^#\/course\/([^/]+)\/([^/]+)$/, (m) => screenCourse(m[1], m[2])],
     [/^#\/course\/(.+)$/, (m) => screenCourse(m[1])],
     [/^#\/enroll\/([^/]+)\/([^/]+)$/, (m) => screenEnroll(m[1], m[2])],
     [/^#\/enroll\/([^/]+)$/, (m) => screenEnroll(m[1])],
@@ -1249,8 +1429,9 @@
   /* 暴露给内联事件 */
   window.App = {
     toggleEnrollConfirm, submitEnroll, closeWxpay, confirmWxpay, confirmPay, switchStudent, openSwitchSheet, closeSwitchSheet, adminTap, soonTip: () => toast('功能开发中'),
-    openSkuSheet, closeSkuSheet, selectSku, confirmSku,
+    openSkuSheet, closeSkuSheet, selectSku, confirmSku, startEnroll, confirmClassEnroll,
     openReview, closeReview, setStars, submitReview,
+    confirmLesson, openDispute, closeDispute, selectDispute, submitDispute,
     openAftersale, closeAftersale, selectAS, submitAftersale,
     openStudentForm, closeStudentForm, editStudent, saveStudentForm, deleteStudent,
     pickAvatar, saveProfile, toggleWxBind, logout, sendCode, doLogin, wxLogin,

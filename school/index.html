@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>天府通未来教育中心 · 学校端 Demo</title>
+<title>天府未来教育中心 · 学校端 Demo</title>
 <style>
   :root {
     --primary: #0e9f6e; --primary-soft: #e6f7f1;
@@ -38,6 +38,7 @@
   .topbar { height: 56px; background: #fff; box-shadow: 0 1px 4px rgba(0,21,41,.06); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; position: sticky; top: 0; z-index: 20; }
   .topbar .title { font-size: 16px; font-weight: 700; }
   .top-right { display: flex; align-items: center; gap: 12px; font-size: 13px; }
+  .plan-banner { background: #fff7e6; color: #995e00; border-bottom: 1px solid #ffe0a3; padding: 8px 24px; font-size: 12.5px; }
   .top-right .who { color: var(--muted); }
   .top-right .who b { color: var(--text); }
   .top-right select { border: 1px solid #d9dce3; border-radius: 6px; padding: 6px 10px; font-size: 13px; font-family: inherit; color: var(--text); background: #fff; cursor: pointer; }
@@ -141,8 +142,8 @@
   .m-body ol { padding-left: 20px; color: #52565e; font-size: 13px; line-height: 2; }
   .form-row { margin-bottom: 12px; }
   .form-row label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
-  .form-row textarea, .form-row input { width: 100%; border: 1px solid #d9dce3; border-radius: 6px; padding: 9px 10px; font-size: 13px; font-family: inherit; resize: vertical; }
-  .form-row textarea:focus, .form-row input:focus { outline: none; border-color: var(--primary); }
+  .form-row textarea, .form-row input, .form-row select { width: 100%; border: 1px solid #d9dce3; border-radius: 6px; padding: 9px 10px; font-size: 13px; font-family: inherit; resize: vertical; background: #fff; }
+  .form-row textarea:focus, .form-row input:focus, .form-row select:focus { outline: none; border-color: var(--primary); }
   .m-tip { background: var(--orange-soft); color: #7a4a18; border-radius: 8px; padding: 10px 12px; font-size: 12.5px; line-height: 1.7; margin-top: 12px; }
 
   .toast { position: fixed; top: 70px; left: 50%; transform: translateX(-50%) translateY(-8px); background: rgba(20,22,30,.88); color: #fff; padding: 10px 20px; border-radius: 8px; font-size: 13px; z-index: 200; opacity: 0; pointer-events: none; transition: all .25s; }
@@ -161,14 +162,14 @@
   <aside class="sider">
     <div class="brand">
       <div class="logo">校</div>
-      <b>天府通未来教育中心<div class="sub">学校端 · Demo</div></b>
+      <b>天府未来教育中心<div class="sub">学校端 · Demo</div></b>
     </div>
     <nav class="menu" id="menu"></nav>
     <div class="side-links">
       <div class="side-title">友情链接</div>
       <a href="../">家长端</a>
       <a href="../admin/">平台管理后台</a>
-      <a href="../org/">机构端 / 老师端</a>
+      <a href="../org/">机构端 / 教师端</a>
     </div>
   </aside>
   <div class="main">
@@ -178,11 +179,12 @@
         <button class="help-btn" onclick="showGlossary()" title="查看平台全部名词与状态解释">？ 名词解释</button>
         <span class="who">当前学校：</span>
         <select id="schoolSel" onchange="setSchool(this.value)">
-          <option>天府一小</option><option>天府二小</option><option>天府实验小学</option>
+          <option>成都天府新区实验小学</option><option>成都天府新区第七小学</option><option>成都麓湖小学</option>
         </select>
         <span class="who">当前账号：<b>学校管理员</b></span>
       </div>
     </header>
+    <div class="plan-banner">远期规划演示 · 首期学校端暂不上线：场地维护、排课确认等由平台运营在「平台管理后台」代为处理，学校侧线下配合</div>
     <main class="content" id="content"></main>
   </div>
 </div>
@@ -198,15 +200,15 @@
 
 <script>
 /* ============================================================
- * 天府通未来教育中心 · 学校端 单文件原型
+ * 天府未来教育中心 · 学校端 单文件原型
  * 学校职责：看本校课程 / 管场地 / 看名单 / 确认排课 / 确认上课销课
  * 不涉及机构财务与结算金额
  * ============================================================ */
 
 /* ---------- Mock 数据（按学校隔离，切换学校数据变化） ---------- */
 const DATA = {
-  '天府一小': {
-    info: { name: '天府一小', area: '天府新区', addr: '天府新区麓山大道 66 号', contact: '李主任', phone: '138****8888', status: '已合作', outside: '否', admin: '李主任' },
+  '成都天府新区实验小学': {
+    info: { name: '成都天府新区实验小学', area: '天府新区', addr: '天府新区麓山大道 66 号', contact: '李主任', phone: '138****8888', status: '已合作', outside: '否', admin: '李主任' },
     stats: [['本校开放课程', 6, '门'], ['当前开课班级', 4, '个'], ['今日上课班级', 2, '个'], ['本月报名人数', 126, '人'],
       ['待确认排课', 2, '个', 1], ['待确认销课', 3, '节', 1], ['场地数量', 8, '个'], ['待处理售后', 1, '单', 1]],
     venues: [
@@ -252,7 +254,7 @@ const DATA = {
       { id: 'r1', cls: '人工智能启蒙课一班', course: '人工智能启蒙课', no: 4, date: '2026-07-01', time: '17:00-18:00', venue: '科技教室', teacher: '王老师', due: 28, actual: 27, sign: '已签到', record: '已提交记录', signAt: '16:52', content: '训练自己的小模型', mood: '课堂气氛活跃，动手环节完成度高', comment: '整体掌握良好', note: '' },
       { id: 'r2', cls: '人工智能启蒙课一班', course: '人工智能启蒙课', no: 5, date: '2026-07-08', time: '17:00-18:00', venue: '科技教室', teacher: '王老师', due: 28, actual: 0, sign: '待上课', record: '待上课', signAt: '—', content: '', mood: '', comment: '', note: '' },
       { id: 'r3', cls: '科学实验探索课一班', course: '科学实验探索课', no: 1, date: '2026-06-30', time: '17:00-18:00', venue: '科学教室', teacher: '张老师', due: 18, actual: 17, sign: '已签到', record: '已提交记录', signAt: '16:55', content: '观察与猜想', mood: '实验安全规范讲解到位', comment: '学生兴趣浓厚', note: '' },
-      { id: 'r4', cls: '科学实验探索课一班', course: '科学实验探索课', no: 2, date: '2026-07-07', time: '17:00-18:00', venue: '科学教室', teacher: '张老师', due: 18, actual: 16, sign: '已签到', record: '异常', signAt: '17:20', content: '浮沉与密度', mood: '', comment: '', note: '老师迟到 20 分钟，实到人数与签到不符，已上报平台' },
+      { id: 'r4', cls: '科学实验探索课一班', course: '科学实验探索课', no: 2, date: '2026-07-07', time: '17:00-18:00', venue: '科学教室', teacher: '张老师', due: 18, actual: 16, sign: '已签到', record: '异常', signAt: '17:20', content: '浮沉与密度', mood: '', comment: '', note: '教师迟到 20 分钟，实到人数与签到不符，已上报平台' },
     ],
     confirms: [
       { id: 'x1', cls: '人工智能启蒙课一班', course: '人工智能启蒙课', no: 4, date: '2026-07-01', teacher: '王老师', org: '成都启智未来教育', due: 28, actual: 27, tSubmit: '已提交', school: '待确认', status: '已上课待确认' },
@@ -269,7 +271,7 @@ const DATA = {
       { t: '新课程待确认开放', d: '平台已将「科学实验探索课」分发至本校，请在「本校课程」中确认开放。', time: '2026-07-05 09:12', read: false },
       { t: '新班级待排课确认', d: '「少儿编程思维课一班」已成班（24 人），请确认教室与上课时间。', time: '2026-07-04 15:30', read: false },
       { t: '今日上课提醒', d: '今日 17:00「人工智能启蒙课一班」在科技教室上课，任课王老师。', time: '2026-07-08 08:00', read: false },
-      { t: '老师签到提醒', d: '张老师 7 月 7 日签到时间 17:20，迟到 20 分钟，请关注。', time: '2026-07-07 17:25', read: false },
+      { t: '教师签到提醒', d: '张老师 7 月 7 日签到时间 17:20，迟到 20 分钟，请关注。', time: '2026-07-07 17:25', read: false },
       { t: '销课待确认', d: '有 3 节课待学校确认，请在「销课确认」中处理。', time: '2026-07-07 18:00', read: false },
       { t: '售后协同提醒', d: '售后单 SH20260702001 需学校协助，请及时反馈。', time: '2026-07-02 10:05', read: true },
       { t: '班级满员提醒', d: '「人工智能启蒙课一班」报名 28/30，即将满员。', time: '2026-07-01 12:00', read: true },
@@ -281,8 +283,8 @@ const DATA = {
     ],
   },
 
-  '天府二小': {
-    info: { name: '天府二小', area: '天府新区', addr: '天府新区科学城中路 88 号', contact: '吴主任', phone: '139****1002', status: '已合作', outside: '否', admin: '吴主任' },
+  '成都天府新区第七小学': {
+    info: { name: '成都天府新区第七小学', area: '天府新区', addr: '天府新区科学城中路 88 号', contact: '吴主任', phone: '139****1002', status: '已合作', outside: '否', admin: '吴主任' },
     stats: [['本校开放课程', 2, '门'], ['当前开课班级', 1, '个'], ['今日上课班级', 0, '个'], ['本月报名人数', 24, '人'],
       ['待确认排课', 1, '个', 1], ['待确认销课', 1, '节', 1], ['场地数量', 3, '个'], ['待处理售后', 0, '单']],
     venues: [
@@ -322,8 +324,8 @@ const DATA = {
     today: [],
   },
 
-  '天府实验小学': {
-    info: { name: '天府实验小学', area: '天府新区', addr: '天府新区兴隆湖畔 12 号', contact: '郑校长', phone: '137****1003', status: '已合作', outside: '是', admin: '郑校长' },
+  '成都麓湖小学': {
+    info: { name: '成都麓湖小学', area: '天府新区', addr: '天府新区兴隆湖畔 12 号', contact: '郑校长', phone: '137****1003', status: '已合作', outside: '是', admin: '郑校长' },
     stats: [['本校开放课程', 1, '门'], ['当前开课班级', 1, '个'], ['今日上课班级', 1, '个'], ['本月报名人数', 18, '人'],
       ['待确认排课', 0, '个'], ['待确认销课', 0, '节'], ['场地数量', 2, '个'], ['待处理售后', 1, '单', 1]],
     venues: [
@@ -385,7 +387,7 @@ const GLOSSARY = [
     ['报名中', '班级已开放，家长可报名。'],
     ['待成班', '报名未达最低成班人数，暂不能开课。'],
     ['已成班', '达到最低成班人数，等待学校确认教室与时间（见「排课确认」）。'],
-    ['已排课', '学校已确认时间、场地与老师。'],
+    ['已排课', '学校已确认时间、场地与教师。'],
     ['上课中', '班级正常上课中。'],
     ['已结课', '全部课时完成。'],
     ['已取消', '未成班或其他原因取消，家长已缴费用由平台自动退款。'],
@@ -397,14 +399,14 @@ const GLOSSARY = [
   ] },
   { title: '上课记录状态', items: [
     ['待上课', '尚未到上课时间。'],
-    ['已签到', '机构老师已到校并在系统完成签到。'],
-    ['已提交记录', '老师已提交本节课堂记录（内容、出勤、评语）。'],
-    ['异常', '本节课存在问题：老师迟到 / 未签到、实到人数与签到不符、课程未正常开展等。处理：学校标记异常并备注 → 平台核实 → 机构 2 个工作日内说明，异常期间本节不计入机构销课。'],
+    ['已签到', '机构教师已到校并在系统完成签到。'],
+    ['已提交记录', '教师已提交本节课堂记录（内容、出勤、评语）。'],
+    ['异常', '本节课存在问题：教师迟到 / 未签到、实到人数与签到不符、课程未正常开展等。处理：学校标记异常并备注 → 平台核实 → 机构 2 个工作日内说明，异常期间本节不计入机构销课。'],
   ] },
   { title: '销课确认（学校确认上课事实）', items: [
-    ['已上课待确认', '老师已提交上课记录，等待学校确认本节课真实完成。'],
+    ['已上课待确认', '教师已提交上课记录，等待学校确认本节课真实完成。'],
     ['已确认销课', '学校已确认本节课真实完成；确认后平台才会将本节计入机构结算（学校端不涉及金额）。'],
-    ['异常', '学校对本节课提出异议（人数不符 / 老师迟到等），暂停计入，由平台跟进处理。'],
+    ['异常', '学校对本节课提出异议（人数不符 / 教师迟到等），暂停计入，由平台跟进处理。'],
     ['已计入结算', '本节已随平台月度结算锁定（学校端仅作状态展示）。'],
   ] },
   { title: '售后协同状态', items: [
@@ -414,7 +416,7 @@ const GLOSSARY = [
     ['已完成', '售后处理完毕结案。'],
   ] },
   { title: '通用名词', items: [
-    ['课程分发', '平台把审核通过的课程配置到指定学校；只有被分发学校的家长能看到课程。'],
+    ['课程分发', '平台把审核通过的课程配置到指定学校；学校确认开放、时间和场地后，该校家长才能看到对应班级。'],
     ['成班人数', '开班所需最低报名人数，未达标班级将取消并自动退款。'],
     ['是否允许外校学生报名', '学校可选择是否开放本校课程给外校学生（默认否）。'],
     ['对外开放（场地）', '本校场地是否可承接非本校课程使用。'],
@@ -422,8 +424,8 @@ const GLOSSARY = [
 ];
 const DEF = {};
 GLOSSARY.forEach((g) => g.items.forEach(([t, d]) => { if (!DEF[t]) DEF[t] = d; }));
-DEF['已提交'] = '老师已提交本节课的上课记录。';
-DEF['已签到'] = '机构老师已到校并完成系统签到。';
+DEF['已提交'] = '教师已提交本节课的上课记录。';
+DEF['已签到'] = '机构教师已到校并完成系统签到。';
 DEF['已支付'] = '家长已缴费，资金由平台监管账户托管。';
 DEF['待支付'] = '家长已报名但尚未完成付款。';
 DEF['有异常'] = DEF['异常'];
@@ -431,6 +433,7 @@ DEF['可用'] = '场地空闲，可用于排课。';
 DEF['已占用'] = '该时段场地已被其他班级/校内活动占用。';
 
 const tag = (v) => `<span class="tag ${TAG[v] || 'tg-gray'}" ${DEF[v] ? `title="${DEF[v].replace(/"/g, '&quot;')}"` : ''}>${v}</span>`;
+const esc = (v) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 function showGlossary() {
   openModal('学校端名词解释', GLOSSARY.map((g) => `
@@ -444,7 +447,7 @@ function showGlossary() {
 
 /* ---------- 表格字段解释（列名 ? 提示） ---------- */
 const COLDEF = {
-  '所属机构': '提供该课程/老师的培训机构（机构资质由平台审核）。',
+  '所属机构': '提供该课程/教师的培训机构（机构资质由平台审核）。',
   '课程分类': '课程所属类目。',
   '适合年级': '建议报名的学生年级范围。',
   '总课时': '一期课程包含的上课节次总数。',
@@ -461,7 +464,7 @@ const COLDEF = {
   '当前状态': '场地当前可用性。',
   '上课场地': '班级实际使用的本校场地。',
   '上课时间': '固定周期的上课时间（课后延时时段）。',
-  '任课老师': '机构派驻的授课老师（资质已由平台审核）。',
+  '任课教师': '机构派驻的授课教师（资质已由平台审核）。',
   '已上课时': '已完成的上课节次。',
   '报名人数': '当前已报名人数。',
   '最大人数': '班级最大容量。',
@@ -481,9 +484,9 @@ const COLDEF = {
   '上课日期': '本节课实际上课日期。',
   '应到人数': '班级报名人数。',
   '实到人数': '实际到课人数，与签到不符会触发异常。',
-  '老师签到状态': '机构老师是否已到校签到。',
-  '课堂记录状态': '老师是否已提交本节课堂记录。',
-  '老师提交状态': '老师是否已提交本节上课记录。',
+  '教师签到状态': '机构教师是否已到校签到。',
+  '课堂记录状态': '教师是否已提交本节课堂记录。',
+  '教师提交状态': '教师是否已提交本节上课记录。',
   '学校确认状态': '学校对本节课真实完成的确认；确认后平台才计入机构销课。',
   '销课状态': '本节课在平台的计费流转状态（学校端不显示金额）。',
   '售后编号': '售后工单编号。',
@@ -505,9 +508,10 @@ function decorateTh(root) {
 }
 
 /* ---------- 状态 ---------- */
-let school = '天府一小';
+let school = '成都天府新区实验小学';
 let page = 'dash';
 const D = () => DATA[school];
+const displayStats = () => D().stats.map((item) => item[0] === '场地数量' ? ['场地数量', D().venues.length, '个', item[3]] : item);
 
 const MENUS = [
   ['dash', '首页看板'], ['info', '学校信息'], ['venues', '场地管理'], ['courses', '本校课程'],
@@ -534,14 +538,14 @@ const PAGES = {
     return `<div class="flow">
       <span class="f">平台分发课程到本校</span><span class="a">→</span><span class="f">学校确认开放</span><span class="a">→</span>
       <span class="f">家长报名成班</span><span class="a">→</span><span class="f">学校确认教室/排课</span><span class="a">→</span>
-      <span class="f">机构老师到校上课</span><span class="a">→</span><span class="f">学校查看/确认上课</span><span class="a">→</span>
+      <span class="f">机构教师到校上课</span><span class="a">→</span><span class="f">学校查看/确认上课</span><span class="a">→</span>
       <span class="f">配合销课确认</span>
     </div>
     <div class="stats">
-      ${d.stats.map(([t, v, u, warn]) => `<div class="stat ${warn ? 'warn' : ''}"><div class="t">${t}</div><div class="v">${v}<small>${u}</small></div></div>`).join('')}
+      ${displayStats().map(([t, v, u, warn]) => `<div class="stat ${warn ? 'warn' : ''}"><div class="t">${t}</div><div class="v">${v}<small>${u}</small></div></div>`).join('')}
     </div>
     <div class="card"><h4>今日上课安排</h4><div class="tbl-wrap"><table>
-      <tr><th>班级名称</th><th>课程名称</th><th>上课时间</th><th>上课场地</th><th>任课老师</th><th>所属机构</th><th>状态</th></tr>
+      <tr><th>班级名称</th><th>课程名称</th><th>上课时间</th><th>上课场地</th><th>任课教师</th><th>所属机构</th><th>状态</th></tr>
       ${d.today.length ? d.today.map((t) => `<tr><td><b>${t.cls}</b></td><td>${t.course}</td><td>${t.time}</td><td>${t.venue}</td><td>${t.teacher}</td><td>${t.org}</td><td>${tag(t.status)}</td></tr>`).join('') : '<tr><td colspan="7" class="empty">今日无上课安排</td></tr>'}
     </table></div></div>
     <div class="grid2 mt">
@@ -578,18 +582,18 @@ const PAGES = {
   },
 
   venues() {
-    return `<div class="page-title"><span></span><span class="hint">学校维护本校场地资源，场地容量限制班级报名上限</span></div>
+    return `<div class="page-title"><span></span><span class="hint">学校端维护本校场地；平台后台可跨学校查看和代建场地</span></div>
     <div class="card" style="padding:12px 16px;margin-bottom:14px;display:flex;justify-content:flex-end">
-      <button class="btn btn-primary" onclick="toast('Demo：新增场地表单')">＋ 新增场地</button>
+      <button class="btn btn-primary" onclick="openVenueForm()">＋ 新增场地</button>
     </div>
     <div class="tbl-wrap"><table>
       <tr><th>场地名称</th><th>场地类型</th><th>容纳人数</th><th>可用时间</th><th>适合课程</th><th>是否对外开放</th><th>当前状态</th><th>操作</th></tr>
       ${D().venues.map((v) => `<tr>
         <td><b>${v.name}</b></td><td>${v.type}</td><td>${v.cap} 人</td><td>${v.time}</td><td>${v.fit}</td>
         <td>${tag(v.open)}</td><td>${tag(v.status)}</td>
-        <td><span class="lnk" onclick="toast('Demo：编辑场地')">编辑</span>
+        <td><span class="lnk" onclick="openVenueForm('${v.id}')">编辑</span>
             <span class="lnk" onclick="venueSchedule('${v.id}')">查看排课</span>
-            <span class="lnk danger" onclick="toast('Demo：场地已停用，将不可被新班级选用')">停用</span></td>
+            <span class="lnk ${v.status === '可用' ? 'danger' : 'warn'}" onclick="toggleVenue('${v.id}')">${v.status === '可用' ? '停用' : '启用'}</span></td>
       </tr>`).join('')}
     </table></div>`;
   },
@@ -612,7 +616,7 @@ const PAGES = {
   classes() {
     return `<div class="page-title"><span></span><span class="hint">课程配置到本校后形成具体班级，家长报名的是班级</span></div>
     <div class="tbl-wrap"><table>
-      <tr><th>班级名称</th><th>课程名称</th><th>所属机构</th><th>上课场地</th><th>上课时间</th><th>任课老师</th><th>总课时</th><th>已上课时</th><th>报名人数</th><th>最大人数</th><th>班级状态</th><th>操作</th></tr>
+      <tr><th>班级名称</th><th>课程名称</th><th>所属机构</th><th>上课场地</th><th>上课时间</th><th>任课教师</th><th>总课时</th><th>已上课时</th><th>报名人数</th><th>最大人数</th><th>班级状态</th><th>操作</th></tr>
       ${D().classes.map((c) => `<tr>
         <td><b>${c.name}</b></td><td>${c.course}</td><td>${c.org}</td><td>${c.venue}</td><td>${c.time}</td><td>${c.teacher}</td>
         <td>${c.total} 节</td><td>${c.done} 节</td><td>${c.enrolled}</td><td>${c.max}</td><td>${tag(c.status)}</td>
@@ -642,7 +646,7 @@ const PAGES = {
   schedule() {
     return `<div class="page-title"><span></span><span class="hint">班级成班后，学校确认教室与上课时间；有冲突可调整或退回平台</span></div>
     <div class="tbl-wrap"><table>
-      <tr><th>班级名称</th><th>课程名称</th><th>所属机构</th><th>建议上课时间</th><th>建议场地</th><th>任课老师</th><th>当前报名人数</th><th>最大人数</th><th>确认状态</th><th>操作</th></tr>
+      <tr><th>班级名称</th><th>课程名称</th><th>所属机构</th><th>建议上课时间</th><th>建议场地</th><th>任课教师</th><th>当前报名人数</th><th>最大人数</th><th>确认状态</th><th>操作</th></tr>
       ${D().schedule.length ? D().schedule.map((s) => `<tr>
         <td><b>${s.cls}</b></td><td>${s.course}</td><td>${s.org}</td><td>${s.time}</td><td>${s.venue}</td><td>${s.teacher}</td>
         <td>${s.enrolled}</td><td>${s.max}</td><td>${tag(s.status)}</td>
@@ -657,7 +661,7 @@ const PAGES = {
   records() {
     return `<div class="page-title"><span></span><span class="hint">本校所有班级上课情况；发现问题可标记异常，异常节次暂停计入机构销课</span></div>
     <div class="tbl-wrap"><table>
-      <tr><th>班级名称</th><th>课程名称</th><th>第几节课</th><th>上课日期</th><th>上课时间</th><th>上课场地</th><th>任课老师</th><th>应到人数</th><th>实到人数</th><th>老师签到状态</th><th>课堂记录状态</th><th>操作</th></tr>
+      <tr><th>班级名称</th><th>课程名称</th><th>第几节课</th><th>上课日期</th><th>上课时间</th><th>上课场地</th><th>任课教师</th><th>应到人数</th><th>实到人数</th><th>教师签到状态</th><th>课堂记录状态</th><th>操作</th></tr>
       ${D().records.map((r) => `<tr>
         <td><b>${r.cls}</b></td><td>${r.course}</td><td>第 ${r.no} 节</td><td>${r.date}</td><td>${r.time}</td><td>${r.venue}</td><td>${r.teacher}</td>
         <td>${r.due}</td><td>${r.actual || '—'}</td><td>${tag(r.sign)}</td><td>${tag(r.record)}</td>
@@ -670,7 +674,7 @@ const PAGES = {
   confirm() {
     return `<div class="page-title"><span></span><span class="hint">学校只确认上课事实，不涉及机构结算金额；确认后平台方可将该节计入机构销课</span></div>
     <div class="tbl-wrap"><table>
-      <tr><th>班级名称</th><th>课程名称</th><th>第几节课</th><th>上课日期</th><th>任课老师</th><th>所属机构</th><th>应到人数</th><th>实到人数</th><th>老师提交状态</th><th>学校确认状态</th><th>销课状态</th><th>操作</th></tr>
+      <tr><th>班级名称</th><th>课程名称</th><th>第几节课</th><th>上课日期</th><th>任课教师</th><th>所属机构</th><th>应到人数</th><th>实到人数</th><th>教师提交状态</th><th>学校确认状态</th><th>销课状态</th><th>操作</th></tr>
       ${D().confirms.map((x) => `<tr>
         <td><b>${x.cls}</b></td><td>${x.course}</td><td>第 ${x.no} 节</td><td>${x.date}</td><td>${x.teacher}</td><td>${x.org}</td>
         <td>${x.due}</td><td>${x.actual}</td><td>${tag(x.tSubmit)}</td><td>${tag(x.school)}</td><td>${tag(x.status)}</td>
@@ -735,12 +739,67 @@ function editInfo() {
      <button class="btn btn-primary" onclick="closeModal();toast('Demo：学校信息已保存')">保存</button>`);
 }
 
+function openVenueForm(id) {
+  const v = id ? D().venues.find((x) => x.id === id) : null;
+  openModal((v ? '编辑场地 · ' : '新增场地 · ') + school, `
+    <div class="form-row"><label>场地名称</label><input id="venueName" value="${esc(v?.name || '')}" placeholder="如：科技教室 B"></div>
+    <div class="form-row"><label>场地类型</label>
+      <select id="venueType">
+        ${['科技类', '信息技术', '艺术类', '体育类', '综合类', '音乐类'].map((type) => `<option value="${type}" ${v?.type === type ? 'selected' : ''}>${type}</option>`).join('')}
+      </select>
+    </div>
+    <div class="form-row"><label>容纳人数</label><input id="venueCap" type="number" min="1" value="${esc(v?.cap || '')}" placeholder="如：30"></div>
+    <div class="form-row"><label>可用时间</label><input id="venueTime" value="${esc(v?.time || '')}" placeholder="如：周一至周五 17:00-18:00"></div>
+    <div class="form-row"><label>适合课程</label><input id="venueFit" value="${esc(v?.fit || '')}" placeholder="如：AI、编程、科学实验"></div>
+    <div class="form-row"><label>是否对外开放</label>
+      <select id="venueOpen">
+        ${['不开放', '可开放'].map((open) => `<option value="${open}" ${v?.open === open ? 'selected' : ''}>${open}</option>`).join('')}
+      </select>
+    </div>
+    <div class="form-row"><label>当前状态</label>
+      <select id="venueStatus">
+        ${['可用', '已占用', '已暂停'].map((status) => `<option value="${status}" ${v?.status === status ? 'selected' : ''}>${status}</option>`).join('')}
+      </select>
+    </div>
+    <div class="m-tip"><b>权限说明：</b>学校端只能创建和维护当前学校的场地；平台后台可跨学校代建、停用和查看排课。</div>`,
+    `<button class="btn btn-ghost" onclick="closeModal()">取消</button>
+     <button class="btn btn-primary" onclick="submitVenue('${id || ''}')">${v ? '保存场地' : '创建场地'}</button>`);
+}
+function submitVenue(id) {
+  const name = document.getElementById('venueName').value.trim();
+  const type = document.getElementById('venueType').value;
+  const cap = parseInt(document.getElementById('venueCap').value, 10);
+  const time = document.getElementById('venueTime').value.trim();
+  const fit = document.getElementById('venueFit').value.trim();
+  const open = document.getElementById('venueOpen').value;
+  const status = document.getElementById('venueStatus').value;
+  if (!name || !cap || cap < 1 || !time || !fit) return toast('请填写场地名称、容纳人数、可用时间和适合课程');
+  const duplicate = D().venues.some((v) => v.name === name && v.id !== id);
+  if (duplicate) return toast('当前学校已存在同名场地，请更换名称');
+  if (id) {
+    const v = D().venues.find((x) => x.id === id);
+    Object.assign(v, { name, type, cap, time, fit, open, status });
+  } else {
+    D().venues.unshift({ id: 'v' + Date.now(), name, type, cap, time, fit, open, status });
+  }
+  closeModal();
+  render();
+  toast(id ? '场地信息已保存' : '场地已创建，可用于后续排课确认');
+}
+function toggleVenue(id) {
+  const v = D().venues.find((x) => x.id === id);
+  if (!v) return toast('未找到场地');
+  v.status = v.status === '可用' ? '已暂停' : '可用';
+  render();
+  toast(v.status === '可用' ? '场地已启用，可用于排课' : '场地已停用，将不可被新班级选用');
+}
+
 function venueSchedule(id) {
   const v = D().venues.find((x) => x.id === id);
   const rows = D().classes.filter((c) => c.venue === v.name);
   openModal('场地排课 · ' + v.name, rows.length ? `
     <div class="tbl-wrap"><table>
-      <tr><th>班级名称</th><th>上课时间</th><th>任课老师</th><th>班级状态</th></tr>
+      <tr><th>班级名称</th><th>上课时间</th><th>任课教师</th><th>班级状态</th></tr>
       ${rows.map((c) => `<tr><td>${c.name}</td><td>${c.time}</td><td>${c.teacher}</td><td>${tag(c.status)}</td></tr>`).join('')}
     </table></div>` : '<div class="empty">该场地暂无排课</div>');
 }
@@ -756,7 +815,7 @@ function courseDetail(id) {
       <div class="k">成班 / 班额</div><div class="v">满 ${c.min} 人开班 · 最大 ${c.max} 人</div>
       <div class="k">所需场地</div><div class="v">${c.venue}</div>
       <div class="k">所需设备</div><div class="v">${c.device}</div>
-      <div class="k">任课老师</div><div class="v">${c.teacher}</div>
+      <div class="k">任课教师</div><div class="v">${c.teacher}</div>
       <div class="k">课程介绍</div><div class="v">${c.intro}</div>
     </div>
     <h5>每节课大纲</h5>
@@ -807,7 +866,7 @@ function confirmSchedule(id) {
       <div class="k">班级名称</div><div class="v">${s.cls}</div>
       <div class="k">上课时间</div><div class="v">${s.time}</div>
       <div class="k">上课场地</div><div class="v">${s.venue}</div>
-      <div class="k">任课老师</div><div class="v">${s.teacher}（机构派驻，资质平台已审核）</div>
+      <div class="k">任课教师</div><div class="v">${s.teacher}（机构派驻，资质平台已审核）</div>
       <div class="k">当前报名</div><div class="v">${s.enrolled} / ${s.max} 人</div>
     </div>
     <div class="m-tip"><b>注意事项：</b>确认前请核对该时段场地无校内活动冲突；确认后平台将通知机构与家长，按此安排开课。</div>`,
@@ -823,9 +882,31 @@ function doConfirmSchedule(id) {
 }
 function adjust(id, what) {
   const s = D().schedule.find((x) => x.id === id);
+  const usable = D().venues.filter((v) => v.status === '可用');
+  openModal('调整' + what + ' · ' + s.cls, `
+    <div class="form-row"><label>建议上课时间</label><input id="adjTime" value="${esc(s.time)}" placeholder="如：每周四 17:00-18:00"></div>
+    <div class="form-row"><label>建议场地（从本校已创建且可用的场地中选择）</label>
+      <select id="adjVenue">
+        ${usable.map((v) => `<option value="${esc(v.name)}" ${v.name === s.venue ? 'selected' : ''}>${esc(v.name)}（${esc(v.type)} · 容纳 ${v.cap} 人）</option>`).join('')}
+      </select>
+    </div>
+    ${usable.length ? '' : '<div class="m-tip">当前学校暂无可用场地，请先到「场地管理」新增或启用场地。</div>'}
+    <div class="form-row"><label>调整原因</label><textarea id="adjReason" rows="3" placeholder="如：原场地有校内活动 / 原时段与社团冲突"></textarea></div>
+    <div class="m-tip">提交后状态变为「需调整」，平台将带着学校建议与机构重新协调。</div>`,
+    `<button class="btn btn-ghost" onclick="closeModal()">取消</button>
+     <button class="btn btn-primary" ${usable.length ? '' : 'disabled'} onclick="doAdjust('${id}')">提交调整建议</button>`);
+}
+function doAdjust(id) {
+  const s = D().schedule.find((x) => x.id === id);
+  const time = document.getElementById('adjTime').value.trim();
+  const venue = document.getElementById('adjVenue').value;
+  if (!time || !venue) return toast('请选择场地并填写上课时间');
+  s.time = time;
+  s.venue = venue;
   s.status = '需调整';
+  closeModal();
   render();
-  toast('已标记需调整' + what + '，平台将与机构重新协调');
+  toast('已提交调整建议，平台将与机构重新协调');
 }
 function backToPlatform(id) {
   const s = D().schedule.find((x) => x.id === id);
@@ -840,8 +921,8 @@ function recordDetail(id) {
     <div class="desc">
       <div class="k">上课日期</div><div class="v">${r.date} ${r.time}</div>
       <div class="k">上课场地</div><div class="v">${r.venue}</div>
-      <div class="k">任课老师</div><div class="v">${r.teacher}</div>
-      <div class="k">老师签到时间</div><div class="v">${r.signAt}</div>
+      <div class="k">任课教师</div><div class="v">${r.teacher}</div>
+      <div class="k">教师签到时间</div><div class="v">${r.signAt}</div>
       <div class="k">学生出勤</div><div class="v">应到 ${r.due} 人 · 实到 ${r.actual || '—'} 人</div>
       <div class="k">课堂记录</div><div class="v">${r.content || '—'}</div>
       <div class="k">课堂情况</div><div class="v">${r.mood || '—'}</div>
@@ -852,7 +933,7 @@ function recordDetail(id) {
 function markAbnormal(id) {
   const r = D().records.find((x) => x.id === id);
   openModal('标记异常 · ' + r.cls + ' 第 ' + r.no + ' 节', `
-    <div class="form-row"><label>异常类型</label><input placeholder="如：老师迟到 / 实到人数不符 / 课程未正常开展"></div>
+    <div class="form-row"><label>异常类型</label><input placeholder="如：教师迟到 / 实到人数不符 / 课程未正常开展"></div>
     <div class="form-row"><label>异常说明</label><textarea rows="3" placeholder="请描述具体情况，平台将核实处理"></textarea></div>
     <div class="m-tip">标记异常后，该节课暂停计入机构销课，平台将要求机构在 2 个工作日内说明。</div>`,
     `<button class="btn btn-ghost" onclick="closeModal()">取消</button>

@@ -1,7 +1,7 @@
 /* ============================================================
- * 天府通未来教育中心 · 后台管理系统 Demo
+ * 天府未来教育中心 · 后台管理系统 Demo
  * React 18 + TSX + Ant Design 5（UMD 免构建，mock 数据）
- * 业务闭环：建校/场地 → 审机构 → 审老师 → 审课程 → 课程库
+ * 业务闭环：建校/场地 → 审机构 → 审教师 → 审课程 → 课程库
  *          → 分发学校 → 家长报名付费 → 按节销课 → 按月结算
  * ============================================================ */
 const { useState, useMemo } = React;
@@ -36,9 +36,9 @@ const STC: Record<string, string> = {
 const GLOSSARY: { title: string; items: [string, string][] }[] = [
   { title: '销课状态（核心流程）', items: [
     ['待上课', '课程已排期、尚未到上课时间，本节不产生任何费用。'],
-    ['已上课待确认', '老师已完成签到并提交课堂记录，等待平台或学校确认；确认之前本节不计入结算。'],
+    ['已上课待确认', '教师已完成签到并提交课堂记录，等待平台或学校确认；确认之前本节不计入结算。'],
     ['已确认销课', '平台/学校已确认本节课真实完成，本节费用进入当月可结算范围。'],
-    ['异常', '本节课数据存疑：如实到人数与签到不符、老师未签到、家长投诉课程未上等，暂停计费。处理方式：机构在 2 个工作日内补充说明或更正记录，平台复核后转为「已确认销课」，或作废本节（不计费）。'],
+    ['异常', '本节课数据存疑：如实到人数与签到不符、教师未签到、家长投诉课程未上等，暂停计费。处理方式：机构在 2 个工作日内补充说明或更正记录，平台复核后转为「已确认销课」，或作废本节（不计费）。'],
     ['已计入结算', '本节课已随月度结算单锁定，金额不再变动。'],
   ] },
   { title: '结算状态', items: [
@@ -52,21 +52,21 @@ const GLOSSARY: { title: string; items: [string, string][] }[] = [
   { title: '结算相关名词', items: [
     ['应结算金额', '当月所有「已确认销课」节次的金额合计。'],
     ['平台服务费', '按合作协议比例（Demo 为 10%）从应结算金额中扣除。'],
-    ['学校分成', '涉及学校分成时按约定比例扣除（规则预留，Demo 为 5%）。'],
+    ['学校服务费', '涉及学校服务费时按约定比例扣除（规则预留，Demo 为 5%）。'],
     ['退款扣减', '当月发生退款的订单，对应金额从机构结算中扣回。'],
-    ['机构实收', '应结算金额 − 平台服务费 − 学校分成 − 退款扣减。'],
+    ['机构实收', '应结算金额 − 平台服务费 − 学校服务费 − 退款扣减。'],
   ] },
   { title: '机构状态', items: [
-    ['待审核', '机构已提交入驻资料，平台审核中；审核通过前不能创建老师、发布课程。'],
-    ['审核通过', '入驻审核通过，可创建老师、发布课程。'],
+    ['待审核', '机构已提交入驻资料，平台审核中；审核通过前不能创建教师、发布课程。'],
+    ['审核通过', '入驻审核通过，可创建教师、发布课程。'],
     ['审核驳回', '资料不符合要求，按驳回原因补充后重新提交。'],
     ['已暂停', '合作暂停，机构课程停止分发与报名。'],
     ['已禁用', '因违规或退出合作，账号冻结。'],
   ] },
-  { title: '老师状态', items: [
-    ['待审核（老师）', '机构已创建老师并提交资质，平台审核中；通过前不能绑定班级授课。'],
-    ['审核通过（老师）', '资质审核通过，可绑定课程与班级授课。'],
-    ['已停用', '老师不再授课，账号停用。'],
+  { title: '教师状态', items: [
+    ['待审核（教师）', '机构已创建教师并提交资质，平台审核中；通过前不能绑定班级授课。'],
+    ['审核通过（教师）', '资质审核通过，可绑定课程与班级授课。'],
+    ['已停用', '教师不再授课，账号停用。'],
   ] },
   { title: '课程状态', items: [
     ['草稿', '机构编辑中，尚未提交平台审核。'],
@@ -78,7 +78,7 @@ const GLOSSARY: { title: string; items: [string, string][] }[] = [
     ['报名中', '班级已上架，家长可报名。'],
     ['待成班', '报名人数未达最低成班人数，暂不能开课。'],
     ['已成班', '达到最低成班人数，可安排排课开课。'],
-    ['已排课', '已确定上课时间、场地与老师。'],
+    ['已排课', '已确定上课时间、场地与教师。'],
     ['上课中', '班级正常上课中。'],
     ['已结课', '全部课时完成，进入结课确认与结算。'],
     ['已取消', '未成班或其他原因取消，家长已缴费用自动全额退款。'],
@@ -102,13 +102,13 @@ const GLOSSARY: { title: string; items: [string, string][] }[] = [
     ['已合作', '合作中，可向该校分发课程。'],
     ['暂停合作', '暂停向该校分发新课程，存量班级正常上完。'],
     ['启用 / 停用', '场地是否可用于排课；停用后不可被新班级选用。'],
-    ['已上架 / 已下架', '课程配置在该校家长端是否可见、可报名。'],
+    ['待确认 / 已上架 / 已下架', '课程配置需学校确认开放和排课后，才在该校家长端可见、可报名。'],
   ] },
   { title: '通用名词', items: [
     ['资金托管', '家长报名费一次性支付后进入平台监管账户，机构按已确认销课的课时逐节累计，按月结算。'],
     ['销课', '每完成一节课形成一条销课记录，经平台/学校确认后机构累计一节可结算费用。'],
     ['成班人数', '开班所需的最低报名人数，未达标班级将取消并自动退款。'],
-    ['课程分发', '平台将课程库中的课程配置到指定合作学校，仅被分发学校的家长端可见该课程。'],
+    ['课程分发', '平台将课程库中的课程配置到指定合作学校，并等待学校确认开放、时间和场地后，该校家长端才可见。'],
   ] },
 ];
 /* 悬停提示：状态 → 解释（带「（xx）」限定的词条映射回原状态名） */
@@ -117,8 +117,8 @@ GLOSSARY.forEach((g) => g.items.forEach(([t, d]) => {
   const key = t.replace(/（.*?）/g, '').split(' / ')[0];
   if (!TERM_DEF[key]) TERM_DEF[key] = d;
 }));
-TERM_DEF['已签到'] = '老师已在系统完成本节课签到。';
-TERM_DEF['未签到'] = '老师尚未签到，本节课未开始或存在异常。';
+TERM_DEF['已签到'] = '教师已在系统完成本节课签到。';
+TERM_DEF['未签到'] = '教师尚未签到，本节课未开始或存在异常。';
 TERM_DEF['待确认'] = TERM_DEF['已上课待确认'];
 TERM_DEF['已确认'] = '平台/学校已确认本节课真实完成。';
 
@@ -131,13 +131,13 @@ const S = ({ v }: { v: string }) => {
 const FIELD_DEF: Record<string, string> = {
   机构名称: '入驻或合作机构的主体名称，通常与营业执照名称一致。',
   服务方向: '机构可提供的课程方向，如 AI、编程、科创、美术、体育等。',
-  提交时间: '机构、老师或课程提交给平台审核的时间。',
+  提交时间: '机构、教师或课程提交给平台审核的时间。',
   状态: '当前业务状态，点击状态标签或顶部名词解释可查看完整含义。',
-  老师: '负责该班级或课程授课的老师。',
-  老师姓名: '机构提交并由平台审核的授课老师姓名。',
-  机构: '课程、老师、班级、订单或结算所属的服务机构。',
-  所属机构: '老师或课程归属的机构，由机构维护并提交平台审核。',
-  方向: '老师或课程的教学方向。',
+  教师: '负责该班级或课程授课的教师。',
+  教师姓名: '机构提交并由平台审核的授课教师姓名。',
+  机构: '课程、教师、班级、订单或结算所属的服务机构。',
+  所属机构: '教师或课程归属的机构，由机构维护并提交平台审核。',
+  方向: '教师或课程的教学方向。',
   课程: '平台课程库中的课程或订单报名课程。',
   课程名称: '课程在平台课程库中的标准名称。',
   分类: '课程所属类目，如 AI、编程、科学、研学等。',
@@ -178,15 +178,15 @@ const FIELD_DEF: Record<string, string> = {
   审核状态: '平台审核进度或结果，通过前不能进入下一业务环节。',
   课程库: '平台审核通过后的课程资源池，课程需分发到学校后家长才可见。',
   课程数: '机构已维护或已通过审核的课程数量。',
-  老师数: '机构已维护或已通过审核的老师数量。',
+  教师数: '机构已维护或已通过审核的教师数量。',
   课程数量: '机构已维护或已通过审核的课程数量。',
-  老师数量: '机构已维护或已通过审核的老师数量。',
+  教师数量: '机构已维护或已通过审核的教师数量。',
   结算账户: '机构用于接收月度结算款的账户配置状态。',
-  资质类型: '老师提交的资质证书类型，如教师资格证、行业资格证等。',
-  材料照片: '老师资质审核所需图片材料，包括老师本人照片和资格证照片。',
-  个人照片: '老师本人照片，用于平台核验老师身份与后续账号资料展示。',
-  资格证照片: '老师资格证或行业资质证书的照片材料，用于平台审核。',
-  教授方向: '老师主要承担的课程方向。',
+  资质类型: '教师提交的资质证书类型，如教师资格证、行业资格证等。',
+  材料照片: '教师资质审核所需图片材料，包括教师本人照片和资格证照片。',
+  个人照片: '教师本人照片，用于平台核验教师身份与后续账号资料展示。',
+  资格证照片: '教师资格证或行业资质证书的照片材料，用于平台审核。',
+  教授方向: '教师主要承担的课程方向。',
   适合年级: '课程建议报名的学生年级范围。',
   课时: '一期课程包含的上课节次总数。',
   建议价格: '机构建议售价，实际报名价以学校课程配置为准。',
@@ -197,7 +197,7 @@ const FIELD_DEF: Record<string, string> = {
   '报名/上限': '当前报名人数 / 班级最大人数。',
   截止: '家长端报名截止时间。',
   成班状态: '班级是否达到最低成班人数。',
-  上架状态: '课程配置在家长端是否可见、可报名。',
+  上架状态: '学校确认开放和排课后，课程配置才在家长端可见、可报名。',
   课时进度: '已上课时 / 总课时。',
   '报名（成班 /上限）': '当前报名人数，以及最低成班人数 / 最大报名人数。',
   班级状态: '班级从报名到结课的业务状态。',
@@ -212,7 +212,7 @@ const FIELD_DEF: Record<string, string> = {
   下单时间: '家长提交报名订单的时间。',
   节次: '该班级课程的第几节课。',
   '应到/实到': '应到为报名人数，实到为本节实际到课人数。',
-  老师签到: '老师是否在系统完成本节课签到。',
+  教师签到: '教师是否在系统完成本节课签到。',
   学校确认: '学校或平台是否确认本节课真实完成。',
   销课状态: '单节课的计费流转状态，确认后才进入结算。',
   可结算金额: '本节课确认销课后计入当月结算的金额。',
@@ -225,9 +225,9 @@ const FIELD_DEF: Record<string, string> = {
   已完成课时: '本期已确认可结算的课时数量。',
   应结算: '当月所有已确认销课节次的金额合计。',
   平台服务费: '按合作协议比例从应结算金额中扣除。',
-  学校分成: '按协议预留给学校或场地相关方的分成金额。',
+  学校服务费: '按协议预留给学校或场地相关方的分成金额。',
   退款扣减: '当月退款订单对应金额，从机构结算中扣回。',
-  机构实收: '应结算金额扣除平台服务费、学校分成、退款扣减后的机构到账金额。',
+  机构实收: '应结算金额扣除平台服务费、学校服务费、退款扣减后的机构到账金额。',
   日期: '销课明细对应的上课日期。',
   实到: '本节课实际到课人数。',
   可结算: '该节课确认后可计入结算的金额。',
@@ -264,12 +264,12 @@ const initDB = {
     { id: 'sc4', name: '成都华阳实验小学', area: '双流区', addr: '华阳大道二段 66 号', contact: '刘校长', phone: '136****1004', status: '暂停合作', courses: 1, venues: 2 },
   ],
   venues: [
-    { id: 'v1', name: '科技教室 A', school: '成都天府新区实验小学', type: '科技教室', cap: 30, time: '周一至周五 16:00-18:00', fit: 'AI / 编程 / 科创', open: '否', status: '启用' },
-    { id: 'v2', name: '计算机教室 1', school: '成都天府新区实验小学', type: '计算机教室', cap: 36, time: '周一至周五 16:00-18:00', fit: '编程 / 信息素养', open: '否', status: '启用' },
-    { id: 'v3', name: '美术教室', school: '成都天府新区实验小学', type: '美术教室', cap: 28, time: '周一至周五 16:30-18:00', fit: '美术 / 手工', open: '否', status: '启用' },
-    { id: 'v4', name: '科学实验室', school: '成都天府新区第七小学', type: '科技教室', cap: 30, time: '周一至周五 16:30-18:00', fit: '科学实验', open: '否', status: '启用' },
-    { id: 'v5', name: '多功能室', school: '成都天府新区第七小学', type: '多功能室', cap: 60, time: '周一至周五 16:00-18:00', fit: '通用', open: '是', status: '启用' },
-    { id: 'v6', name: '操场（东侧）', school: '成都华阳实验小学', type: '操场', cap: 100, time: '周一至周五 16:00-18:00', fit: '体育 / 户外', open: '否', status: '停用' },
+    { id: 'v1', name: '科技教室 A', school: '成都天府新区实验小学', type: '科技教室', scene: '校内', cap: 30, time: '周一至周五 16:00-18:00', fit: 'AI / 编程 / 科创', open: '否', status: '启用' },
+    { id: 'v2', name: '计算机教室 1', school: '成都天府新区实验小学', type: '计算机教室', scene: '校内', cap: 36, time: '周一至周五 16:00-18:00', fit: '编程 / 信息素养', open: '否', status: '启用' },
+    { id: 'v3', name: '美术教室', school: '成都天府新区实验小学', type: '美术教室', scene: '校内', cap: 28, time: '周一至周五 16:30-18:00', fit: '美术 / 手工', open: '否', status: '启用' },
+    { id: 'v4', name: '科学实验室', school: '成都天府新区第七小学', type: '科技教室', scene: '校内', cap: 30, time: '周一至周五 16:30-18:00', fit: '科学实验', open: '否', status: '启用' },
+    { id: 'v5', name: '多功能室', school: '成都天府新区第七小学', type: '多功能室', scene: '校外', cap: 60, time: '周一至周五 16:00-18:00', fit: '通用', open: '是', status: '启用' },
+    { id: 'v6', name: '操场（东侧）', school: '成都华阳实验小学', type: '操场', scene: '校内', cap: 100, time: '周一至周五 16:00-18:00', fit: '体育 / 户外', open: '否', status: '停用' },
   ],
   orgs: [
     { id: 'og1', name: '成都智创未来教育科技有限公司', contact: '王总', phone: '138****2001', dir: 'AI / 编程 / 科创', submitAt: '2026-05-12', status: '审核通过', courses: 3, teachers: 3, account: '已配置', license: '统一社会信用代码 91510100MA6XXXX01', legal: '王建国（法人）', scope: '面向中小学的人工智能与编程素质教育', agreement: '2026-2027 学年课后服务合作协议（已签署）',
@@ -301,6 +301,7 @@ const initDB = {
       syllabus: ['认识编程', '顺序结构', '循环结构', '条件判断', '变量与计分', '角色与交互', '关卡设计', '调试优化', '作品完善', '项目展示'],
       outcome: '提交个人编程作品', audits: [{ t: '2026-06-05 10:05', who: '审核员-李敏', act: '审核通过，入课程库', note: '' }] },
     { id: 'c3', name: '科学实验探索课', org: '成都智创未来教育科技有限公司', cat: '科学', grade: '1-4 年级', lessons: 8, price: 640, min: 10, max: 30, venue: '科技教室', status: '待审核', teacher: '刘嘉敏', intro: '趣味实验培养科学探究精神。', device: '实验器材包',
+      share: { org: 68, platform: 12, region: 15, tf: 5 },
       syllabus: ['观察与猜想', '浮沉与密度', '磁力探索', '气压与流动', '植物观察', '声音传播', '自制小装置', '实验报告展示'],
       outcome: '完成个人实验报告', audits: [{ t: '2026-06-29 14:30', who: '机构', act: '提交课程审核', note: '' }] },
     { id: 'c4', name: '创意水彩画课', org: '童心美育艺术中心', cat: '美术', grade: '1-6 年级', lessons: 12, price: 960, min: 8, max: 28, venue: '美术教室', status: '待审核', teacher: '林晓芸', intro: '从色彩感知到独立创作水彩作品。', device: '画材包',
@@ -350,22 +351,22 @@ const initDB = {
   aftersales: [
     { id: 'SH20260625001', parent: '杨先生', student: '杨浩然', cls: '少儿编程思维课·周二班', type: '申请退款', org: '智创未来', school: '成都天府新区实验小学', time: '2026-06-24 15:20', status: '已退款' },
     { id: 'SH20260628002', parent: '刘女士', student: '刘思彤', cls: '人工智能启蒙课·周五班', type: '课程未开班', org: '智创未来', school: '成都天府新区第七小学', time: '2026-06-28 10:05', status: '处理中' },
-    { id: 'SH20260630003', parent: '王女士', student: '王梓萱', cls: '人工智能启蒙课·周三班', type: '老师缺课', org: '智创未来', school: '成都天府新区实验小学', time: '2026-06-30 18:44', status: '待处理' },
+    { id: 'SH20260630003', parent: '王女士', student: '王梓萱', cls: '人工智能启蒙课·周三班', type: '教师缺课', org: '智创未来', school: '成都天府新区实验小学', time: '2026-06-30 18:44', status: '待处理' },
     { id: 'SH20260701004', parent: '周先生', student: '周子墨', cls: '创意水彩画课·周一班', type: '其他问题', org: '童心美育', school: '成都天府新区实验小学', time: '2026-07-01 09:12', status: '待处理' },
   ],
   users: [
-    { id: 'u1', name: '张运营', phone: '138****9001', role: '平台管理员', unit: '天府通未来教育中心', status: '启用', last: '2026-07-01 09:12' },
-    { id: 'u2', name: '李敏', phone: '139****9002', role: '审核人员', unit: '天府通未来教育中心', status: '启用', last: '2026-07-01 08:45' },
-    { id: 'u3', name: '王芳', phone: '137****9003', role: '财务人员', unit: '天府通未来教育中心', status: '启用', last: '2026-06-30 17:30' },
+    { id: 'u1', name: '张运营', phone: '138****9001', role: '平台管理员', unit: '天府未来教育中心', status: '启用', last: '2026-07-01 09:12' },
+    { id: 'u2', name: '李敏', phone: '139****9002', role: '审核人员', unit: '天府未来教育中心', status: '启用', last: '2026-07-01 08:45' },
+    { id: 'u3', name: '王芳', phone: '137****9003', role: '财务人员', unit: '天府未来教育中心', status: '启用', last: '2026-06-30 17:30' },
     { id: 'u4', name: '周校长', phone: '138****1001', role: '学校管理员', unit: '成都天府新区实验小学', status: '启用', last: '2026-06-30 16:02' },
     { id: 'u5', name: '王总', phone: '138****2001', role: '机构管理员', unit: '成都智创未来教育科技有限公司', status: '启用', last: '2026-07-01 10:18' },
-    { id: 'u6', name: '测试客服', phone: '135****9006', role: '客服人员', unit: '天府通未来教育中心', status: '禁用', last: '2026-05-20 11:00' },
+    { id: 'u6', name: '测试客服', phone: '135****9006', role: '客服人员', unit: '天府未来教育中心', status: '禁用', last: '2026-05-20 11:00' },
   ],
   roles: [
     { id: 'r1', name: '平台管理员', desc: '全部权限', perms: 24 }, { id: 'r2', name: '运营人员', desc: '学校 / 课程配置 / 班级', perms: 14 },
-    { id: 'r3', name: '审核人员', desc: '机构 / 老师 / 课程审核', perms: 8 }, { id: 'r4', name: '财务人员', desc: '订单 / 销课 / 结算', perms: 9 },
+    { id: 'r3', name: '审核人员', desc: '机构 / 教师 / 课程审核', perms: 8 }, { id: 'r4', name: '财务人员', desc: '订单 / 销课 / 结算', perms: 9 },
     { id: 'r5', name: '客服人员', desc: '售后 / 订单查看', perms: 5 }, { id: 'r6', name: '学校管理员', desc: '本校场地 / 班级 / 销课确认', perms: 7 },
-    { id: 'r7', name: '机构管理员', desc: '本机构老师 / 课程 / 销课', perms: 10 }, { id: 'r8', name: '老师子账号', desc: '上课签到 / 提交销课', perms: 3 },
+    { id: 'r7', name: '机构管理员', desc: '本机构教师 / 课程 / 销课', perms: 10 }, { id: 'r8', name: '教师子账号', desc: '上课签到 / 提交销课', perms: 3 },
   ],
   logs: [
     { t: '2026-07-01 10:32', who: '张运营', mod: '学校课程配置', act: '将「人工智能启蒙课」分发至 成都天府新区第七小学', ip: '10.8.1.21', ret: '成功' },
@@ -374,7 +375,7 @@ const initDB = {
     { t: '2026-06-30 17:12', who: '王芳', mod: '结算管理', act: '确认打款 结算单 JS202606-01（¥21,132）', ip: '10.8.1.23', ret: '成功' },
     { t: '2026-06-30 16:55', who: '周校长', mod: '销课管理', act: '确认 6 月 30 日「少儿编程·周二班」第 6 节销课', ip: '171.221.4.9', ret: '成功' },
     { t: '2026-06-30 15:04', who: '张运营', mod: '班级管理', act: '「人工智能启蒙课·周三班」达到成班人数，标记已成班', ip: '10.8.1.21', ret: '成功' },
-    { t: '2026-06-28 11:30', who: '李敏', mod: '老师审核', act: '通过老师「刘嘉敏」资质审核', ip: '10.8.1.22', ret: '成功' },
+    { t: '2026-06-28 11:30', who: '李敏', mod: '教师审核', act: '通过教师「刘嘉敏」资质审核', ip: '10.8.1.22', ret: '成功' },
     { t: '2026-06-24 11:06', who: '王芳', mod: '订单管理', act: '订单 DD20260624005 退款 ¥900', ip: '10.8.1.23', ret: '成功' },
   ],
 };
@@ -382,6 +383,8 @@ const initDB = {
 /* ---------- 工具 ---------- */
 const patch = (list: any[], id: string, ch: any) => list.map((x) => (x.id === id ? { ...x, ...ch } : x));
 const money = (n: number) => '¥' + n.toLocaleString('zh-CN');
+/* 四方分账默认比例：机构 / 平台 / 地方国企 / 天府通通道（不同课程可在审核时单独配置） */
+const DEFAULT_SHARE = { org: 70, platform: 12, region: 13, tf: 5 };
 const tblProps = { size: 'small' as const, rowKey: 'id', pagination: false as const, locale: { emptyText: '暂无数据' }, scroll: { x: 'max-content' } };
 const statThemes = [
   { bg: 'linear-gradient(135deg, #eef6ff 0%, #ffffff 48%, #e9f0ff 100%)', glow: 'rgba(22,119,255,.18)', value: '#1765d8' },
@@ -430,22 +433,22 @@ const COLDEF: Record<string, string> = {
   '提交时间': '提交平台审核的时间。',
   '审核状态': '平台审核结果，悬停状态标签查看含义。',
   '结算账户': '机构是否已配置对公收款账户；未配置无法结算打款。',
-  '资质类型': '老师提交的资质证书类型（教师资格证 / 从业证书等）。',
-  '教授方向': '老师主要授课的课程方向。',
+  '资质类型': '教师提交的资质证书类型（教师资格证 / 从业证书等）。',
+  '教授方向': '教师主要授课的课程方向。',
   '分类': '课程所属类目。',
   '适合年级': '建议报名的学生年级范围。',
   '课时': '一期课程包含的上课节次总数。',
   '建议价格': '机构建议售价；实际以分发学校时的配置价为准。',
   '成班/上限': '最低开班人数 / 班级最大容量。',
   '所需场地': '开课所需的场地类型。',
-  '投放学校': '课程被分发（配置）到的学校；未分发学校的家长看不到该课程。',
+  '投放学校': '课程被分发（配置）到的学校；未分发或学校未确认的家长端不可见。',
   '班级': '课程在学校形成的具体班级，家长报名的是班级。',
   '上课时间': '固定周期的上课时间（课后延时服务时段）。',
   '报名/上限': '当前报名人数 / 班级最大容量。',
   '价格': '该校该班的实际报名价格。',
   '截止': '报名截止时间。',
   '成班状态': '是否达到最低开班人数（达到后可排课开课）。',
-  '上架状态': '该课程配置在对应学校家长端是否可见、可报名。',
+  '上架状态': '该课程配置是否已由学校确认开放并进入对应学校家长端展示。',
   '课时进度': '已上节次 / 总节次。',
   '报名（成班 /上限）': '当前报名人数（最低成班人数 / 最大容量）。',
   '班级状态': '班级当前阶段，悬停标签查看含义。',
@@ -457,7 +460,7 @@ const COLDEF: Record<string, string> = {
   '上课日期': '本节课实际上课日期。',
   '节次': '本班课程的第几节课。',
   '应到/实到': '应到 = 班级报名人数；实到 = 实际到课人数。两者与签到不符会触发销课异常。',
-  '老师签到': '老师是否已在系统完成本节课签到。',
+  '教师签到': '教师是否已在系统完成本节课签到。',
   '学校确认': '学校对本节课真实完成的确认。',
   '销课状态': '本节课的计费流转状态（待上课 → 已上课待确认 → 已确认销课 → 已计入结算；异常暂停计费）。',
   '可结算金额': '本节课确认销课后计入当月结算的金额；待上课 / 异常节次不计费。',
@@ -470,9 +473,9 @@ const COLDEF: Record<string, string> = {
   '应结算': '当月所有已确认销课节次的金额合计。',
   '应结算金额': '当月所有已确认销课节次的金额合计。',
   '平台服务费': '按合作协议比例（Demo 为 10%）从应结算金额中扣除。',
-  '学校分成': '涉及学校分成时按约定比例扣除（规则预留，Demo 为 5%）。',
+  '学校服务费': '涉及学校服务费时按约定比例扣除（规则预留，Demo 为 5%）。',
   '退款扣减': '当月退款订单对应金额，从机构结算中扣回。',
-  '机构实收': '应结算金额 − 平台服务费 − 学校分成 − 退款扣减。',
+  '机构实收': '应结算金额 − 平台服务费 − 学校服务费 − 退款扣减。',
   '问题类型': '家长提交的售后问题分类。',
   '课程班级': '售后涉及的课程与班级。',
   '操作内容': '本次操作的具体描述。',
@@ -541,7 +544,7 @@ function Dashboard({ db, go }: any) {
   return (
     <div>
       <Card size="small" style={{ marginBottom: 16 }}>
-        <Steps size="small" items={['创建学校/场地', '机构入驻审核', '老师资质审核', '课程审核入库', '课程分发学校', '家长报名付费', '按节上课销课', '按月结算机构'].map((t) => ({ title: t, status: 'finish' }))} />
+        <Steps size="small" items={['创建学校/场地', '机构入驻审核', '教师资质审核', '课程审核入库', '课程分发学校', '家长报名付费', '按节上课销课', '按月结算机构'].map((t) => ({ title: t, status: 'finish' }))} />
       </Card>
       <Row gutter={[16, 16]}>
         {stat.map((s, i) => (
@@ -563,8 +566,8 @@ function Dashboard({ db, go }: any) {
           { title: '机构名称', dataIndex: 'name' }, { title: '服务方向', dataIndex: 'dir' }, { title: '提交时间', dataIndex: 'submitAt' }, { title: '状态', dataIndex: 'status', render: (v: string) => <S v={v} /> },
         ], 'id', '待审核机构', 'org')}</Col>
         <Col span={12}>{mini(db.teachers.filter((t: any) => t.status === '待审核'), [
-          { title: '老师', dataIndex: 'name' }, { title: '机构', dataIndex: 'org', ellipsis: true }, { title: '方向', dataIndex: 'dir' }, { title: '状态', dataIndex: 'status', render: (v: string) => <S v={v} /> },
-        ], 'id', '待审核老师', 'teacher')}</Col>
+          { title: '教师', dataIndex: 'name' }, { title: '机构', dataIndex: 'org', ellipsis: true }, { title: '方向', dataIndex: 'dir' }, { title: '状态', dataIndex: 'status', render: (v: string) => <S v={v} /> },
+        ], 'id', '待审核教师', 'teacher')}</Col>
         <Col span={12}>{mini(db.courses.filter((c: any) => c.status === '待审核'), [
           { title: '课程', dataIndex: 'name' }, { title: '机构', dataIndex: 'org', ellipsis: true }, { title: '分类', dataIndex: 'cat' }, { title: '状态', dataIndex: 'status', render: (v: string) => <S v={v} /> },
         ], 'id', '待审核课程', 'course')}</Col>
@@ -572,7 +575,7 @@ function Dashboard({ db, go }: any) {
           { id: 1, cls: '人工智能启蒙课·周三班', school: '实验小学', time: '16:30-17:30', teacher: '王思远' },
           { id: 2, cls: '少儿编程思维课·周二班', school: '实验小学', time: '16:30-17:30', teacher: '陈亦然' },
         ], [
-          { title: '班级', dataIndex: 'cls' }, { title: '学校', dataIndex: 'school' }, { title: '时间', dataIndex: 'time' }, { title: '老师', dataIndex: 'teacher' },
+          { title: '班级', dataIndex: 'cls' }, { title: '学校', dataIndex: 'school' }, { title: '时间', dataIndex: 'time' }, { title: '教师', dataIndex: 'teacher' },
         ], 'id', '今日上课安排', 'class')}</Col>
         <Col span={24}>{mini(db.settlements, [
           { title: '结算单号', dataIndex: 'id' }, { title: '机构', dataIndex: 'org', ellipsis: true }, { title: '月份', dataIndex: 'month' },
@@ -605,7 +608,7 @@ function UserPage({ db, setDb }: any) {
                 <Form.Item label="姓名"><Input placeholder="请输入姓名" /></Form.Item>
                 <Form.Item label="手机号"><Input placeholder="请输入手机号" /></Form.Item>
                 <Form.Item label="角色"><Select placeholder="请选择角色" options={db.roles.map((r: any) => ({ value: r.name, label: r.name }))} /></Form.Item>
-                <Form.Item label="所属单位"><Input placeholder="如：天府通未来教育中心 / 某学校 / 某机构" /></Form.Item>
+                <Form.Item label="所属单位"><Input placeholder="如：天府未来教育中心 / 某学校 / 某机构" /></Form.Item>
               </Form>
             </Modal>
           </Card>
@@ -623,7 +626,7 @@ function UserPage({ db, setDb }: any) {
               onOk={() => { setPermRole(null); message.success('Demo：权限已保存'); }}>
               <Checkbox.Group style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}
                 defaultValue={['看板', '学校管理', '机构审核']}
-                options={['看板', '用户管理', '学校管理', '场地管理', '机构审核', '老师审核', '课程审核', '课程配置', '班级管理', '订单管理', '销课管理', '结算管理', '售后管理', '操作日志'].map((x) => ({ label: x, value: x }))} />
+                options={['看板', '用户管理', '学校管理', '场地管理', '机构审核', '教师审核', '课程审核', '课程配置', '班级管理', '订单管理', '销课管理', '结算管理', '售后管理', '操作日志'].map((x) => ({ label: x, value: x }))} />
             </Modal>
           </Card>
         ),
@@ -686,10 +689,36 @@ function SchoolPage({ db, setDb, go }: any) {
 function VenuePage({ db, setDb }: any) {
   const [addOpen, setAddOpen] = useState(false);
   const [schedule, setSchedule] = useState<any>(null);
+  const [form] = Form.useForm();
+  const createVenue = async () => {
+    const values = await form.validateFields();
+    const duplicate = db.venues.some((v: any) => v.school === values.school && v.name === values.name);
+    if (duplicate) return message.warning('该学校已存在同名场地，请更换名称');
+    const venue = {
+      id: 'v' + Date.now(),
+      name: values.name,
+      school: values.school,
+      type: values.type,
+      cap: values.cap,
+      time: values.time,
+      fit: values.fit,
+      open: values.open,
+      status: values.status,
+    };
+    setDb((d: any) => ({
+      ...d,
+      venues: [venue, ...d.venues],
+      schools: d.schools.map((s: any) => s.name === values.school ? { ...s, venues: d.venues.filter((v: any) => v.school === s.name).length + 1 } : s),
+    }));
+    setAddOpen(false);
+    form.resetFields();
+    message.success('场地创建成功，可在课程分发时选择使用');
+  };
   return (
     <Card size="small" title="学校场地" extra={<Button type="primary" icon={<PlusOutlined />} onClick={() => setAddOpen(true)}>新增场地</Button>}>
       <Tbl {...tblProps} dataSource={db.venues} columns={[
         { title: '场地名称', dataIndex: 'name' }, { title: '所属学校', dataIndex: 'school', ellipsis: true },
+        { title: '场景', dataIndex: 'scene', render: (v: string) => <Tag color={v === '校外' ? 'purple' : 'geekblue'}>{v || '校内'}</Tag> },
         { title: '类型', dataIndex: 'type', render: (v: string) => <Tag>{v}</Tag> }, { title: '容纳人数', dataIndex: 'cap' },
         { title: '可用时间', dataIndex: 'time' }, { title: '适合课程', dataIndex: 'fit' }, { title: '对外开放', dataIndex: 'open' },
         { title: '状态', dataIndex: 'status', render: (v: string) => <S v={v} /> },
@@ -697,16 +726,25 @@ function VenuePage({ db, setDb }: any) {
           <a onClick={() => setDb((d: any) => ({ ...d, venues: patch(d.venues, r.id, { status: r.status === '启用' ? '停用' : '启用' }) }))}>{r.status === '启用' ? '停用' : '启用'}</a>
           <a onClick={() => setSchedule(r)}>查看排课</a></Space> },
       ]} />
-      <Modal open={addOpen} title="新增场地" okText="创建" cancelText="取消" onCancel={() => setAddOpen(false)}
-        onOk={() => { setAddOpen(false); message.success('Demo：场地创建成功'); }}>
-        <Form layout="vertical">
-          <Form.Item label="所属学校"><Select placeholder="请选择学校" options={db.schools.map((s: any) => ({ value: s.name, label: s.name }))} /></Form.Item>
-          <Form.Item label="场地名称"><Input placeholder="如：科技教室 B" /></Form.Item>
+      <Modal open={addOpen} title="新增场地" okText="创建" cancelText="取消" onCancel={() => { setAddOpen(false); form.resetFields(); }}
+        onOk={createVenue}>
+        <Alert type="info" showIcon style={{ marginBottom: 12 }} message="平台后台可为任意合作学校代建场地；课程分发配置班级时，只能选择该学校已创建且启用的场地。" />
+        <Form form={form} layout="vertical" initialValues={{ open: '否', status: '启用', scene: '校内' }}>
           <Row gutter={12}>
-            <Col span={12}><Form.Item label="场地类型"><Select placeholder="请选择" options={['科技教室', '计算机教室', '美术教室', '音乐教室', '操场', '多功能室'].map((x) => ({ value: x, label: x }))} /></Form.Item></Col>
-            <Col span={12}><Form.Item label="容纳人数"><InputNumber style={{ width: '100%' }} placeholder="30" /></Form.Item></Col>
+            <Col span={12}><Form.Item label="所属学校" name="school" rules={[{ required: true, message: '请选择学校' }]}><Select placeholder="请选择学校" options={db.schools.map((s: any) => ({ value: s.name, label: s.name }))} /></Form.Item></Col>
+            <Col span={12}><Form.Item label="场景" name="scene"><Radio.Group><Radio value="校内">校内</Radio><Radio value="校外">校外</Radio></Radio.Group></Form.Item></Col>
           </Row>
-          <Form.Item label="可用时间"><Input placeholder="如：周一至周五 16:00-18:00" /></Form.Item>
+          <Form.Item label="场地名称" name="name" rules={[{ required: true, message: '请输入场地名称' }]}><Input placeholder="如：科技教室 B" /></Form.Item>
+          <Row gutter={12}>
+            <Col span={12}><Form.Item label="场地类型" name="type" rules={[{ required: true, message: '请选择场地类型' }]}><Select placeholder="请选择" options={['科技教室', '计算机教室', '美术教室', '音乐教室', '操场', '多功能室'].map((x) => ({ value: x, label: x }))} /></Form.Item></Col>
+            <Col span={12}><Form.Item label="容纳人数" name="cap" rules={[{ required: true, message: '请输入容纳人数' }]}><InputNumber min={1} style={{ width: '100%' }} placeholder="30" /></Form.Item></Col>
+          </Row>
+          <Form.Item label="可用时间" name="time" rules={[{ required: true, message: '请输入可用时间' }]}><Input placeholder="如：周一至周五 16:00-18:00" /></Form.Item>
+          <Form.Item label="适合课程" name="fit" rules={[{ required: true, message: '请输入适合课程' }]}><Input placeholder="如：AI / 编程 / 科学实验" /></Form.Item>
+          <Row gutter={12}>
+            <Col span={12}><Form.Item label="对外开放" name="open"><Radio.Group><Radio value="是">是</Radio><Radio value="否">否</Radio></Radio.Group></Form.Item></Col>
+            <Col span={12}><Form.Item label="状态" name="status"><Radio.Group><Radio value="启用">启用</Radio><Radio value="停用">停用</Radio></Radio.Group></Form.Item></Col>
+          </Row>
         </Form>
       </Modal>
       <Drawer open={!!schedule} width={480} title={'场地排课：' + (schedule?.name || '')} onClose={() => setSchedule(null)}>
@@ -727,7 +765,7 @@ function OrgPage({ db, setDb }: any) {
   const doAudit = (result: string, reason: string) => {
     const st = result === '通过' ? '审核通过' : '审核驳回';
     setDb((d: any) => ({ ...d, orgs: patch(d.orgs, audit.id, { status: st, audits: [{ t: now(), who: '审核员-李敏', act: st, note: reason }, ...audit.audits] }) }));
-    message.success(result === '通过' ? '机构审核通过，已开通老师创建与课程发布权限' : '已驳回，原因将通知机构');
+    message.success(result === '通过' ? '机构审核通过，已开通教师创建与课程发布权限' : '已驳回，原因将通知机构');
     setAudit(null); setDetail(null);
   };
   return (
@@ -736,7 +774,7 @@ function OrgPage({ db, setDb }: any) {
         { title: '机构名称', dataIndex: 'name', ellipsis: true }, { title: '联系人', dataIndex: 'contact' }, { title: '电话', dataIndex: 'phone' },
         { title: '服务方向', dataIndex: 'dir' }, { title: '提交时间', dataIndex: 'submitAt' },
         { title: '审核状态', dataIndex: 'status', render: (v: string) => <S v={v} /> },
-        { title: '课程', dataIndex: 'courses' }, { title: '老师', dataIndex: 'teachers' }, { title: '结算账户', dataIndex: 'account' },
+        { title: '课程', dataIndex: 'courses' }, { title: '教师', dataIndex: 'teachers' }, { title: '结算账户', dataIndex: 'account' },
         { title: '操作', render: (_: any, r: any) => <Space><a onClick={() => setDetail(r)}>查看资料</a>
           {r.status === '待审核' && <a style={{ color: '#fa8c16' }} onClick={() => setAudit(r)}>审核</a>}
           <a onClick={() => message.info('Demo：编辑机构')}>编辑</a>
@@ -763,20 +801,20 @@ function OrgPage({ db, setDb }: any) {
   );
 }
 
-/* 六、老师审核管理 */
+/* 六、教师审核管理 */
 function TeacherPage({ db, setDb }: any) {
   const [detail, setDetail] = useState<any>(null);
   const [audit, setAudit] = useState<any>(null);
   const doAudit = (result: string, reason: string) => {
     const st = result === '通过' ? '审核通过' : '审核驳回';
     setDb((d: any) => ({ ...d, teachers: patch(d.teachers, audit.id, { status: st, audits: [{ t: now(), who: '审核员-李敏', act: st, note: reason }, ...(audit.audits || [])] }) }));
-    message.success(result === '通过' ? '老师审核通过，可绑定到课程和班级' : '已驳回');
+    message.success(result === '通过' ? '教师审核通过，可绑定到课程和班级' : '已驳回');
     setAudit(null); setDetail(null);
   };
   return (
-    <Card size="small" title="机构老师审核" extra={<Alert type="info" showIcon message="老师审核通过后，才能被绑定到课程或班级" style={{ padding: '2px 10px' }} />}>
+    <Card size="small" title="机构教师审核" extra={<Alert type="info" showIcon message="教师审核通过后，才能被绑定到课程或班级" style={{ padding: '2px 10px' }} />}>
       <Tbl {...tblProps} dataSource={db.teachers} columns={[
-        { title: '老师姓名', dataIndex: 'name' }, { title: '所属机构', dataIndex: 'org', ellipsis: true }, { title: '手机号', dataIndex: 'phone' },
+        { title: '教师姓名', dataIndex: 'name' }, { title: '所属机构', dataIndex: 'org', ellipsis: true }, { title: '手机号', dataIndex: 'phone' },
         { title: '教授方向', dataIndex: 'dir' }, { title: '资质类型', dataIndex: 'cert', ellipsis: true },
         { title: '材料照片', render: (_: any, r: any) => <Space size={4}>
           <Tag color={r.teacherPhoto ? 'green' : 'default'}>个人照</Tag>
@@ -788,11 +826,11 @@ function TeacherPage({ db, setDb }: any) {
           {r.status === '待审核' && <a style={{ color: '#fa8c16' }} onClick={() => setAudit(r)}>审核</a>}
           <a style={{ color: '#ff4d4f' }} onClick={() => setDb((d: any) => ({ ...d, teachers: patch(d.teachers, r.id, { status: '已停用' }) }))}>停用</a></Space> },
       ]} />
-      <Drawer open={!!detail} width={520} title="老师详情" onClose={() => setDetail(null)}
+      <Drawer open={!!detail} width={520} title="教师详情" onClose={() => setDetail(null)}
         extra={detail?.status === '待审核' && <Button type="primary" onClick={() => setAudit(detail)}>审核</Button>}>
         {detail && <>
           <Descriptions column={1} size="small" bordered items={[
-            { key: '1', label: '老师姓名', children: detail.name }, { key: '2', label: '所属机构', children: detail.org },
+            { key: '1', label: '教师姓名', children: detail.name }, { key: '2', label: '所属机构', children: detail.org },
             { key: '3', label: '手机号', children: detail.phone }, { key: '4', label: '教授方向', children: detail.dir },
             { key: '5', label: '身份证信息', children: detail.idcard }, { key: '6', label: '资质证书', children: detail.cert },
             { key: '7', label: '个人照片', children: detail.teacherPhoto || '未上传' },
@@ -803,7 +841,7 @@ function TeacherPage({ db, setDb }: any) {
           {(detail.audits || []).length ? <AuditTimeline items={detail.audits} /> : <div style={{ color: '#999' }}>暂无审核记录</div>}
         </>}
       </Drawer>
-      <AuditModal open={!!audit} title={'老师资质审核：' + (audit?.name || '')} onClose={() => setAudit(null)} onSubmit={doAudit} />
+      <AuditModal open={!!audit} title={'教师资质审核：' + (audit?.name || '')} onClose={() => setAudit(null)} onSubmit={doAudit} />
     </Card>
   );
 }
@@ -845,10 +883,24 @@ function CoursePage({ db, setDb }: any) {
             { key: '4', label: '课时数量', children: detail.lessons + ' 节' }, { key: '5', label: '建议价格', children: money(detail.price) + ' /期' },
             { key: '6', label: '最低成班', children: detail.min + ' 人' }, { key: '7', label: '最大人数', children: detail.max + ' 人' },
             { key: '8', label: '所需场地', children: detail.venue }, { key: '9', label: '所需设备', children: detail.device },
-            { key: '10', label: '关联老师', children: detail.teacher }, { key: '11', label: '所属机构', children: detail.org },
+            { key: '10', label: '关联教师', children: detail.teacher }, { key: '11', label: '所属机构', children: detail.org },
             { key: '12', label: '课程介绍', span: 2, children: detail.intro },
             { key: '13', label: '课程成果', span: 2, children: detail.outcome },
           ]} />
+          <Divider>分账比例配置（审核时按课程单独设置，四方分账）</Divider>
+          {(() => {
+            const sh = detail.share || DEFAULT_SHARE;
+            return <>
+              <Row gutter={12}>
+                <Col span={6}><Form.Item label="机构"><InputNumber style={{ width: '100%' }} value={sh.org} formatter={(v) => v + '%'} disabled={detail.status !== '待审核'} /></Form.Item></Col>
+                <Col span={6}><Form.Item label="平台"><InputNumber style={{ width: '100%' }} value={sh.platform} formatter={(v) => v + '%'} disabled={detail.status !== '待审核'} /></Form.Item></Col>
+                <Col span={6}><Form.Item label="地方国企"><InputNumber style={{ width: '100%' }} value={sh.region} formatter={(v) => v + '%'} disabled={detail.status !== '待审核'} /></Form.Item></Col>
+                <Col span={6}><Form.Item label="天府通通道"><InputNumber style={{ width: '100%' }} value={sh.tf} formatter={(v) => v + '%'} disabled={detail.status !== '待审核'} /></Form.Item></Col>
+              </Row>
+              <Alert type={sh.org + sh.platform + sh.region + sh.tf === 100 ? 'success' : 'error'} showIcon
+                message={`四方合计 ${sh.org + sh.platform + sh.region + sh.tf}%${detail.status === '待审核' ? '（审核通过时随课程一并生效，不同课程可不同）' : '（已生效，如需调整请联系运营）'}`} />
+            </>;
+          })()}
           <Divider>课程大纲（每节课标题）</Divider>
           <List size="small" dataSource={detail.syllabus} renderItem={(s: string, i: number) => <List.Item><Tag color="blue">{i + 1}</Tag> {s}</List.Item>} />
           <Divider>审核记录</Divider>
@@ -866,80 +918,110 @@ function DeployPage({ db, setDb }: any) {
   const [step, setStep] = useState(0);
   const [selCourse, setSelCourse] = useState<string>();
   const [selSchools, setSelSchools] = useState<string[]>([]);
-  const [cfg, setCfg] = useState<any>({ className: '周三班', time: '每周三 16:30-17:30（课后延时）', venue: '科技教室', price: 800, min: 10, max: 30, deadline: '2026-07-15' });
+  const [cfg, setCfg] = useState<any>({ className: '周三班', time: '每周三 16:30-17:30（课后延时）', venues: {}, price: 800, min: 10, max: 30, signupStart: '2026-07-01', deadline: '2026-07-15', openDate: '2026-09-01' });
   const libCourses = db.courses.filter((c: any) => c.status === '已入课程库');
   const course = libCourses.find((c: any) => c.name === selCourse);
+  const venueOptionsFor = (schoolName: string) => db.venues
+    .filter((v: any) => v.school === schoolName && v.status === '启用')
+    .map((v: any) => ({ value: v.name, label: `${v.name}（${v.type} · 容纳 ${v.cap} 人）` }));
+  const venueOf = (schoolName: string) => cfg.venues?.[schoolName] || venueOptionsFor(schoolName)[0]?.value || '';
+  const setVenueFor = (schoolName: string, venue: string) => setCfg((c: any) => ({ ...c, venues: { ...(c.venues || {}), [schoolName]: venue } }));
+  const fillVenueDefaults = () => {
+    const venues = { ...(cfg.venues || {}) };
+    selSchools.forEach((sc) => { if (!venues[sc]) venues[sc] = venueOptionsFor(sc)[0]?.value || ''; });
+    setCfg({ ...cfg, venues });
+  };
+  const selectedVenueItems = selSchools.map((sc) => ({ school: sc, venue: venueOf(sc) }));
+  const hasMissingVenue = selectedVenueItems.some((x) => !x.venue);
   const reset = () => { setWizOpen(false); setStep(0); setSelCourse(undefined); setSelSchools([]); };
   const publish = () => {
+    if (hasMissingVenue) return message.warning('请先为每所学校选择已创建且启用的场地');
     const rows = selSchools.map((sc, i) => ({
       id: 'd' + Date.now() + i, course: course.name, org: course.org.slice(2, 6), school: sc,
-      className: cfg.className, time: cfg.time, venue: cfg.venue, teacher: course.teacher,
-      enrolled: 0, max: cfg.max, min: cfg.min, price: cfg.price, deadline: cfg.deadline, formed: '待成班', shelf: '已上架',
+      className: cfg.className, time: cfg.time, venue: venueOf(sc), teacher: course.teacher,
+      enrolled: 0, max: cfg.max, min: cfg.min, price: cfg.price, deadline: cfg.deadline, formed: '待成班', shelf: '待确认',
     }));
     const clsRows = selSchools.map((sc, i) => ({
       id: 'cl' + Date.now() + i, name: course.name + '·' + cfg.className, course: course.name, org: course.org.slice(2, 6), school: sc,
-      venue: cfg.venue, time: cfg.time, teacher: course.teacher, total: course.lessons, done: 0, min: cfg.min, max: cfg.max, enrolled: 0, status: '报名中',
+      venue: venueOf(sc), time: cfg.time, teacher: course.teacher, total: course.lessons, done: 0, min: cfg.min, max: cfg.max, enrolled: 0, status: '待确认',
     }));
     setDb((d: any) => ({ ...d, deployments: [...rows, ...d.deployments], classes: [...clsRows, ...d.classes] }));
-    message.success(`已将「${course.name}」发布到 ${selSchools.length} 所学校，家长端即刻可见`);
+    message.success(`已将「${course.name}」分发到 ${selSchools.length} 所学校，待学校确认开放后家长端可见`);
     reset();
   };
   return (
     <Card size="small" title="学校课程配置"
-      extra={<Space><Alert type="warning" showIcon message="课程须分发到学校后，该校家长端才可见" style={{ padding: '2px 10px' }} /><Button type="primary" icon={<SendOutlined />} onClick={() => setWizOpen(true)}>分发课程到学校</Button></Space>}>
+      extra={<Space><Alert type="warning" showIcon message="课程分发后还需学校确认开放和排课，该校家长端才可见" style={{ padding: '2px 10px' }} /><Button type="primary" icon={<SendOutlined />} onClick={() => setWizOpen(true)}>分发课程到学校</Button></Space>}>
       <Tbl {...tblProps} dataSource={db.deployments} columns={[
         { title: '课程名称', dataIndex: 'course' }, { title: '机构', dataIndex: 'org' }, { title: '投放学校', dataIndex: 'school', ellipsis: true },
-        { title: '班级', dataIndex: 'className' }, { title: '上课时间', dataIndex: 'time', ellipsis: true }, { title: '场地', dataIndex: 'venue' }, { title: '老师', dataIndex: 'teacher' },
+        { title: '班级', dataIndex: 'className' }, { title: '上课时间', dataIndex: 'time', ellipsis: true }, { title: '场地', dataIndex: 'venue' }, { title: '教师', dataIndex: 'teacher' },
         { title: '报名/上限', render: (_: any, r: any) => `${r.enrolled} / ${r.max}` },
         { title: '价格', dataIndex: 'price', render: money }, { title: '截止', dataIndex: 'deadline' },
         { title: '成班状态', dataIndex: 'formed', render: (v: string) => <S v={v} /> },
         { title: '上架状态', dataIndex: 'shelf', render: (v: string) => <S v={v} /> },
         { title: '操作', render: (_: any, r: any) => <Space><a onClick={() => message.info('Demo：查看配置详情')}>查看</a><a onClick={() => message.info('Demo：编辑配置')}>编辑</a>
-          <a onClick={() => setDb((d: any) => ({ ...d, deployments: patch(d.deployments, r.id, { shelf: r.shelf === '已上架' ? '已下架' : '已上架' }) }))}>{r.shelf === '已上架' ? '下架' : '上架'}</a>
-          <a onClick={() => message.success('Demo：已复制配置，请选择目标学校')}>复制到其他学校</a></Space> },
+          {r.shelf === '待确认'
+            ? <Tag color="orange">待学校确认</Tag>
+            : <a onClick={() => setDb((d: any) => ({ ...d, deployments: patch(d.deployments, r.id, { shelf: r.shelf === '已上架' ? '已下架' : '已上架' }) }))}>{r.shelf === '已上架' ? '下架' : '上架'}</a>}</Space> },
       ]} />
       <Modal open={wizOpen} width={720} title="分发课程到学校" onCancel={reset} footer={null}>
         <Steps current={step} size="small" style={{ margin: '8px 0 20px' }} items={[{ title: '选择课程' }, { title: '选择学校' }, { title: '配置班级' }, { title: '确认发布' }]} />
         {step === 0 && <>
           <Select style={{ width: '100%' }} placeholder="从课程库选择课程" value={selCourse} onChange={setSelCourse}
             options={libCourses.map((c: any) => ({ value: c.name, label: `${c.name} · ${c.org}（${c.lessons} 节 / 建议 ${money(c.price)}）` }))} />
-          {course && <Alert style={{ marginTop: 12 }} type="info" showIcon message={`${course.cat} · ${course.grade} · 需 ${course.venue} · 老师：${course.teacher}`} />}
+          {course && <Alert style={{ marginTop: 12 }} type="info" showIcon message={`${course.cat} · ${course.grade} · 需 ${course.venue} · 教师：${course.teacher}`} />}
           <div style={{ textAlign: 'right', marginTop: 20 }}><Button type="primary" disabled={!selCourse} onClick={() => setStep(1)}>下一步</Button></div>
         </>}
         {step === 1 && <>
           <Alert type="info" showIcon style={{ marginBottom: 12 }} message="一个课程可分发到多所学校；只有被分发学校的学生（家长端）能看到该课程" />
           <Checkbox.Group style={{ display: 'grid', gap: 10 }} value={selSchools} onChange={(v: any) => setSelSchools(v)}
             options={db.schools.filter((s: any) => s.status === '已合作').map((s: any) => ({ value: s.name, label: `${s.name}（${s.area} · 场地 ${s.venues} 个）` }))} />
-          <div style={{ textAlign: 'right', marginTop: 20 }}><Space><Button onClick={() => setStep(0)}>上一步</Button><Button type="primary" disabled={!selSchools.length} onClick={() => setStep(2)}>下一步</Button></Space></div>
+          <div style={{ textAlign: 'right', marginTop: 20 }}><Space><Button onClick={() => setStep(0)}>上一步</Button><Button type="primary" disabled={!selSchools.length} onClick={() => { fillVenueDefaults(); setStep(2); }}>下一步</Button></Space></div>
         </>}
         {step === 2 && <>
-          <Alert type="info" showIcon style={{ marginBottom: 12 }} message="同一课程在不同学校可配置不同班级 / 时间 / 场地 / 价格（Demo 简化为统一配置）" />
+          <Alert type="info" showIcon style={{ marginBottom: 12 }} message="场地必须从对应学校已创建且启用的场地中选择；同一课程在不同学校可配置不同场地 / 时间 / 价格" />
           <Form layout="vertical">
             <Row gutter={12}>
               <Col span={8}><Form.Item label="班级名称"><Input value={cfg.className} onChange={(e: any) => setCfg({ ...cfg, className: e.target.value })} /></Form.Item></Col>
               <Col span={16}><Form.Item label="上课时间（课后延时时段）"><Input value={cfg.time} onChange={(e: any) => setCfg({ ...cfg, time: e.target.value })} /></Form.Item></Col>
             </Row>
             <Row gutter={12}>
-              <Col span={8}><Form.Item label="学校场地"><Input value={cfg.venue} onChange={(e: any) => setCfg({ ...cfg, venue: e.target.value })} /></Form.Item></Col>
               <Col span={8}><Form.Item label="课程价格（元/期）"><InputNumber style={{ width: '100%' }} value={cfg.price} onChange={(v: any) => setCfg({ ...cfg, price: v })} /></Form.Item></Col>
+              <Col span={8}><Form.Item label="报名开始时间"><Input value={cfg.signupStart} onChange={(e: any) => setCfg({ ...cfg, signupStart: e.target.value })} /></Form.Item></Col>
               <Col span={8}><Form.Item label="报名截止时间"><Input value={cfg.deadline} onChange={(e: any) => setCfg({ ...cfg, deadline: e.target.value })} /></Form.Item></Col>
             </Row>
+            <Row gutter={12}>
+              <Col span={8}><Form.Item label="开课时间"><Input value={cfg.openDate} onChange={(e: any) => setCfg({ ...cfg, openDate: e.target.value })} /></Form.Item></Col>
+            </Row>
+            <Divider style={{ margin: '4px 0 16px' }}>按学校选择上课场地</Divider>
+            {selSchools.map((sc) => {
+              const options = venueOptionsFor(sc);
+              return (
+                <Form.Item key={sc} label={sc + ' · 学校场地'}>
+                  <Select placeholder="请选择该学校已创建场地" value={venueOf(sc) || undefined} onChange={(v: string) => setVenueFor(sc, v)}
+                    status={!options.length ? 'error' : undefined}
+                    options={options} />
+                  {!options.length && <Alert style={{ marginTop: 8 }} type="warning" showIcon message="该学校暂无启用场地，请先到「学校场地管理」创建或启用场地" />}
+                </Form.Item>
+              );
+            })}
             <Row gutter={12}>
               <Col span={8}><Form.Item label="最低成班人数"><InputNumber style={{ width: '100%' }} value={cfg.min} onChange={(v: any) => setCfg({ ...cfg, min: v })} /></Form.Item></Col>
               <Col span={8}><Form.Item label="最大报名人数"><InputNumber style={{ width: '100%' }} value={cfg.max} onChange={(v: any) => setCfg({ ...cfg, max: v })} /></Form.Item></Col>
             </Row>
           </Form>
-          <div style={{ textAlign: 'right' }}><Space><Button onClick={() => setStep(1)}>上一步</Button><Button type="primary" onClick={() => setStep(3)}>下一步</Button></Space></div>
+          <div style={{ textAlign: 'right' }}><Space><Button onClick={() => setStep(1)}>上一步</Button><Button type="primary" disabled={hasMissingVenue} onClick={() => setStep(3)}>下一步</Button></Space></div>
         </>}
         {step === 3 && course && <>
           <Descriptions column={2} size="small" bordered items={[
             { key: '1', label: '课程', span: 2, children: course.name + '（' + course.org + '）' },
             { key: '2', label: '投放学校', span: 2, children: selSchools.join('、') },
             { key: '3', label: '班级', children: cfg.className }, { key: '4', label: '时间', children: cfg.time },
-            { key: '5', label: '场地', children: cfg.venue }, { key: '6', label: '价格', children: money(cfg.price) + ' /期' },
-            { key: '7', label: '成班/上限', children: cfg.min + ' / ' + cfg.max + ' 人' }, { key: '8', label: '报名截止', children: cfg.deadline },
+            { key: '5', label: '场地', span: 2, children: selectedVenueItems.map((x) => `${x.school}：${x.venue}`).join('；') }, { key: '6', label: '价格', children: money(cfg.price) + ' /期' },
+            { key: '7', label: '成班/上限', children: cfg.min + ' / ' + cfg.max + ' 人' },
+            { key: '8', label: '报名时间', children: cfg.signupStart + ' 至 ' + cfg.deadline }, { key: '9', label: '开课时间', children: cfg.openDate },
           ]} />
-          <Alert style={{ marginTop: 12 }} type="success" showIcon message={`发布后，${selSchools.length} 所学校的家长端将立即展示该课程，其他学校学生不可见`} />
+          <Alert style={{ marginTop: 12 }} type="success" showIcon message={`发布后进入学校确认流程；学校确认开放和排课后，该校家长端才展示对应班级`} />
           <div style={{ textAlign: 'right', marginTop: 16 }}><Space><Button onClick={() => setStep(2)}>上一步</Button><Button type="primary" onClick={publish}>确认发布到学校</Button></Space></div>
         </>}
       </Modal>
@@ -954,7 +1036,7 @@ function ClassPage({ db, setDb }: any) {
     <Card size="small" title="班级管理" extra={<Alert type="info" showIcon message="达到最低成班人数可成班；达到上限自动停止报名；未达标可取消 / 延期 / 转班" style={{ padding: '2px 10px' }} />}>
       <Tbl {...tblProps} dataSource={db.classes} columns={[
         { title: '班级名称', dataIndex: 'name', ellipsis: true }, { title: '机构', dataIndex: 'org' }, { title: '学校', dataIndex: 'school', ellipsis: true },
-        { title: '场地', dataIndex: 'venue' }, { title: '时间', dataIndex: 'time', ellipsis: true }, { title: '老师', dataIndex: 'teacher' },
+        { title: '场地', dataIndex: 'venue' }, { title: '时间', dataIndex: 'time', ellipsis: true }, { title: '教师', dataIndex: 'teacher' },
         { title: '课时进度', render: (_: any, r: any) => <Tooltip title={`已上 ${r.done} / 共 ${r.total} 节`}><Progress size="small" style={{ width: 90 }} percent={Math.round((r.done / r.total) * 100)} /></Tooltip> },
         { title: '报名（成班 ' + '/上限）', render: (_: any, r: any) => <span style={{ color: r.enrolled >= r.min ? '#52c41a' : '#fa8c16' }}>{r.enrolled}<span style={{ color: '#999' }}>（{r.min}/{r.max}）</span></span> },
         { title: '班级状态', dataIndex: 'status', render: (v: string, r: any) => <Space size={4}><S v={v} />{r.enrolled >= r.min && ['报名中', '待成班'].includes(v) && <Tag color="green">可成班</Tag>}</Space> },
@@ -1004,12 +1086,12 @@ function OrderPage({ db, setDb }: any) {
 function LessonPage({ db, setDb }: any) {
   const [detail, setDetail] = useState<any>(null);
   return (
-    <Card size="small" title="上课销课（老师上完课提交记录 → 平台/学校确认 → 计入可结算）">
+    <Card size="small" title="上课销课（教师上完课提交记录 → 平台/学校确认 → 计入可结算）">
       <Tbl {...tblProps} dataSource={db.lessons} columns={[
         { title: '班级', dataIndex: 'cls', ellipsis: true }, { title: '机构', dataIndex: 'org' }, { title: '学校', dataIndex: 'school', ellipsis: true },
-        { title: '上课日期', dataIndex: 'date' }, { title: '节次', dataIndex: 'no', render: (v: number) => '第 ' + v + ' 节' }, { title: '老师', dataIndex: 'teacher' },
+        { title: '上课日期', dataIndex: 'date' }, { title: '节次', dataIndex: 'no', render: (v: number) => '第 ' + v + ' 节' }, { title: '教师', dataIndex: 'teacher' },
         { title: '应到/实到', render: (_: any, r: any) => `${r.due} / ${r.actual || '—'}` },
-        { title: '老师签到', dataIndex: 'sign', render: (v: string) => <S v={v} /> },
+        { title: '教师签到', dataIndex: 'sign', render: (v: string) => <S v={v} /> },
         { title: '学校确认', dataIndex: 'schoolConfirm', render: (v: string) => (v === '—' ? '—' : <S v={v} />) },
         { title: '销课状态', dataIndex: 'status', render: (v: string) => <S v={v} /> },
         { title: '可结算金额', dataIndex: 'amount', render: (v: number) => (v ? <b style={{ color: '#52c41a' }}>{money(v)}</b> : '—') },
@@ -1024,7 +1106,7 @@ function LessonPage({ db, setDb }: any) {
         {detail && <Descriptions column={1} size="small" bordered items={[
           { key: '1', label: '班级', children: detail.cls }, { key: '2', label: '课程', children: detail.course },
           { key: '3', label: '机构 / 学校', children: detail.org + ' / ' + detail.school },
-          { key: '4', label: '上课时间', children: detail.date + '（第 ' + detail.no + ' 节）' }, { key: '5', label: '任课老师', children: detail.teacher },
+          { key: '4', label: '上课时间', children: detail.date + '（第 ' + detail.no + ' 节）' }, { key: '5', label: '任课教师', children: detail.teacher },
           { key: '6', label: '出勤', children: `应到 ${detail.due} 人 · 实到 ${detail.actual || '—'} 人` },
           { key: '7', label: '销课状态', children: <S v={detail.status} /> },
           { key: '8', label: '可结算金额', children: detail.amount ? money(detail.amount) : '—' },
@@ -1039,13 +1121,13 @@ function LessonPage({ db, setDb }: any) {
 function SettlePage({ db, setDb }: any) {
   const [detail, setDetail] = useState<any>(null);
   return (
-    <Card size="small" title="机构结算（按月：销课累计 − 平台服务费 − 学校分成 − 退款扣减）"
+    <Card size="small" title="机构结算（按月：销课累计 − 平台服务费 − 学校服务费 − 退款扣减）"
       extra={<Button type="primary" onClick={() => message.success('Demo：已按 2026-07 销课记录生成结算单草稿')}>生成本月结算单</Button>}>
       <Tbl {...tblProps} dataSource={db.settlements} columns={[
         { title: '结算单号', dataIndex: 'id' }, { title: '机构名称', dataIndex: 'org', ellipsis: true }, { title: '月份', dataIndex: 'month' },
         { title: '涉及学校', dataIndex: 'schools', ellipsis: true }, { title: '班级数', dataIndex: 'clsCount' }, { title: '完成课时', dataIndex: 'doneLessons' },
         { title: '应结算', dataIndex: 'gross', render: money }, { title: '平台服务费', dataIndex: 'fee', render: money },
-        { title: '学校分成', dataIndex: 'schoolShare', render: money }, { title: '退款扣减', dataIndex: 'refund', render: money },
+        { title: '学校服务费', dataIndex: 'schoolShare', render: money }, { title: '退款扣减', dataIndex: 'refund', render: money },
         { title: '机构实收', dataIndex: 'net', render: (v: number) => <b style={{ color: '#1677ff' }}>{money(v)}</b> },
         { title: '状态', dataIndex: 'status', render: (v: string) => <S v={v} /> },
         { title: '操作', render: (_: any, r: any) => <Space><a onClick={() => setDetail(r)}>查看明细</a>
@@ -1068,10 +1150,21 @@ function SettlePage({ db, setDb }: any) {
           <Descriptions column={1} size="small" bordered items={[
             { key: '1', label: '销课累计（应结算）', children: money(detail.gross) },
             { key: '2', label: '平台服务费（10%）', children: '− ' + money(detail.fee) },
-            { key: '3', label: '学校分成（5%，规则预留）', children: '− ' + money(detail.schoolShare) },
+            { key: '3', label: '学校服务费（5%，规则预留）', children: '− ' + money(detail.schoolShare) },
             { key: '4', label: '退款扣减', children: '− ' + money(detail.refund) },
             { key: '5', label: '最终应付机构金额', children: <b style={{ color: '#1677ff', fontSize: 16 }}>{money(detail.net)}</b> },
           ]} />
+          <Divider>四方分账（按课程配置比例，天府通内部完成分账）</Divider>
+          <Tbl {...tblProps} rowKey="party" dataSource={[
+            { party: '机构', ratio: '70%', amount: Math.round(detail.gross * 0.70) },
+            { party: '平台（未来教育中心）', ratio: '12%', amount: Math.round(detail.gross * 0.12) },
+            { party: '地方国企（平台公司）', ratio: '13%', amount: Math.round(detail.gross * 0.13) },
+            { party: '天府通（支付通道）', ratio: '5%', amount: Math.round(detail.gross * 0.05) },
+          ]} columns={[
+            { title: '分账方', dataIndex: 'party' }, { title: '比例', dataIndex: 'ratio' }, { title: '金额（示例）', dataIndex: 'amount', render: money },
+          ]} />
+          <Alert style={{ marginTop: 12 }} type="info" showIcon
+            message="资金监管：平台向天府通下发「订单详情」与「对账单」两份独立数据（订单用于资金入账核查、对账单用于四方分账），不合并；机构确认对账单后由天府通完成分账打款。" />
         </>}
       </Drawer>
     </Card>
@@ -1121,7 +1214,7 @@ const MENUS = [
   { key: 'school', icon: <BankOutlined />, label: '学校管理' },
   { key: 'venue', icon: <EnvironmentOutlined />, label: '学校场地管理' },
   { key: 'org', icon: <ShopOutlined />, label: '机构入驻管理' },
-  { key: 'teacher', icon: <IdcardOutlined />, label: '老师审核管理' },
+  { key: 'teacher', icon: <IdcardOutlined />, label: '教师审核管理' },
   { key: 'course', icon: <BookOutlined />, label: '课程审核与课程库' },
   { key: 'deploy', icon: <SendOutlined />, label: '学校课程配置' },
   { key: 'class', icon: <ClusterOutlined />, label: '班级管理' },
@@ -1152,7 +1245,7 @@ function App() {
         <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
           <div style={{ color: '#fff', padding: '18px 16px', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
             <div style={{ width: 34, height: 34, borderRadius: 8, background: '#1677ff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>未</div>
-            <div style={{ lineHeight: 1.25 }}><b>天府通未来教育中心</b><div style={{ fontSize: 11, opacity: .65 }}>后台管理系统 Demo</div></div>
+            <div style={{ lineHeight: 1.25 }}><b>天府未来教育中心</b><div style={{ fontSize: 11, opacity: .65 }}>后台管理系统 Demo</div></div>
           </div>
           <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
             <Menu theme="dark" mode="inline" selectedKeys={[nav]} items={MENUS} onClick={(e: any) => setNav(e.key)} />
@@ -1161,8 +1254,8 @@ function App() {
             <div style={{ color: 'rgba(255,255,255,.45)', fontSize: 12, marginBottom: 8 }}>友情链接</div>
             <Space direction="vertical" size={4} style={{ width: '100%' }}>
               <a href="../" style={{ color: 'rgba(255,255,255,.82)', fontSize: 13 }}>家长端</a>
-              <a href="../school/" style={{ color: 'rgba(255,255,255,.82)', fontSize: 13 }}>学校端</a>
-              <a href="../org/" style={{ color: 'rgba(255,255,255,.82)', fontSize: 13 }}>机构端 / 老师端</a>
+              <a href="../school/" style={{ color: 'rgba(255,255,255,.82)', fontSize: 13 }}>学校端（暂不做）</a>
+              <a href="../org/" style={{ color: 'rgba(255,255,255,.82)', fontSize: 13 }}>机构端 / 教师端</a>
             </Space>
           </div>
         </div>

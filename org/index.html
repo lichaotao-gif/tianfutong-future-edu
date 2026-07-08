@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>天府通未来教育中心 · 机构端 Demo</title>
+<title>天府未来教育中心 · 机构端 Demo</title>
 <style>
   :root {
     --primary: #7c3aed; --primary-soft: #f3e8ff;
@@ -178,7 +178,7 @@
   <aside class="sider">
     <div class="brand">
       <div class="logo">机</div>
-      <b>天府通未来教育中心<div class="sub">机构端 · Demo</div></b>
+      <b>天府未来教育中心<div class="sub">机构端 · Demo</div></b>
     </div>
     <nav class="menu" id="menu"></nav>
     <div class="side-links">
@@ -196,7 +196,7 @@
         <span class="who" id="whoami"></span>
         <div class="seg">
           <button id="roleOrg" onclick="setRole('org')">机构管理员</button>
-          <button id="roleTeacher" onclick="setRole('teacher')">老师账号</button>
+          <button id="roleTeacher" onclick="setRole('teacher')">教师账号</button>
         </div>
       </div>
     </header>
@@ -215,8 +215,8 @@
 
 <script>
 /* ============================================================
- * 天府通未来教育中心 · 机构端 / 老师端 单文件原型
- * 角色权限：机构管理员看全部；老师只看自己班级，隐藏财务
+ * 天府未来教育中心 · 机构端 / 教师端 单文件原型
+ * 角色权限：机构管理员看全部；教师只看自己班级，隐藏财务
  * ============================================================ */
 
 /* ---------- Mock 数据 ---------- */
@@ -259,46 +259,46 @@ const COURSES = [
 ];
 
 const CLASSES = [
-  { id: 'cl1', name: '天府一小 - 人工智能启蒙课一班', course: '人工智能启蒙课', school: '天府一小', venue: '科技教室',
+  { id: 'cl1', name: '成都天府新区实验小学 - 人工智能启蒙课一班', course: '人工智能启蒙课', school: '成都天府新区实验小学', venue: '科技教室 A',
     time: '每周三 17:00-18:00', teacher: '王老师', tid: 't1', total: 10, done: 4, enrolled: 28, max: 30, status: '上课中' },
-  { id: 'cl2', name: '天府二小 - 人工智能启蒙课一班', course: '人工智能启蒙课', school: '天府二小', venue: '计算机教室',
+  { id: 'cl2', name: '成都天府新区第七小学 - 人工智能启蒙课一班', course: '人工智能启蒙课', school: '成都天府新区第七小学', venue: '科学实验室',
     time: '每周五 17:00-18:00', teacher: '王老师', tid: 't1', total: 10, done: 2, enrolled: 24, max: 30, status: '上课中' },
-  { id: 'cl3', name: '天府实验小学 - 科学实验探索课一班', course: '科学实验探索课', school: '天府实验小学', venue: '科学教室',
+  { id: 'cl3', name: '成都麓湖小学 - 科学实验探索课一班', course: '科学实验探索课', school: '成都麓湖小学', venue: '科学教室',
     time: '每周二 17:00-18:00', teacher: '张老师', tid: 't3', total: 8, done: 1, enrolled: 18, max: 25, status: '上课中' },
 ];
 
 const STUDENTS = [
-  { name: '李小明', school: '天府一小', grade: '三年级 2 班', course: '人工智能启蒙课', cls: 'cl1', phone: '138****8888', status: '已报名', attend: '4/4' },
-  { name: '张一诺', school: '天府一小', grade: '三年级 1 班', course: '人工智能启蒙课', cls: 'cl1', phone: '139****2211', status: '已报名', attend: '4/4' },
-  { name: '王梓萱', school: '天府一小', grade: '二年级 3 班', course: '人工智能启蒙课', cls: 'cl1', phone: '137****5566', status: '已报名', attend: '3/4' },
-  { name: '陈梓航', school: '天府二小', grade: '三年级 4 班', course: '人工智能启蒙课', cls: 'cl2', phone: '136****7788', status: '已报名', attend: '2/2' },
-  { name: '刘思彤', school: '天府二小', grade: '二年级 2 班', course: '人工智能启蒙课', cls: 'cl2', phone: '135****3344', status: '已报名', attend: '1/2' },
-  { name: '黄雨桐', school: '天府实验小学', grade: '三年级 3 班', course: '科学实验探索课', cls: 'cl3', phone: '188****9900', status: '已报名', attend: '1/1' },
-  { name: '周子墨', school: '天府实验小学', grade: '四年级 1 班', course: '科学实验探索课', cls: 'cl3', phone: '186****1122', status: '已报名', attend: '1/1' },
-  { name: '杨浩然', school: '天府实验小学', grade: '三年级 2 班', course: '科学实验探索课', cls: 'cl3', phone: '158****6677', status: '已报名', attend: '0/1' },
+  { name: '李小明', school: '成都天府新区实验小学', grade: '三年级 2 班', course: '人工智能启蒙课', cls: 'cl1', phone: '138****8888', status: '已报名', attend: '4/4' },
+  { name: '张一诺', school: '成都天府新区实验小学', grade: '三年级 1 班', course: '人工智能启蒙课', cls: 'cl1', phone: '139****2211', status: '已报名', attend: '4/4' },
+  { name: '王梓萱', school: '成都天府新区实验小学', grade: '二年级 3 班', course: '人工智能启蒙课', cls: 'cl1', phone: '137****5566', status: '已报名', attend: '3/4' },
+  { name: '陈梓航', school: '成都天府新区第七小学', grade: '三年级 4 班', course: '人工智能启蒙课', cls: 'cl2', phone: '136****7788', status: '已报名', attend: '2/2' },
+  { name: '刘思彤', school: '成都天府新区第七小学', grade: '二年级 2 班', course: '人工智能启蒙课', cls: 'cl2', phone: '135****3344', status: '已报名', attend: '1/2' },
+  { name: '黄雨桐', school: '成都麓湖小学', grade: '三年级 3 班', course: '科学实验探索课', cls: 'cl3', phone: '188****9900', status: '已报名', attend: '1/1' },
+  { name: '周子墨', school: '成都麓湖小学', grade: '四年级 1 班', course: '科学实验探索课', cls: 'cl3', phone: '186****1122', status: '已报名', attend: '1/1' },
+  { name: '杨浩然', school: '成都麓湖小学', grade: '三年级 2 班', course: '科学实验探索课', cls: 'cl3', phone: '158****6677', status: '已报名', attend: '0/1' },
 ];
 
 /* 今日签到任务：先列出课次任务，再进入每节课完成签到 / 课堂记录 */
 const CHECKINS = [
   {
-    id: 'ck1', recordId: 'r2', cls: 'cl1', className: '天府一小 - 人工智能启蒙课一班', course: '人工智能启蒙课',
-    school: '天府一小', venue: '科技教室', time: '今天 17:00-18:00（第 5 节）', teacher: '王老师', tid: 't1', submitted: false,
+    id: 'ck1', recordId: 'r2', cls: 'cl1', className: '成都天府新区实验小学 - 人工智能启蒙课一班', course: '人工智能启蒙课',
+    school: '成都天府新区实验小学', venue: '科技教室 A', time: '今天 17:00-18:00（第 5 节）', teacher: '王老师', tid: 't1', submitted: false,
     students: [
       { name: '李小明', st: '已到' }, { name: '张一诺', st: '已到' }, { name: '王梓萱', st: '已到' },
-      { name: '赵一鸣', st: '迟到' }, { name: '钱多多', st: '请假' }, { name: '孙小美', st: '已到' },
+      { name: '赵一鸣', st: '已到' }, { name: '钱多多', st: '缺勤' }, { name: '孙小美', st: '已到' },
     ],
   },
   {
-    id: 'ck2', recordId: 'r3', cls: 'cl2', className: '天府二小 - 人工智能启蒙课一班', course: '人工智能启蒙课',
-    school: '天府二小', venue: '计算机教室', time: '今天 17:00-18:00（第 2 节）', teacher: '王老师', tid: 't1', submitted: true,
+    id: 'ck2', recordId: 'r3', cls: 'cl2', className: '成都天府新区第七小学 - 人工智能启蒙课一班', course: '人工智能启蒙课',
+    school: '成都天府新区第七小学', venue: '科学实验室', time: '今天 17:00-18:00（第 2 节）', teacher: '王老师', tid: 't1', submitted: true,
     students: [
       { name: '陈梓航', st: '已到' }, { name: '刘思彤', st: '已到' }, { name: '何嘉树', st: '已到' },
       { name: '宋依依', st: '已到' }, { name: '唐子轩', st: '已到' },
     ],
   },
   {
-    id: 'ck3', recordId: 'r4', cls: 'cl3', className: '天府实验小学 - 科学实验探索课一班', course: '科学实验探索课',
-    school: '天府实验小学', venue: '科学教室', time: '今天 17:00-18:00（第 2 节）', teacher: '张老师', tid: 't3', submitted: true,
+    id: 'ck3', recordId: 'r4', cls: 'cl3', className: '成都麓湖小学 - 科学实验探索课一班', course: '科学实验探索课',
+    school: '成都麓湖小学', venue: '科学教室', time: '今天 17:00-18:00（第 2 节）', teacher: '张老师', tid: 't3', submitted: true,
     students: [
       { name: '黄雨桐', st: '已到' }, { name: '周子墨', st: '已到' }, { name: '杨浩然', st: '缺勤' },
       { name: '罗可欣', st: '已到' },
@@ -307,45 +307,45 @@ const CHECKINS = [
 ];
 
 const RECORDS = [
-  { id: 'r1', cls: '天府一小 - AI启蒙一班', clsId: 'cl1', tid: 't1', no: 4, date: '2026-07-01', content: '训练自己的小模型', attend: 27, absent: 1, mood: '课堂气氛活跃，动手环节完成度高', comment: '整体掌握良好，个别学生需课后巩固', status: '已提交' },
-  { id: 'r2', cls: '天府一小 - AI启蒙一班', clsId: 'cl1', tid: 't1', no: 5, date: '2026-07-08', content: '', attend: 0, absent: 0, mood: '', comment: '', status: '待填写' },
-  { id: 'r3', cls: '天府二小 - AI启蒙一班', clsId: 'cl2', tid: 't1', no: 2, date: '2026-07-03', content: '和 AI 对话', attend: 24, absent: 0, mood: '学生提问踊跃', comment: '课堂参与度高', status: '已提交' },
-  { id: 'r4', cls: '天府实验小学 - 科学探索一班', clsId: 'cl3', tid: 't3', no: 1, date: '2026-06-30', content: '观察与猜想', attend: 17, absent: 1, mood: '实验安全规范讲解到位', comment: '学生兴趣浓厚', status: '已提交' },
+  { id: 'r1', cls: '成都天府新区实验小学 - AI启蒙一班', clsId: 'cl1', tid: 't1', no: 4, date: '2026-07-01', content: '训练自己的小模型', attend: 27, absent: 1, mood: '课堂气氛活跃，动手环节完成度高', comment: '整体掌握良好，个别学生需课后巩固', status: '已提交' },
+  { id: 'r2', cls: '成都天府新区实验小学 - AI启蒙一班', clsId: 'cl1', tid: 't1', no: 5, date: '2026-07-08', content: '', attend: 0, absent: 0, mood: '', comment: '', status: '待填写' },
+  { id: 'r3', cls: '成都天府新区第七小学 - AI启蒙一班', clsId: 'cl2', tid: 't1', no: 2, date: '2026-07-03', content: '和 AI 对话', attend: 24, absent: 0, mood: '学生提问踊跃', comment: '课堂参与度高', status: '已提交' },
+  { id: 'r4', cls: '成都麓湖小学 - 科学探索一班', clsId: 'cl3', tid: 't3', no: 1, date: '2026-06-30', content: '观察与猜想', attend: 17, absent: 1, mood: '实验安全规范讲解到位', comment: '学生兴趣浓厚', status: '已提交' },
 ];
 
 const LESSONS = [
-  { course: '人工智能启蒙课', cls: '天府一小 - AI启蒙一班', school: '天府一小', venue: '科技教室', no: 4, date: '2026-07-01', time: '17:00-18:00', teacher: '王老师', tid: 't1', due: 28, actual: 27, sign: '已签到', tSubmit: '已提交', confirm: '已确认', status: '已确认销课', amount: 2160 },
-  { course: '人工智能启蒙课', cls: '天府一小 - AI启蒙一班', school: '天府一小', venue: '科技教室', no: 3, date: '2026-06-24', time: '17:00-18:00', teacher: '王老师', tid: 't1', due: 28, actual: 28, sign: '已签到', tSubmit: '已提交', confirm: '已确认', status: '已计入结算', amount: 2240 },
-  { course: '人工智能启蒙课', cls: '天府一小 - AI启蒙一班', school: '天府一小', venue: '科技教室', no: 5, date: '2026-07-08', time: '17:00-18:00', teacher: '王老师', tid: 't1', due: 28, actual: 0, sign: '未签到', tSubmit: '未提交', confirm: '—', status: '待上课', amount: 0 },
-  { course: '人工智能启蒙课', cls: '天府一小 - AI启蒙一班', school: '天府一小', venue: '科技教室', no: 6, date: '2026-07-15', time: '17:00-18:00', teacher: '王老师', tid: 't1', due: 28, actual: 0, sign: '未签到', tSubmit: '未提交', confirm: '—', status: '待上课', amount: 0 },
-  { course: '人工智能启蒙课', cls: '天府二小 - AI启蒙一班', school: '天府二小', venue: '计算机教室', no: 2, date: '2026-07-03', time: '17:00-18:00', teacher: '王老师', tid: 't1', due: 24, actual: 24, sign: '已签到', tSubmit: '已提交', confirm: '待确认', status: '已上课待确认', amount: 1920 },
-  { course: '人工智能启蒙课', cls: '天府二小 - AI启蒙一班', school: '天府二小', venue: '计算机教室', no: 3, date: '2026-07-10', time: '17:00-18:00', teacher: '王老师', tid: 't1', due: 24, actual: 0, sign: '未签到', tSubmit: '未提交', confirm: '—', status: '待上课', amount: 0 },
-  { course: '科学实验探索课', cls: '天府实验小学 - 科学探索一班', school: '天府实验小学', venue: '科学教室', no: 1, date: '2026-06-30', time: '17:00-18:00', teacher: '张老师', tid: 't3', due: 18, actual: 17, sign: '已签到', tSubmit: '已提交', confirm: '已确认', status: '已确认销课', amount: 1360 },
-  { course: '科学实验探索课', cls: '天府实验小学 - 科学探索一班', school: '天府实验小学', venue: '科学教室', no: 2, date: '2026-07-07', time: '17:00-18:00', teacher: '张老师', tid: 't3', due: 18, actual: 16, sign: '已签到', tSubmit: '已提交', confirm: '待确认', status: '异常', amount: 0, note: '实到人数与签到不符，待补充说明' },
-  { course: '科学实验探索课', cls: '天府实验小学 - 科学探索一班', school: '天府实验小学', venue: '科学教室', no: 3, date: '2026-07-14', time: '17:00-18:00', teacher: '张老师', tid: 't3', due: 18, actual: 0, sign: '未签到', tSubmit: '未提交', confirm: '—', status: '待上课', amount: 0 },
+  { course: '人工智能启蒙课', cls: '成都天府新区实验小学 - AI启蒙一班', school: '成都天府新区实验小学', venue: '科技教室 A', no: 4, date: '2026-07-01', time: '17:00-18:00', teacher: '王老师', tid: 't1', due: 28, actual: 27, sign: '已签到', tSubmit: '已提交', confirm: '已确认', status: '已确认销课', amount: 2160 },
+  { course: '人工智能启蒙课', cls: '成都天府新区实验小学 - AI启蒙一班', school: '成都天府新区实验小学', venue: '科技教室 A', no: 3, date: '2026-06-24', time: '17:00-18:00', teacher: '王老师', tid: 't1', due: 28, actual: 28, sign: '已签到', tSubmit: '已提交', confirm: '已确认', status: '已计入结算', amount: 2240 },
+  { course: '人工智能启蒙课', cls: '成都天府新区实验小学 - AI启蒙一班', school: '成都天府新区实验小学', venue: '科技教室 A', no: 5, date: '2026-07-08', time: '17:00-18:00', teacher: '王老师', tid: 't1', due: 28, actual: 0, sign: '未签到', tSubmit: '未提交', confirm: '—', status: '待上课', amount: 0 },
+  { course: '人工智能启蒙课', cls: '成都天府新区实验小学 - AI启蒙一班', school: '成都天府新区实验小学', venue: '科技教室 A', no: 6, date: '2026-07-15', time: '17:00-18:00', teacher: '王老师', tid: 't1', due: 28, actual: 0, sign: '未签到', tSubmit: '未提交', confirm: '—', status: '待上课', amount: 0 },
+  { course: '人工智能启蒙课', cls: '成都天府新区第七小学 - AI启蒙一班', school: '成都天府新区第七小学', venue: '科学实验室', no: 2, date: '2026-07-03', time: '17:00-18:00', teacher: '王老师', tid: 't1', due: 24, actual: 24, sign: '已签到', tSubmit: '已提交', confirm: '待确认', status: '已上课待确认', amount: 1920 },
+  { course: '人工智能启蒙课', cls: '成都天府新区第七小学 - AI启蒙一班', school: '成都天府新区第七小学', venue: '科学实验室', no: 3, date: '2026-07-10', time: '17:00-18:00', teacher: '王老师', tid: 't1', due: 24, actual: 0, sign: '未签到', tSubmit: '未提交', confirm: '—', status: '待上课', amount: 0 },
+  { course: '科学实验探索课', cls: '成都麓湖小学 - 科学探索一班', school: '成都麓湖小学', venue: '科学教室', no: 1, date: '2026-06-30', time: '17:00-18:00', teacher: '张老师', tid: 't3', due: 18, actual: 17, sign: '已签到', tSubmit: '已提交', confirm: '已确认', status: '已确认销课', amount: 1360 },
+  { course: '科学实验探索课', cls: '成都麓湖小学 - 科学探索一班', school: '成都麓湖小学', venue: '科学教室', no: 2, date: '2026-07-07', time: '17:00-18:00', teacher: '张老师', tid: 't3', due: 18, actual: 16, sign: '已签到', tSubmit: '已提交', confirm: '待确认', status: '异常', amount: 0, note: '实到人数与签到不符，待补充说明' },
+  { course: '科学实验探索课', cls: '成都麓湖小学 - 科学探索一班', school: '成都麓湖小学', venue: '科学教室', no: 3, date: '2026-07-14', time: '17:00-18:00', teacher: '张老师', tid: 't3', due: 18, actual: 0, sign: '未签到', tSubmit: '未提交', confirm: '—', status: '待上课', amount: 0 },
 ];
 
 const AFTERSALES = [
-  { id: 'SH20260701001', student: '刘思彤', school: '天府二小', cls: '人工智能启蒙课一班', type: '申请退款', status: '机构需反馈', opinion: '请机构 2 个工作日内提交该生出勤与课堂记录' },
-  { id: 'SH20260703002', student: '杨浩然', school: '天府实验小学', cls: '科学实验探索课一班', type: '老师缺课', status: '平台处理中', opinion: '平台已核实排课记录，待与学校确认' },
+  { id: 'SH20260701001', student: '刘思彤', school: '成都天府新区第七小学', cls: '人工智能启蒙课一班', type: '申请退款', status: '机构需反馈', opinion: '请机构 2 个工作日内提交该生出勤与课堂记录' },
+  { id: 'SH20260703002', student: '杨浩然', school: '成都麓湖小学', cls: '科学实验探索课一班', type: '教师缺课', status: '平台处理中', opinion: '平台已核实排课记录，待与学校确认' },
 ];
 
 const SETTLES = [
-  { id: 'JS202607-01', month: '2026年7月', schools: '天府一小、天府二小、天府实验小学', clsCount: 3, lessons: 42,
+  { id: 'JS202607-01', month: '2026年7月', schools: '成都天府新区实验小学、成都天府新区第七小学、成都麓湖小学', clsCount: 3, lessons: 42,
     gross: 33600, fee: 3360, refund: 800, net: 29440, status: '待审核',
     detail: [
-      { cls: '天府一小 - AI启蒙一班', lessons: 18, amount: 14400 },
-      { cls: '天府二小 - AI启蒙一班', lessons: 14, amount: 11200 },
-      { cls: '天府实验小学 - 科学探索一班', lessons: 10, amount: 8000 },
+      { cls: '成都天府新区实验小学 - AI启蒙一班', lessons: 18, amount: 14400 },
+      { cls: '成都天府新区第七小学 - AI启蒙一班', lessons: 14, amount: 11200 },
+      { cls: '成都麓湖小学 - 科学探索一班', lessons: 10, amount: 8000 },
     ] },
 ];
 
 const NOTICES = [
-  { t: '老师审核通过通知', d: '王老师资质审核已通过，可绑定课程与班级。', time: '2026-07-01 10:20', read: true },
+  { t: '教师审核通过通知', d: '王老师资质审核已通过，可绑定课程与班级。', time: '2026-07-01 10:20', read: true },
   { t: '课程审核驳回通知', d: '「硬笔书法课」审核驳回：课程大纲与课时数不匹配，请修改后重新提交。', time: '2026-07-01 09:12', read: false },
-  { t: '班级成班通知', d: '「天府一小 - 人工智能启蒙课一班」已达最低成班人数，正式成班。', time: '2026-06-30 15:04', read: true },
-  { t: '上课提醒', d: '今日 17:00「天府一小 - 人工智能启蒙课一班」第 5 节课，请王老师按时到校签到。', time: '2026-07-08 08:00', read: false },
-  { t: '销课确认通知', d: '7 月 1 日「天府一小 AI 启蒙一班」第 4 节销课已确认，计入本月结算。', time: '2026-07-02 10:30', read: true },
+  { t: '班级成班通知', d: '「成都天府新区实验小学 - 人工智能启蒙课一班」已达最低成班人数，正式成班。', time: '2026-06-30 15:04', read: true },
+  { t: '上课提醒', d: '今日 17:00「成都天府新区实验小学 - 人工智能启蒙课一班」第 5 节课，请王老师按时到校签到。', time: '2026-07-08 08:00', read: false },
+  { t: '销课确认通知', d: '7 月 1 日「成都天府新区实验小学 AI 启蒙一班」第 4 节销课已确认，计入本月结算。', time: '2026-07-02 10:30', read: true },
   { t: '售后处理通知', d: '售后单 SH20260701001 需机构反馈，请在 2 个工作日内处理。', time: '2026-07-01 16:40', read: false },
   { t: '结算单生成通知', d: '2026 年 7 月结算单 JS202607-01 已生成，请核对销课明细。', time: '2026-07-31 09:00', read: false },
 ];
@@ -361,9 +361,9 @@ const TAG = {
 const GLOSSARY = [
   { title: '销课状态（核心流程）', items: [
     ['待上课', '课程已排期、尚未到上课时间，本节不产生任何费用。'],
-    ['已上课待确认', '老师已完成签到并提交课堂记录，等待平台或学校确认；确认之前本节不计入结算。'],
+    ['已上课待确认', '教师已完成签到并提交课堂记录，等待平台或学校确认；确认之前本节不计入结算。'],
     ['已确认销课', '平台/学校已确认本节课真实完成，本节费用进入当月可结算范围。'],
-    ['异常', '本节课数据存疑：如实到人数与签到不符、老师未签到、家长投诉课程未上等，暂停计费。处理方式：机构在 2 个工作日内补充说明或更正记录，平台复核后转为「已确认销课」，或作废本节（不计费）。'],
+    ['异常', '本节课数据存疑：如实到人数与签到不符、教师未签到、家长投诉课程未上等，暂停计费。处理方式：机构在 2 个工作日内补充说明或更正记录，平台复核后转为「已确认销课」，或作废本节（不计费）。'],
     ['已计入结算', '本节课已随月度结算单锁定，金额不再变动。'],
   ] },
   { title: '结算状态', items: [
@@ -377,15 +377,15 @@ const GLOSSARY = [
   { title: '结算相关名词', items: [
     ['应结算金额', '当月所有「已确认销课」节次的金额合计。'],
     ['平台服务费', '按合作协议比例（本 Demo 为 10%）从应结算金额中扣除。'],
-    ['学校分成', '涉及学校分成时按约定比例扣除（规则预留，Demo 为 5%）。'],
+    ['学校服务费', '涉及学校服务费时按约定比例扣除（规则预留，Demo 为 5%）。'],
     ['退款扣减', '当月发生退款的订单，对应金额从机构结算中扣回。'],
-    ['机构实收', '应结算金额 − 平台服务费 − 学校分成 − 退款扣减。'],
+    ['机构实收', '应结算金额 − 平台服务费 − 学校服务费 − 退款扣减。'],
   ] },
-  { title: '老师状态', items: [
-    ['待平台审核', '机构已创建老师并提交资质，平台审核中；审核通过前不能绑定班级授课。'],
+  { title: '教师状态', items: [
+    ['待平台审核', '机构已创建教师并提交资质，平台审核中；审核通过前不能绑定班级授课。'],
     ['审核通过', '资质审核通过，可绑定课程与班级正常授课。'],
     ['审核驳回', '资质不符合要求，按驳回原因补充材料后重新提交。'],
-    ['已停用', '老师不再授课，账号停用。'],
+    ['已停用', '教师不再授课，账号停用。'],
   ] },
   { title: '课程状态', items: [
     ['草稿', '机构编辑中，尚未提交平台审核。'],
@@ -398,7 +398,7 @@ const GLOSSARY = [
     ['报名中', '班级已上架，家长可报名。'],
     ['待成班', '报名人数未达最低成班人数，暂不能开课。'],
     ['已成班', '达到最低成班人数，可安排排课开课。'],
-    ['已排课', '已确定上课时间、场地与老师。'],
+    ['已排课', '已确定上课时间、场地与教师。'],
     ['上课中', '班级正常上课中。'],
     ['已结课', '全部课时完成，进入结课确认与结算。'],
     ['已取消', '未成班或其他原因取消，家长已缴费用自动全额退款。'],
@@ -414,7 +414,7 @@ const GLOSSARY = [
     ['资金托管', '家长报名费一次性支付后进入平台监管账户，不直接支付给机构；机构按已确认销课的课时逐节累计结算。'],
     ['销课', '每完成一节课形成一条销课记录，经平台/学校确认后机构累计一节可结算费用；按月汇总生成结算单。'],
     ['成班人数', '开班所需的最低报名人数，未达标班级将取消并自动退款。'],
-    ['课程分发', '平台将课程库中的课程配置到指定合作学校，仅被分发学校的家长端可见该课程。'],
+    ['课程分发', '平台将课程库中的课程配置到指定合作学校；学校确认开放、时间和场地后，该校家长端才可见对应班级。'],
   ] },
 ];
 const DEF = {};
@@ -422,10 +422,10 @@ GLOSSARY.forEach((g) => g.items.forEach(([t, d]) => { if (!DEF[t]) DEF[t] = d; }
 /* 别名：同义状态共用解释 */
 DEF['待确认'] = DEF['已上课待确认'];
 DEF['已确认'] = '平台/学校已确认本节课真实完成。';
-DEF['已提交'] = '老师已提交，等待下一环节确认。';
-DEF['未提交'] = '老师尚未提交本节课的签到/课堂记录。';
+DEF['已提交'] = '教师已提交，等待下一环节确认。';
+DEF['未提交'] = '教师尚未提交本节课的签到/课堂记录。';
 DEF['待审核'] = DEF['待审核 / 待平台审核'] || DEF['待审核'];
-DEF['待填写'] = '本节课已上完或临近，老师尚未填写课堂记录，请及时填写（销课以课堂记录为依据）。';
+DEF['待填写'] = '本节课已上完或临近，教师尚未填写课堂记录，请及时填写（销课以课堂记录为依据）。';
 DEF['待签到'] = '本节课尚未完成学生签到，需先签到再填写课堂记录。';
 DEF['未签到'] = DEF['待签到'];
 DEF['已签到'] = '本节课已完成学生签到，下一步填写或查看课堂记录。';
@@ -436,9 +436,9 @@ const esc = (v) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').
 
 /* ---------- 表格字段解释（列名后的 ? 悬停提示） ---------- */
 const COLDEF = {
-  '教授方向': '老师主要授课的课程方向。',
+  '教授方向': '教师主要授课的课程方向。',
   '审核状态': '平台审核结果，悬停状态标签或点右上角「名词解释」查看各状态含义。',
-  '当前负责班级': '该老师正在带的班级数量（仅审核通过的老师可带班）。',
+  '当前负责班级': '该教师正在带的班级数量（仅审核通过的教师可带班）。',
   '本月上课次数': '本月已完成并提交记录的上课节次。',
   '分类': '课程所属类目（AI / 编程 / 科学 / 美术等）。',
   '适合年级': '建议报名的学生年级范围。',
@@ -458,17 +458,17 @@ const COLDEF = {
   '出勤情况': '已出勤节次 / 应出勤节次。',
   '第几节': '本班课程的第几节课。',
   '节次': '本班课程的第几节课。',
-  '签到状态': '本节课老师是否已完成学生签到。',
+  '签到状态': '本节课教师是否已完成学生签到。',
   '课堂记录': '本节课的教学内容、课堂情况和课后评语，是进入销课流程的重要依据。',
   '时间': '本节课上课时间。',
   '地点': '学校与具体上课教室 / 场馆。',
-  '上课内容': '本节课教学内容（来自老师提交的课堂记录）。',
+  '上课内容': '本节课教学内容（来自教师提交的课堂记录）。',
   '到课': '本节课实际到课人数。',
   '缺勤': '本节课缺勤人数。',
-  '课堂情况': '老师记录的课堂纪律与参与度（随堂记录）。',
+  '课堂情况': '教师记录的课堂纪律与参与度（随堂记录）。',
   '课后评语': '本节课的随堂评语，区别于结课后的结课评价。',
   '应到/实到': '应到 = 班级报名人数；实到 = 实际到课人数。两者与签到不符会触发销课异常。',
-  '老师提交': '老师是否已签到并提交本节课堂记录，销课以此为依据。',
+  '教师提交': '教师是否已签到并提交本节课堂记录，销课以此为依据。',
   '平台/学校确认': '平台或学校对本节课真实完成的确认，确认后本节方可计费。',
   '销课状态': '本节课的计费流转状态（待上课 → 已上课待确认 → 已确认销课 → 已计入结算；异常节次暂停计费）。',
   '可结算金额': '本节课确认销课后计入当月结算的金额；待上课 / 异常节次不计费。',
@@ -485,7 +485,7 @@ const COLDEF = {
   '应结算金额': '当月所有已确认销课节次的金额合计。',
   '平台服务费': '按合作协议比例（Demo 为 10%）从应结算金额中扣除。',
   '退款扣减': '当月退款订单对应金额，从结算中扣回。',
-  '机构实收': '应结算金额 − 平台服务费 − 学校分成 − 退款扣减。',
+  '机构实收': '应结算金额 − 平台服务费 − 学校服务费 − 退款扣减。',
   '时间': '上课时间段（课后延时服务时段）。',
   '上课时间': '固定周期的上课时间（课后延时服务时段）。',
   '上课日期': '本节课实际上课日期。',
@@ -517,13 +517,13 @@ function showGlossary() {
 }
 
 /* ---------- 角色与菜单 ---------- */
-let role = 'org';           // org | teacher（老师账号 = 王老师 t1）
+let role = 'org';           // org | teacher（教师账号 = 王老师 t1）
 let page = 'dash';
 const ME_TEACHER = TEACHERS[0];
 
 const MENUS = {
   org: [
-    ['dash', '首页看板'], ['orginfo', '机构信息'], ['teachers', '老师管理'], ['courses', '课程管理'],
+    ['dash', '首页看板'], ['orginfo', '机构信息'], ['teachers', '教师管理'], ['courses', '课程管理'],
     ['classes', '分发班级'], ['students', '学生名单'], ['checkin', '上课签到'], ['records', '课堂记录'],
     ['lessons', '销课管理'], ['aftersale', '售后管理'], ['settle', '结算管理'], ['notices', '消息通知'],
   ],
@@ -546,7 +546,7 @@ function render() {
   document.getElementById('roleOrg').classList.toggle('on', role === 'org');
   document.getElementById('roleTeacher').classList.toggle('on', role === 'teacher');
   document.getElementById('whoami').innerHTML = role === 'org'
-    ? `当前角色：<b>机构管理员</b>（${ORG.contact}）` : `当前角色：<b>老师账号</b>（${ME_TEACHER.name}）`;
+    ? `当前角色：<b>机构管理员</b>（${ORG.contact}）` : `当前角色：<b>教师账号</b>（${ME_TEACHER.name}）`;
 
   document.getElementById('menu').innerHTML = MENUS[role]
     .map(([k, label]) => `<div class="menu-item ${page === k ? 'active' : ''}" onclick="go('${k}')">${label}</div>`).join('');
@@ -557,7 +557,7 @@ function render() {
   decorateTh(document.getElementById('content'));
 }
 
-/* 老师视角数据过滤 */
+/* 教师视角数据过滤 */
 const myClasses = () => role === 'teacher' ? CLASSES.filter((c) => c.tid === 't1') : CLASSES;
 const myStudents = () => {
   const ids = myClasses().map((c) => c.id);
@@ -585,7 +585,7 @@ const lessonAction = (l) => {
   return `<button class="btn btn-ghost" onclick="viewLessonDetail('${l.tid}', ${l.no}, '${l.date}')">查看</button>`;
 };
 const lessonPlanTable = (list, showAmount = false) => `<div class="tbl-wrap"><table>
-  <tr><th>上课状态</th><th>课程</th><th>班级</th><th>学校</th><th>场地</th><th>节次</th><th>日期</th><th>时间</th><th>老师</th><th>签到状态</th><th>课堂记录</th><th>销课状态</th>${showAmount ? '<th>可结算金额</th>' : ''}<th>操作</th></tr>
+  <tr><th>上课状态</th><th>课程</th><th>班级</th><th>学校</th><th>场地</th><th>节次</th><th>日期</th><th>时间</th><th>教师</th><th>签到状态</th><th>课堂记录</th><th>销课状态</th>${showAmount ? '<th>可结算金额</th>' : ''}<th>操作</th></tr>
   ${list.map((l) => `<tr>
     <td>${tag(lessonStage(l))}</td><td>${l.course}</td><td class="ell" title="${l.cls}">${l.cls}</td><td>${l.school}</td><td>${l.venue || '—'}</td>
     <td>第 ${l.no} 节</td><td>${l.date}</td><td>${l.time || '—'}</td><td>${l.teacher}</td>
@@ -601,9 +601,9 @@ const PAGES = {
   /* 首页看板 */
   dash() {
     const flow = `<div class="flow">
-      <span class="f">机构管理老师</span><span class="a">→</span><span class="f">老师资质平台审核</span><span class="a">→</span>
+      <span class="f">机构管理教师</span><span class="a">→</span><span class="f">教师资质平台审核</span><span class="a">→</span>
       <span class="f">机构发布课程</span><span class="a">→</span><span class="f">课程平台审核</span><span class="a">→</span>
-      <span class="f">平台分发学校成班</span><span class="a">→</span><span class="f">老师签到上课</span><span class="a">→</span>
+      <span class="f">平台分发学校成班</span><span class="a">→</span><span class="f">教师签到上课</span><span class="a">→</span>
       <span class="f">提交课堂记录</span><span class="a">→</span><span class="f">生成销课记录</span><span class="a">→</span>
       <span class="f">按月结算</span>
     </div>`;
@@ -641,9 +641,9 @@ const PAGES = {
     </div>
     <div class="grid2">
       <div class="card"><h4>今日上课安排</h4><div class="tbl-wrap"><table>
-        <tr><th>班级</th><th>时间</th><th>老师</th></tr>
-        <tr><td>天府一小 - AI启蒙一班（第 5 节）</td><td>17:00-18:00</td><td>王老师</td></tr>
-        <tr><td>天府实验小学 - 科学探索一班（第 2 节）</td><td>17:00-18:00</td><td>张老师</td></tr>
+        <tr><th>班级</th><th>时间</th><th>教师</th></tr>
+        <tr><td>成都天府新区实验小学 - AI启蒙一班（第 5 节）</td><td>17:00-18:00</td><td>王老师</td></tr>
+        <tr><td>成都麓湖小学 - 科学探索一班（第 2 节）</td><td>17:00-18:00</td><td>张老师</td></tr>
       </table></div></div>
       <div class="card"><h4>课程审核状态</h4><div class="tbl-wrap"><table>
         <tr><th>课程</th><th>状态</th><th>分发学校</th></tr>
@@ -675,11 +675,11 @@ const PAGES = {
     </div>`;
   },
 
-  /* 老师管理 */
+  /* 教师管理 */
   teachers() {
-    return `<div class="page-title"><button class="btn btn-primary" onclick="openTeacherForm()">创建老师</button><span class="hint">老师由机构创建，资质需平台审核通过后方可绑定班级</span></div>
+    return `<div class="page-title"><button class="btn btn-primary" onclick="openTeacherForm()">创建教师</button><span class="hint">教师由机构创建，资质需平台审核通过后方可绑定班级</span></div>
     <div class="tbl-wrap"><table>
-      <tr><th>老师姓名</th><th>手机号</th><th>教授方向</th><th>审核状态</th><th>当前负责班级</th><th>本月上课次数</th><th>操作</th></tr>
+      <tr><th>教师姓名</th><th>手机号</th><th>教授方向</th><th>审核状态</th><th>当前负责班级</th><th>本月上课次数</th><th>操作</th></tr>
       ${TEACHERS.map((t) => `<tr>
         <td><b>${t.name}</b></td><td>${t.phone}</td><td>${t.dir}</td><td>${tag(t.status)}</td>
         <td>${t.classes} 个班</td><td>${t.monthLessons} 次</td>
@@ -708,7 +708,7 @@ const PAGES = {
     const list = myClasses();
     return `<div class="page-title"><span></span><span class="hint">${role === 'teacher' ? '仅展示我负责的班级' : '课程由平台分发到学校后形成班级，家长报名的是具体班级'}</span></div>
     <div class="tbl-wrap"><table>
-      <tr><th>班级名称</th><th>课程</th><th>学校</th><th>场地</th><th>上课时间</th><th>老师</th><th>课时进度</th><th>报名</th><th>状态</th><th>操作</th></tr>
+      <tr><th>班级名称</th><th>课程</th><th>学校</th><th>场地</th><th>上课时间</th><th>教师</th><th>课时进度</th><th>报名</th><th>状态</th><th>操作</th></tr>
       ${list.map((c) => `<tr>
         <td class="ell" title="${c.name}"><b>${c.name}</b></td><td>${c.course}</td><td>${c.school}</td><td>${c.venue}</td>
         <td>${c.time}</td><td>${c.teacher}</td><td>${c.done} / ${c.total} 节</td>
@@ -740,7 +740,7 @@ const PAGES = {
     const lessonPlan = myLessonPlan();
     return `<div class="page-title"><span></span><span class="hint">${role === 'teacher' ? '先处理今天的签到/课堂记录，再查看后续排课' : '机构可查看今日待办，并跟踪全部成班课次'}</span></div>
     <div class="card"><h4>今日上课待办<span style="color:var(--muted);font-size:12px;font-weight:400;margin-left:8px">今天需要签到、补课堂记录或查看记录的课次</span></h4><div class="tbl-wrap"><table>
-      <tr><th>课程</th><th>班级</th><th>学校</th><th>地点</th><th>时间</th><th>老师</th><th>签到状态</th><th>课堂记录</th><th>操作</th></tr>
+      <tr><th>课程</th><th>班级</th><th>学校</th><th>地点</th><th>时间</th><th>教师</th><th>签到状态</th><th>课堂记录</th><th>操作</th></tr>
       ${tasks.map((task) => {
         const r = recordOfTask(task);
         const recordStatus = r ? r.status : '待填写';
@@ -763,7 +763,7 @@ const PAGES = {
   /* 课堂记录 */
   records() {
     const list = myRecords();
-    return `<div class="page-title"><span></span><span class="hint">${role === 'teacher' ? '上完课请及时填写课堂记录，销课以记录为依据' : '查看全部老师课堂记录'}</span></div>
+    return `<div class="page-title"><span></span><span class="hint">${role === 'teacher' ? '上完课请及时填写课堂记录，销课以记录为依据' : '查看全部教师课堂记录'}</span></div>
     <div class="tbl-wrap"><table>
       <tr><th>班级名称</th><th>第几节</th><th>上课日期</th><th>上课内容</th><th>到课</th><th>缺勤</th><th>课堂情况</th><th>课后评语</th><th>状态</th><th>操作</th></tr>
       ${list.map((r) => `<tr>
@@ -781,7 +781,7 @@ const PAGES = {
   lessons() {
     const list = myLessons();
     const isT = role === 'teacher';
-    return `<div class="page-title"><span></span><span class="hint">${isT ? '仅展示我的课次和销课状态（老师端不展示金额）' : '已上和未上课次统一展示；平台/学校确认后计入结算'}</span></div>
+    return `<div class="page-title"><span></span><span class="hint">${isT ? '仅展示我的课次和销课状态（教师端不展示金额）' : '已上和未上课次统一展示；平台/学校确认后计入结算'}</span></div>
     ${lessonPlanTable(list, !isT)}`;
   },
 
@@ -840,10 +840,10 @@ function toast(msg) {
   toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
 }
 
-/* 老师详情 */
+/* 教师详情 */
 function teacherDetail(id) {
   const t = TEACHERS.find((x) => x.id === id);
-  openModal('老师详情 · ' + t.name, `
+  openModal('教师详情 · ' + t.name, `
     <div class="desc">
       <div class="k">姓名</div><div class="v">${t.name}</div>
       <div class="k">手机号</div><div class="v">${t.phone}</div>
@@ -857,15 +857,15 @@ function teacherDetail(id) {
     </div>`);
 }
 
-/* 创建老师 */
+/* 创建教师 */
 function openTeacherForm() {
-  openModal('创建老师', `
-    <div class="form-row"><label>老师姓名</label><input id="tcName" placeholder="请输入老师姓名"></div>
-    <div class="form-row"><label>手机号</label><input id="tcPhone" placeholder="请输入老师手机号"></div>
+  openModal('创建教师', `
+    <div class="form-row"><label>教师姓名</label><input id="tcName" placeholder="请输入教师姓名"></div>
+    <div class="form-row"><label>手机号</label><input id="tcPhone" placeholder="请输入教师手机号"></div>
     <div class="form-row"><label>教授方向</label><input id="tcDir" placeholder="如：人工智能启蒙 / 少儿编程 / 科学实验"></div>
     <div class="form-row"><label>身份证信息</label><input id="tcIdcard" placeholder="请输入身份证号（Demo 可脱敏）"></div>
     <div class="form-row"><label>资质证书</label><input id="tcCert" placeholder="如：教师资格证（小学信息技术）"></div>
-    <div class="form-row"><label>老师个人照片</label><input id="tcTeacherPhoto" type="file" accept="image/*"></div>
+    <div class="form-row"><label>教师个人照片</label><input id="tcTeacherPhoto" type="file" accept="image/*"></div>
     <div class="form-row"><label>资格证照片</label><input id="tcCertPhoto" type="file" accept="image/*"></div>
     <div class="form-row"><label>个人简介</label><textarea id="tcBio" rows="3" placeholder="教学经验、擅长方向、获奖情况等"></textarea></div>
     <div style="font-size:12px;color:var(--muted);line-height:1.7">创建后状态为「待平台审核」，审核通过前不能绑定班级授课。Demo 暂展示上传文件名，正式系统会保存图片材料。</div>`,
@@ -881,7 +881,7 @@ function submitTeacherForm() {
   const teacherPhoto = document.getElementById('tcTeacherPhoto').files[0];
   const certPhoto = document.getElementById('tcCertPhoto').files[0];
   const bio = document.getElementById('tcBio').value.trim();
-  if (!name || !phone || !dir || !cert || !teacherPhoto || !certPhoto) return toast('请填写老师信息，并上传个人照片和资格证照片');
+  if (!name || !phone || !dir || !cert || !teacherPhoto || !certPhoto) return toast('请填写教师信息，并上传个人照片和资格证照片');
   TEACHERS.unshift({
     id: 't' + Date.now(),
     name,
@@ -898,9 +898,9 @@ function submitTeacherForm() {
   });
   closeModal();
   render();
-  toast('老师已创建并提交平台审核');
+  toast('教师已创建并提交平台审核');
 }
-/* 老师上课记录 */
+/* 教师上课记录 */
 function teacherLessons(id) {
   const t = TEACHERS.find((x) => x.id === id);
   const rows = LESSONS.filter((l) => l.tid === id);
@@ -919,7 +919,7 @@ function courseDetail(id) {
       <div class="k">课时 / 价格</div><div class="v">${c.lessons} 节 · 建议 ${money(c.price)}/期</div>
       <div class="k">所需场地</div><div class="v">${c.venue}</div>
       <div class="k">所需设备</div><div class="v">${c.device}</div>
-      <div class="k">关联老师</div><div class="v">${c.teacher}</div>
+      <div class="k">关联教师</div><div class="v">${c.teacher}</div>
       <div class="k">审核状态</div><div class="v">${tag(c.status)} <span style="color:var(--muted);font-size:12px">已分发 ${c.schools} 所学校</span></div>
       <div class="k">课程介绍</div><div class="v">${c.intro}</div>
     </div>
@@ -938,9 +938,9 @@ function openCourseForm() {
     <div class="form-row"><label>适合年级</label><input id="ccGrade" placeholder="如：1-3 年级"></div>
     <div class="form-row"><label>总课时</label><input id="ccLessons" type="number" min="1" placeholder="如：8"></div>
     <div class="form-row"><label>建议价格（元/期）</label><input id="ccPrice" type="number" min="0" placeholder="如：399"></div>
-    <div class="form-row"><label>关联老师</label>
+    <div class="form-row"><label>关联教师</label>
       <select id="ccTeacher" style="width:100%;border:1px solid #d9dce3;border-radius:6px;padding:9px 10px;font-size:13px;font-family:inherit">
-        <option value="">请选择已审核老师</option>
+        <option value="">请选择已审核教师</option>
         ${approvedTeachers.map((t) => `<option value="${t.name}">${t.name} · ${t.dir}</option>`).join('')}
       </select>
     </div>
@@ -964,7 +964,7 @@ function submitCourseForm() {
   const intro = document.getElementById('ccIntro').value.trim();
   const syllabus = document.getElementById('ccSyllabus').value.split('\n').map((s) => s.trim()).filter(Boolean);
   if (!name || !cat || !grade || !lessons || !price || !teacher || !venue || !intro || !syllabus.length) {
-    return toast('请填写课程名称、分类、年级、课时、价格、老师、场地、介绍和大纲');
+    return toast('请填写课程名称、分类、年级、课时、价格、教师、场地、介绍和大纲');
   }
   COURSES.unshift({
     id: 'c' + Date.now(),
@@ -1035,7 +1035,7 @@ function viewLessonDetail(tid, no, date) {
       <div class="k">课程</div><div class="v">${lesson.course}</div>
       <div class="k">学校 / 场地</div><div class="v">${lesson.school} · ${lesson.venue || '—'}</div>
       <div class="k">上课时间</div><div class="v">${lesson.date} ${lesson.time || ''}</div>
-      <div class="k">老师</div><div class="v">${lesson.teacher}</div>
+      <div class="k">教师</div><div class="v">${lesson.teacher}</div>
       <div class="k">签到状态</div><div class="v">${tag(lesson.sign || '未签到')}</div>
       <div class="k">课堂记录</div><div class="v">${tag(record ? record.status : lessonRecordStatus(lesson))}</div>
       <div class="k">销课状态</div><div class="v">${tag(lesson.status)}${lesson.note ? ` <span style="color:var(--muted);font-size:12px">${lesson.note}</span>` : ''}</div>
@@ -1066,11 +1066,11 @@ function viewLessonDetailByRecord(id) {
 function openCheckin(id) {
   const task = CHECKINS.find((x) => x.id === id);
   if (!task) return toast('未找到上课任务');
-  const arrived = task.students.filter((s) => s.st === '已到' || s.st === '迟到').length;
+  const arrived = task.students.filter((s) => s.st === '已到').length;
   openModal(`上课签到 · ${task.className}`, `
     <div class="sign-head">
       <div><span class="k">课程</span>${task.course}</div>
-      <div><span class="k">老师</span>${task.teacher}</div>
+      <div><span class="k">教师</span>${task.teacher}</div>
       <div><span class="k">学校</span>${task.school}</div>
       <div><span class="k">地点</span>${task.venue}</div>
       <div><span class="k">时间</span>${task.time}</div>
@@ -1080,7 +1080,7 @@ function openCheckin(id) {
       <div class="sign-row">
         <span class="nm">${s.name}</span>
         <div class="sign-btns">
-          ${['已到', '迟到', '请假', '缺勤'].map((st) => `<button class="${s.st === st ? 'on-' + st : ''}" onclick="setSign('${task.id}', ${i}, '${st}')">${st}</button>`).join('')}
+          ${['已到', '缺勤'].map((st) => `<button class="${s.st === st ? 'on-' + st : ''}" onclick="setSign('${task.id}', ${i}, '${st}')">${st}</button>`).join('')}
         </div>
       </div>`).join('')}
     <div style="margin-top:16px;color:var(--muted);font-size:13px">到课 ${arrived} / ${task.students.length} 人${task.submitted ? ' · 本节签到已提交' : ''}</div>`,
@@ -1123,7 +1123,7 @@ function submitRecord(id) {
   if (!content) return toast('请填写本节课内容');
   const task = CHECKINS.find((x) => x.recordId === id);
   const signStudents = task ? task.students : [];
-  const arrived = signStudents.filter((s) => s.st === '已到' || s.st === '迟到').length;
+  const arrived = signStudents.filter((s) => s.st === '已到').length;
   r.content = content;
   r.mood = document.getElementById('rcMood').value.trim() || '正常';
   r.comment = document.getElementById('rcComment').value.trim() || '—';
