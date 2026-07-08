@@ -347,7 +347,8 @@
     const available = classes.filter((cls) => canBuyClass(c, cls));
     const hasSeat = classes.some((cls) => cls.enrolled < cls.maxSeats && classStatus(c, cls) !== '已满员');
     const displayClass = selectedClass || classes[0];
-    const defaultPlace = selectedClass?.place || (classes.length === 1 ? classes[0].place : '点击立即报名后选择班次和场地') || c.place;
+    const showSlotInfo = !!selectedClass || classes.length === 1;
+    const defaultPlace = selectedClass?.place || (classes.length === 1 ? classes[0].place : '') || c.place;
     const prices = classes.length ? classes.map((cls) => cls.price || c.price) : [c.price];
     const price = selectedClass?.price || Math.min(...prices);
     const min = selectedClass?.minClass || Math.min(...(classes.length ? classes.map((cls) => cls.minClass || c.minClass) : [c.minClass]));
@@ -378,8 +379,8 @@
             <div class="divider"></div>
             <div class="kv"><span class="k">上课学校</span><span class="v">${esc(currentStudent().school)}</span></div>
             ${selectedClass ? `<div class="kv"><span class="k">报名班级</span><span class="v bold">${esc(selectedClass.name)}</span></div>` : ''}
-            <div class="kv"><span class="k">上课地点</span><span class="v">${esc(defaultPlace)}</span></div>
-            <div class="kv"><span class="k">上课时间</span><span class="v">${esc(selectedClass?.time || (classes.length === 1 ? classes[0].time : '点击立即报名后选择班次和时间段') || c.time)}</span></div>
+            ${showSlotInfo ? `<div class="kv"><span class="k">上课地点</span><span class="v">${esc(defaultPlace)}</span></div>` : ''}
+            ${showSlotInfo ? `<div class="kv"><span class="k">上课时间</span><span class="v">${esc(selectedClass?.time || (classes.length === 1 ? classes[0].time : '') || c.time)}</span></div>` : ''}
             <div class="kv"><span class="k">课时数量</span><span class="v">共 ${c.lessons} 次</span></div>
             <div class="kv"><span class="k">成班人数</span><span class="v">满 ${min} 人开班${selectedClass ? ` · 最大 ${max} 人` : ''}</span></div>
             ${displayClass ? `<div class="kv"><span class="k">购买时间</span><span class="v">${esc(buyRangeText(c, displayClass))}</span></div>` : ''}
