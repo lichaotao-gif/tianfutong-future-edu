@@ -685,7 +685,7 @@ function SchoolPage({ db, setDb, go }: any) {
   );
 }
 
-/* 四、学校场地管理 */
+/* 四、场地管理 */
 function VenuePage({ db, setDb }: any) {
   const [addOpen, setAddOpen] = useState(false);
   const [schedule, setSchedule] = useState<any>(null);
@@ -715,7 +715,7 @@ function VenuePage({ db, setDb }: any) {
     message.success('场地创建成功，可在课程分发时选择使用');
   };
   return (
-    <Card size="small" title="学校场地" extra={<Button type="primary" icon={<PlusOutlined />} onClick={() => setAddOpen(true)}>新增场地</Button>}>
+    <Card size="small" title="场地管理" extra={<Button type="primary" icon={<PlusOutlined />} onClick={() => setAddOpen(true)}>新增场地</Button>}>
       <Tbl {...tblProps} dataSource={db.venues} columns={[
         { title: '场地名称', dataIndex: 'name' }, { title: '所属学校', dataIndex: 'school', ellipsis: true },
         { title: '场景', dataIndex: 'scene', render: (v: string) => <Tag color={v === '校外' ? 'purple' : 'geekblue'}>{v || '校内'}</Tag> },
@@ -849,56 +849,113 @@ function TeacherPage({ db, setDb }: any) {
 /* 七、课程审核与课程库 */
 function CoursePage({ db, setDb }: any) {
   const [detail, setDetail] = useState<any>(null);
+  const [courseDraft, setCourseDraft] = useState<any>(null);
+  const [editMode, setEditMode] = useState(false);
   const [audit, setAudit] = useState<any>(null);
+  const canManageCourse = true; // Demo 当前登录人为「张运营（平台管理员）」，具备课程资料与分账比例维护权限。
+  const openDetail = (r: any) => {
+    const draft = { ...r, share: { ...(r.share || DEFAULT_SHARE) } };
+    setDetail(r);
+    setCourseDraft(draft);
+    setEditMode(false);
+  };
+  const updateDraft = (key: string, value: any) => setCourseDraft((d: any) => ({ ...d, [key]: value }));
+  const updateShare = (key: string, value: any) => setCourseDraft((d: any) => ({ ...d, share: { ...(d.share || DEFAULT_SHARE), [key]: Number(value || 0) } }));
+  const saveCourse = () => {
+    const sh = courseDraft.share || DEFAULT_SHARE;
+    const total = Number(sh.org || 0) + Number(sh.platform || 0) + Number(sh.region || 0) + Number(sh.tf || 0);
+    if (total !== 100) return message.warning('四方分账比例合计必须为 100%');
+    setDb((d: any) => ({ ...d, courses: patch(d.courses, courseDraft.id, courseDraft) }));
+    setDetail(courseDraft);
+    setEditMode(false);
+    message.success('课程资料与分账比例已保存');
+  };
   const doAudit = (result: string, reason: string) => {
     const st = result === '通过' ? '已入课程库' : '审核驳回';
     setDb((d: any) => ({ ...d, courses: patch(d.courses, audit.id, { status: st, audits: [{ t: now(), who: '审核员-李敏', act: result === '通过' ? '审核通过，入课程库' : '审核驳回', note: reason }, ...(audit.audits || [])] }) }));
     message.success(result === '通过' ? '课程已进入课程库，可分发到合作学校' : '已驳回');
     setAudit(null); setDetail(null);
   };
+  const filterOf = (field: string) => Array.from(new Set(db.courses.map((c: any) => c[field]).filter(Boolean)))
+    .map((v: any) => ({ text: v, value: v }));
+  const orgFilters = filterOf('org');
+  const statusFilters = filterOf('status');
+  const catFilters = filterOf('cat');
   const cols = (isLib: boolean) => [
-    { title: '课程名称', dataIndex: 'name' }, { title: '所属机构', dataIndex: 'org', ellipsis: true },
-    { title: '分类', dataIndex: 'cat', render: (v: string) => <Tag>{v}</Tag> }, { title: '适合年级', dataIndex: 'grade' },
+    { title: '课程名称', dataIndex: 'name' },
+    { title: '所属机构', dataIndex: 'org', ellipsis: true, filters: orgFilters, onFilter: (v: any, r: any) => r.org === v },
+    { title: '分类', dataIndex: 'cat', filters: catFilters, onFilter: (v: any, r: any) => r.cat === v, render: (v: string) => <Tag>{v}</Tag> },
+    { title: '适合年级', dataIndex: 'grade' },
     { title: '课时', dataIndex: 'lessons' }, { title: '建议价格', dataIndex: 'price', render: money },
     { title: '成班/上限', render: (_: any, r: any) => r.min + ' / ' + r.max }, { title: '所需场地', dataIndex: 'venue' },
-    { title: '状态', dataIndex: 'status', render: (v: string) => <S v={v} /> },
-    { title: '操作', render: (_: any, r: any) => <Space><a onClick={() => setDetail(r)}>查看</a>
+    { title: '状态', dataIndex: 'status', filters: statusFilters, onFilter: (v: any, r: any) => r.status === v, render: (v: string) => <S v={v} /> },
+    { title: '操作', render: (_: any, r: any) => <Space><a onClick={() => openDetail(r)}>查看</a>
       {r.status === '待审核' && <a style={{ color: '#fa8c16' }} onClick={() => setAudit(r)}>审核</a>}
-      {isLib && <a onClick={() => setDb((d: any) => ({ ...d, courses: patch(d.courses, r.id, { status: '已下架' }) }))}>下架</a>}</Space> },
+      {isLib && ['已入课程库', '已下架'].includes(r.status) && <a onClick={() => setDb((d: any) => ({ ...d, courses: patch(d.courses, r.id, { status: r.status === '已入课程库' ? '已下架' : '已入课程库' }) }))}>{r.status === '已入课程库' ? '下架' : '上架'}</a>}</Space> },
   ];
+  const all = db.courses;
   const pend = db.courses.filter((c: any) => ['待审核', '审核驳回', '草稿'].includes(c.status));
   const lib = db.courses.filter((c: any) => ['已入课程库', '已下架'].includes(c.status));
+  const tableCard = (data: any[], isLib = false, title?: string) => (
+    <Card size="small" title={title}>
+      <Tbl {...tblProps} dataSource={data} columns={cols(isLib)} />
+    </Card>
+  );
   return (
     <>
       <Tabs items={[
-        { key: 'audit', label: `课程审核（${pend.filter((c: any) => c.status === '待审核').length} 待审）`, children: <Card size="small"><Tbl {...tblProps} dataSource={pend} columns={cols(false)} /></Card> },
-        { key: 'lib', label: `课程库（${lib.filter((c: any) => c.status === '已入课程库').length}）`, children: <Card size="small" title="课程库中的课程不直接对家长展示，须分发到学校后其学生方可见"><Tbl {...tblProps} dataSource={lib} columns={cols(true)} /></Card> },
+        { key: 'all', label: `全部（${all.length}）`, children: tableCard(all, true, '全部课程 · 可按机构、状态、分类筛选') },
+        { key: 'audit', label: `课程审核（${pend.filter((c: any) => c.status === '待审核').length} 待审）`, children: tableCard(pend, false, '待审核 / 驳回 / 草稿课程 · 可按机构、状态、分类筛选') },
+        { key: 'lib', label: `课程库（${lib.filter((c: any) => c.status === '已入课程库').length}）`, children: tableCard(lib, true, '课程库中的课程不直接对家长展示，须分发到学校后其学生方可见') },
       ]} />
       <Drawer open={!!detail} width={640} title="课程详情" onClose={() => setDetail(null)}
-        extra={detail?.status === '待审核' && <Button type="primary" onClick={() => setAudit(detail)}>审核</Button>}>
-        {detail && <>
-          <Descriptions column={2} size="small" bordered items={[
-            { key: '1', label: '课程名称', span: 2, children: detail.name },
-            { key: '2', label: '课程分类', children: detail.cat }, { key: '3', label: '适合年级', children: detail.grade },
-            { key: '4', label: '课时数量', children: detail.lessons + ' 节' }, { key: '5', label: '建议价格', children: money(detail.price) + ' /期' },
-            { key: '6', label: '最低成班', children: detail.min + ' 人' }, { key: '7', label: '最大人数', children: detail.max + ' 人' },
-            { key: '8', label: '所需场地', children: detail.venue }, { key: '9', label: '所需设备', children: detail.device },
-            { key: '10', label: '关联教师', children: detail.teacher }, { key: '11', label: '所属机构', children: detail.org },
-            { key: '12', label: '课程介绍', span: 2, children: detail.intro },
-            { key: '13', label: '课程成果', span: 2, children: detail.outcome },
-          ]} />
-          <Divider>分账比例配置（审核时按课程单独设置，四方分账）</Divider>
+        extra={detail && <Space>
+          {detail.status === '待审核' && <Button type="primary" onClick={() => setAudit(detail)}>审核</Button>}
+          {canManageCourse && (editMode
+            ? <><Button onClick={() => { setCourseDraft({ ...detail, share: { ...(detail.share || DEFAULT_SHARE) } }); setEditMode(false); }}>取消编辑</Button><Button type="primary" onClick={saveCourse}>保存</Button></>
+            : <Button onClick={() => setEditMode(true)}>编辑资料 / 分账比例</Button>)}
+        </Space>}>
+        {detail && courseDraft && <>
+          <Alert type="info" showIcon style={{ marginBottom: 12 }}
+            message={canManageCourse ? '当前账号：平台运营管理员，可维护课程资料与分账比例。' : '仅平台运营管理权限可维护课程资料与分账比例。'} />
+          <Form layout="vertical" disabled={!editMode || !canManageCourse}>
+            <Row gutter={12}>
+              <Col span={12}><Form.Item label="课程名称"><Input value={courseDraft.name} onChange={(e: any) => updateDraft('name', e.target.value)} /></Form.Item></Col>
+              <Col span={12}><Form.Item label="所属机构"><Input value={courseDraft.org} onChange={(e: any) => updateDraft('org', e.target.value)} /></Form.Item></Col>
+            </Row>
+            <Row gutter={12}>
+              <Col span={8}><Form.Item label="课程分类"><Input value={courseDraft.cat} onChange={(e: any) => updateDraft('cat', e.target.value)} /></Form.Item></Col>
+              <Col span={8}><Form.Item label="适合年级"><Input value={courseDraft.grade} onChange={(e: any) => updateDraft('grade', e.target.value)} /></Form.Item></Col>
+              <Col span={8}><Form.Item label="状态"><Select value={courseDraft.status} onChange={(v: string) => updateDraft('status', v)}
+                options={['草稿', '待审核', '审核驳回', '已入课程库', '已下架'].map((v) => ({ value: v, label: v }))} /></Form.Item></Col>
+            </Row>
+            <Row gutter={12}>
+              <Col span={6}><Form.Item label="课时数量"><InputNumber style={{ width: '100%' }} value={courseDraft.lessons} onChange={(v: any) => updateDraft('lessons', v)} /></Form.Item></Col>
+              <Col span={6}><Form.Item label="建议价格"><InputNumber style={{ width: '100%' }} value={courseDraft.price} onChange={(v: any) => updateDraft('price', v)} /></Form.Item></Col>
+              <Col span={6}><Form.Item label="最低成班"><InputNumber style={{ width: '100%' }} value={courseDraft.min} onChange={(v: any) => updateDraft('min', v)} /></Form.Item></Col>
+              <Col span={6}><Form.Item label="最大人数"><InputNumber style={{ width: '100%' }} value={courseDraft.max} onChange={(v: any) => updateDraft('max', v)} /></Form.Item></Col>
+            </Row>
+            <Row gutter={12}>
+              <Col span={8}><Form.Item label="所需场地"><Input value={courseDraft.venue} onChange={(e: any) => updateDraft('venue', e.target.value)} /></Form.Item></Col>
+              <Col span={8}><Form.Item label="所需设备"><Input value={courseDraft.device} onChange={(e: any) => updateDraft('device', e.target.value)} /></Form.Item></Col>
+              <Col span={8}><Form.Item label="关联教师"><Input value={courseDraft.teacher} onChange={(e: any) => updateDraft('teacher', e.target.value)} /></Form.Item></Col>
+            </Row>
+            <Form.Item label="课程介绍"><TextArea rows={3} value={courseDraft.intro} onChange={(e: any) => updateDraft('intro', e.target.value)} /></Form.Item>
+            <Form.Item label="课程成果"><TextArea rows={2} value={courseDraft.outcome} onChange={(e: any) => updateDraft('outcome', e.target.value)} /></Form.Item>
+          </Form>
+          <Divider>分账比例配置（仅平台运营管理权限可配置）</Divider>
           {(() => {
-            const sh = detail.share || DEFAULT_SHARE;
+            const sh = courseDraft.share || DEFAULT_SHARE;
+            const total = Number(sh.org || 0) + Number(sh.platform || 0) + Number(sh.region || 0) + Number(sh.tf || 0);
             return <>
               <Row gutter={12}>
-                <Col span={6}><Form.Item label="机构"><InputNumber style={{ width: '100%' }} value={sh.org} formatter={(v) => v + '%'} disabled={detail.status !== '待审核'} /></Form.Item></Col>
-                <Col span={6}><Form.Item label="平台"><InputNumber style={{ width: '100%' }} value={sh.platform} formatter={(v) => v + '%'} disabled={detail.status !== '待审核'} /></Form.Item></Col>
-                <Col span={6}><Form.Item label="地方国企"><InputNumber style={{ width: '100%' }} value={sh.region} formatter={(v) => v + '%'} disabled={detail.status !== '待审核'} /></Form.Item></Col>
-                <Col span={6}><Form.Item label="天府通通道"><InputNumber style={{ width: '100%' }} value={sh.tf} formatter={(v) => v + '%'} disabled={detail.status !== '待审核'} /></Form.Item></Col>
+                <Col span={6}><Form.Item label="机构"><InputNumber style={{ width: '100%' }} value={sh.org} formatter={(v) => v + '%'} disabled={!editMode || !canManageCourse} onChange={(v: any) => updateShare('org', v)} /></Form.Item></Col>
+                <Col span={6}><Form.Item label="平台"><InputNumber style={{ width: '100%' }} value={sh.platform} formatter={(v) => v + '%'} disabled={!editMode || !canManageCourse} onChange={(v: any) => updateShare('platform', v)} /></Form.Item></Col>
+                <Col span={6}><Form.Item label="地方国企"><InputNumber style={{ width: '100%' }} value={sh.region} formatter={(v) => v + '%'} disabled={!editMode || !canManageCourse} onChange={(v: any) => updateShare('region', v)} /></Form.Item></Col>
+                <Col span={6}><Form.Item label="天府通通道"><InputNumber style={{ width: '100%' }} value={sh.tf} formatter={(v) => v + '%'} disabled={!editMode || !canManageCourse} onChange={(v: any) => updateShare('tf', v)} /></Form.Item></Col>
               </Row>
-              <Alert type={sh.org + sh.platform + sh.region + sh.tf === 100 ? 'success' : 'error'} showIcon
-                message={`四方合计 ${sh.org + sh.platform + sh.region + sh.tf}%${detail.status === '待审核' ? '（审核通过时随课程一并生效，不同课程可不同）' : '（已生效，如需调整请联系运营）'}`} />
+              <Alert type={total === 100 ? 'success' : 'error'} showIcon
+                message={`四方合计 ${total}%（不同课程可配置不同分账比例，保存后立即作为该课程规则）`} />
             </>;
           })()}
           <Divider>课程大纲（每节课标题）</Divider>
@@ -1001,7 +1058,7 @@ function DeployPage({ db, setDb }: any) {
                   <Select placeholder="请选择该学校已创建场地" value={venueOf(sc) || undefined} onChange={(v: string) => setVenueFor(sc, v)}
                     status={!options.length ? 'error' : undefined}
                     options={options} />
-                  {!options.length && <Alert style={{ marginTop: 8 }} type="warning" showIcon message="该学校暂无启用场地，请先到「学校场地管理」创建或启用场地" />}
+                  {!options.length && <Alert style={{ marginTop: 8 }} type="warning" showIcon message="该学校暂无启用场地，请先到「场地管理」创建或启用场地" />}
                 </Form.Item>
               );
             })}
@@ -1212,7 +1269,7 @@ const MENUS = [
   { key: 'dash', icon: <DashboardOutlined />, label: '首页看板' },
   { key: 'user', icon: <TeamOutlined />, label: '平台用户管理' },
   { key: 'school', icon: <BankOutlined />, label: '学校管理' },
-  { key: 'venue', icon: <EnvironmentOutlined />, label: '学校场地管理' },
+  { key: 'venue', icon: <EnvironmentOutlined />, label: '场地管理' },
   { key: 'org', icon: <ShopOutlined />, label: '机构入驻管理' },
   { key: 'teacher', icon: <IdcardOutlined />, label: '教师审核管理' },
   { key: 'course', icon: <BookOutlined />, label: '课程审核与课程库' },

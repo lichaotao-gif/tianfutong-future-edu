@@ -364,6 +364,7 @@ window.DB = {
   orders: [
     {
       id: 'order-000',
+      studentId: 'li-xiaoming',
       courseId: 'ai-qimeng',
       courseName: '人工智能启蒙课',
       cover: 'ai',
@@ -392,6 +393,7 @@ window.DB = {
     },
     {
       id: 'order-00a',
+      studentId: 'li-xiaoyu',
       courseId: 'science-shiyan',
       courseName: '科学实验探索课',
       cover: 'science',
@@ -420,6 +422,7 @@ window.DB = {
     },
     {
       id: 'order-001',
+      studentId: 'li-xiaoming',
       courseId: 'ai-qimeng',
       courseName: '人工智能启蒙课',
       cover: 'ai',
@@ -448,6 +451,7 @@ window.DB = {
     },
     {
       id: 'order-001a',
+      studentId: 'li-xiaoyu',
       courseId: 'coding-思维',
       courseName: '少儿编程思维课',
       cover: 'code',
@@ -476,15 +480,16 @@ window.DB = {
     },
     {
       id: 'order-001b',
+      studentId: 'li-chenxi',
       courseId: 'ai-qimeng',
       courseName: 'AI 提示词实践课',
       cover: 'ai',
       status: 'scheduled', // 已排课
       amount: 399,
       payState: 'preauth',
-      school: '成都天府新区实验小学',
-      place: '录播教室',
-      time: '每周一 17:00-18:00',
+      school: '成都天府新区第七小学',
+      place: '科学实验室',
+      time: '每周五 16:30-17:30',
       enrolled: 24,
       minClass: 10,
       maxSeats: 30,
@@ -504,6 +509,7 @@ window.DB = {
     },
     {
       id: 'order-001c',
+      studentId: 'li-xiaoyu',
       courseId: 'science-shiyan',
       courseName: 'STEAM 创客实践课',
       cover: 'science',
@@ -532,6 +538,7 @@ window.DB = {
     },
     {
       id: 'order-002',
+      studentId: 'li-xiaoming',
       courseId: 'ai-zuopin',
       courseName: 'AI 创意作品课',
       cover: 'art',
@@ -565,6 +572,7 @@ window.DB = {
     },
     {
       id: 'order-003',
+      studentId: 'li-xiaoming',
       courseId: 'coding-思维',
       courseName: '少儿编程思维课',
       cover: 'code',

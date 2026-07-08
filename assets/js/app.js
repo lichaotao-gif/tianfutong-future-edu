@@ -61,6 +61,13 @@
     .filter(({ classes }) => classes.length);
   const courseById = (id) => DB.courses.find((c) => c.id === routeId(id));
   const orderById = (id) => DB.orders.find((o) => o.id === routeId(id));
+  const studentByOrder = (order) => {
+    const students = DB.students || [];
+    return students.find((s) => s.id === order.studentId)
+      || students.find((s) => s.name === order.studentName || s.name === order.result?.studentName)
+      || students.find((s) => s.school === order.school)
+      || currentStudent();
+  };
   const coverImages = {
     ai: 'assets/images/courses/ai-basics.png',
     code: 'assets/images/courses/coding-thinking.png',
@@ -662,6 +669,7 @@
     const card = (o) => {
       const st = DB.statusMap[o.status];
       const isPay = o.status === 'to-confirm';
+      const student = studentByOrder(o);
       const orderMeta = {
         'to-preauth': '待支付',
         preauth: '已缴费（托管中）',
@@ -679,8 +687,8 @@
             <div style="width:54px;height:54px;border-radius:12px;overflow:hidden;flex-shrink:0">${coverImg(o.cover, o.courseName)}</div>
             <div style="flex:1;min-width:0">
               <div class="row between"><div class="bold">${esc(o.courseName)}</div><span class="badge ${st.cls}">${st.label}</span></div>
-              <div class="small muted" style="margin-top:3px">${esc(o.school)}</div>
-              <div class="small muted">${esc(o.place || '上课地点待定')}</div>
+              <div class="small muted" style="margin-top:3px">报名学生：${esc(student.name)} · ${esc(student.grade || '')}</div>
+              <div class="small muted">${esc(o.school)} · ${esc(o.place || '上课地点待定')}</div>
             </div>
           </div>
           <div class="divider"></div>
@@ -1188,20 +1196,24 @@
     <div class="screen">
       ${navbar('家长信息')}
       <div class="scroll">
-        <div class="card mx mt pad">
-          <div class="section-title">头像</div>
-          <div class="ava-picker">
-            ${AVATAR_CHOICES.map((a) => `
-              <div class="ava-opt ${a === p.avatar ? 'on' : ''}" onclick="App.pickAvatar('${a}', this)">${a}</div>`).join('')}
+        <div class="card mx mt" style="overflow:hidden">
+          <div class="list-cell" onclick="App.openProfileForm('avatar')">
+            <div class="lc-ic" style="background:var(--orange-grad);font-weight:800">${esc(p.avatar)}</div>
+            <div class="lc-t"><div>头像</div><div class="small muted">点击修改头像</div></div>
+            <span class="arr">${I.arrow}</span>
           </div>
-          <div class="form-row"><label>昵称</label><input class="input" id="pfNick" value="${esc(p.nickname)}" placeholder="请输入昵称"></div>
-          <div class="form-row"><label>手机号</label><input class="input" id="pfPhone" value="${esc(p.phone)}" placeholder="请输入手机号"></div>
-        </div>
-
-        <div class="card mx mt pad">
-          <div class="section-title">修改密码</div>
-          <div class="form-row"><label>新密码</label><input class="input" type="password" id="pfPwd1" placeholder="不修改请留空"></div>
-          <div class="form-row"><label>确认新密码</label><input class="input" type="password" id="pfPwd2" placeholder="再次输入新密码"></div>
+          <div class="list-cell" onclick="App.openProfileForm('nick')">
+            <div class="lc-t"><div>昵称</div><div class="small muted">${esc(p.nickname)}</div></div>
+            <span class="arr">${I.arrow}</span>
+          </div>
+          <div class="list-cell" onclick="App.openProfileForm('phone')">
+            <div class="lc-t"><div>手机号</div><div class="small muted">${esc(p.phone)}</div></div>
+            <span class="arr">${I.arrow}</span>
+          </div>
+          <div class="list-cell" onclick="App.openProfileForm('password')">
+            <div class="lc-t"><div>登录密码</div><div class="small muted">已设置，点击修改</div></div>
+            <span class="arr">${I.arrow}</span>
+          </div>
         </div>
 
         <div class="card mx mt" style="overflow:hidden">
@@ -1218,10 +1230,53 @@
         <div style="height:14px"></div>
       </div>
       <div class="actionbar">
-        <button class="btn btn-primary" onclick="App.saveProfile()">保存</button>
+        <button class="btn btn-primary" onclick="App.openProfileForm()">编辑家长信息</button>
       </div>
+      ${profileFormSheet()}
     </div>`);
   }
+
+  function profileFormSheet() {
+    return `
+    <div class="sheet-mask" id="pfMask" onclick="if(event.target===this)App.closeProfileForm()">
+      <div class="sheet">
+        <div class="handle"></div>
+        <h3>编辑家长信息</h3>
+        <form onsubmit="return false">
+          <div class="section-title">头像</div>
+          <div class="ava-picker">
+            ${AVATAR_CHOICES.map((a) => `
+              <div class="ava-opt" data-avatar="${esc(a)}" onclick="App.pickAvatar('${a}', this)">${a}</div>`).join('')}
+          </div>
+          <div class="form-row"><label>昵称</label><input class="input" id="pfNick" autocomplete="name" placeholder="请输入昵称"></div>
+          <div class="form-row"><label>手机号</label><input class="input" id="pfPhone" autocomplete="tel" placeholder="请输入手机号"></div>
+          <div class="divider"></div>
+          <div class="section-title">修改密码</div>
+          <div class="form-row"><label>新密码</label><input class="input" type="password" id="pfPwd1" autocomplete="new-password" placeholder="不修改请留空"></div>
+          <div class="form-row"><label>确认新密码</label><input class="input" type="password" id="pfPwd2" autocomplete="new-password" placeholder="再次输入新密码"></div>
+          <div style="height:16px"></div>
+          <button class="btn btn-primary" type="button" onclick="App.saveProfile()">保存</button>
+          <div style="height:8px"></div>
+          <button class="btn btn-ghost" type="button" style="height:42px" onclick="App.closeProfileForm()">取消</button>
+        </form>
+      </div>
+    </div>`;
+  }
+
+  function openProfileForm(focus) {
+    const p = DB.parent;
+    profileAvatar = p.avatar;
+    $('#pfNick').value = p.nickname || '';
+    $('#pfPhone').value = p.phone || '';
+    $('#pfPwd1').value = '';
+    $('#pfPwd2').value = '';
+    document.querySelectorAll('#pfMask .ava-opt').forEach((x) => x.classList.toggle('on', x.dataset.avatar === p.avatar));
+    $('#pfMask').classList.add('show');
+    const focusMap = { nick: 'pfNick', phone: 'pfPhone', password: 'pfPwd1' };
+    if (focusMap[focus]) setTimeout(() => $('#' + focusMap[focus])?.focus(), 120);
+  }
+
+  function closeProfileForm() { $('#pfMask')?.classList.remove('show'); }
 
   function pickAvatar(a, el) {
     profileAvatar = a;
@@ -1243,8 +1298,9 @@
     }
     Object.assign(DB.parent, { nickname: nick, phone: maskPhone(phone), avatar: profileAvatar });
     persistState();
+    closeProfileForm();
     toast('已保存');
-    setTimeout(() => go('#/me'), 500);
+    setTimeout(() => screenProfile(), 300);
   }
 
   function toggleWxBind() {
@@ -1434,7 +1490,7 @@
     confirmLesson, openDispute, closeDispute, selectDispute, submitDispute,
     openAftersale, closeAftersale, selectAS, submitAftersale,
     openStudentForm, closeStudentForm, editStudent, saveStudentForm, deleteStudent,
-    pickAvatar, saveProfile, toggleWxBind, logout, sendCode, doLogin, wxLogin,
+    openProfileForm, closeProfileForm, pickAvatar, saveProfile, toggleWxBind, logout, sendCode, doLogin, wxLogin,
   };
   route();
 })();
