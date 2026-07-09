@@ -230,6 +230,7 @@ const ORG = {
 
 const TEACHERS = [
   { id: 't1', name: '王老师', phone: '138****3001', dir: '人工智能启蒙', status: '审核通过', classes: 3, monthLessons: 12,
+    accountInfo: { url: 'https://future-edu.demo/org/teacher/', username: '138****3001', password: 'TfT1@2026' },
     cert: '教师资格证（小学信息技术）', teacherPhoto: '王老师个人照片.jpg', certPhoto: '王老师教师资格证.jpg',
     idcard: '5101**********0011', bio: '6 年少儿 AI 教学经验，市级科技社团指导教师。' },
   { id: 't2', name: '李老师', phone: '139****3002', dir: '少儿编程', status: '待平台审核', classes: 0, monthLessons: 0,
@@ -352,8 +353,8 @@ const NOTICES = [
 
 /* ---------- 状态 → 标签色 ---------- */
 const TAG = {
-  审核通过: 'tg-green', 已进入课程库: 'tg-green', 已确认: 'tg-green', 已提交: 'tg-green', 已报名: 'tg-green', 已完成: 'tg-green', 已到: 'tg-green', 已签到: 'tg-green', 已上: 'tg-green',
-  待平台审核: 'tg-orange', 待确认: 'tg-orange', 待填写: 'tg-orange', 待审核: 'tg-orange', 待处理: 'tg-orange', 已上课待确认: 'tg-orange', 迟到: 'tg-orange', 机构需反馈: 'tg-orange', 待签到: 'tg-orange', 未签到: 'tg-orange', 未提交: 'tg-orange',
+  审核通过: 'tg-green', 已进入课程库: 'tg-green', 已确认: 'tg-green', 已提交: 'tg-green', 已报名: 'tg-green', 已完成: 'tg-green', 已到: 'tg-green', 已签到: 'tg-green', 已上: 'tg-green', 已开通: 'tg-green',
+  待平台审核: 'tg-orange', 待确认: 'tg-orange', 待填写: 'tg-orange', 待审核: 'tg-orange', 待处理: 'tg-orange', 已上课待确认: 'tg-orange', 迟到: 'tg-orange', 机构需反馈: 'tg-orange', 待签到: 'tg-orange', 未签到: 'tg-orange', 未提交: 'tg-orange', 未开通: 'tg-orange',
   上课中: 'tg-blue', 平台处理中: 'tg-blue', 请假: 'tg-blue', 结算中: 'tg-blue',
   已确认销课: 'tg-green', 已计入结算: 'tg-cyan', 待上课: 'tg-gray', 未上: 'tg-gray', 审核驳回: 'tg-red', 异常: 'tg-red', 缺勤: 'tg-red', 已退款: 'tg-red',
 };
@@ -433,11 +434,51 @@ DEF['已签到'] = '本节课已完成学生签到，下一步填写或查看课
 const tag = (v) => `<span class="tag ${TAG[v] || 'tg-gray'}" ${DEF[v] ? `title="${DEF[v].replace(/"/g, '&quot;')}"` : ''}>${v}</span>`;
 const money = (n) => '¥' + n.toLocaleString('zh-CN');
 const esc = (v) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const teacherAccount = (t) => t.accountInfo || {
+  url: 'https://future-edu.demo/org/teacher/',
+  username: t.phone,
+  password: 'Tf' + String(t.id).toUpperCase() + '@2026',
+};
+const accountText = (t) => {
+  const info = teacherAccount(t);
+  return [
+    '教师端登录信息',
+    '对象：' + t.name,
+    '登录链接：' + info.url,
+    '登录手机号：' + info.username,
+    '初始密码：' + info.password,
+    '首次登录后请修改密码。',
+  ].join('\n');
+};
+async function copyAccountText(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    toast('登录信息已复制，可直接发送给老师');
+  } catch (e) {
+    toast('浏览器未允许自动复制，请手动复制弹窗内容');
+  }
+}
+function openTeacherAccount(id) {
+  const t = TEACHERS.find((x) => x.id === id);
+  const info = teacherAccount(t);
+  t.accountInfo = info;
+  render();
+  openModal('教师端登录信息 · ' + t.name, `
+    <div class="desc">
+      <div class="k">登录链接</div><div class="v">${esc(info.url)}</div>
+      <div class="k">登录手机号</div><div class="v">${esc(info.username)}</div>
+      <div class="k">初始密码</div><div class="v">${esc(info.password)}</div>
+    </div>
+    <div class="form-row" style="margin-top:12px"><textarea id="teacherAccountCopy" rows="6" readonly>${esc(accountText(t))}</textarea></div>`,
+    `<button class="btn btn-ghost" onclick="closeModal()">关闭</button>
+     <button class="btn btn-primary" onclick="copyAccountText(document.getElementById('teacherAccountCopy').value)">复制链接和密码</button>`);
+}
 
 /* ---------- 表格字段解释（列名后的 ? 悬停提示） ---------- */
 const COLDEF = {
   '教授方向': '教师主要授课的课程方向。',
   '审核状态': '平台审核结果，悬停状态标签或点右上角「名词解释」查看各状态含义。',
+  '登录账户': '教师端登录账号统一使用手机号，可复制登录链接、手机号和初始密码给老师。',
   '当前负责班级': '该教师正在带的班级数量（仅审核通过的教师可带班）。',
   '本月上课次数': '本月已完成并提交记录的上课节次。',
   '分类': '课程所属类目（AI / 编程 / 科学 / 美术等）。',
@@ -679,11 +720,12 @@ const PAGES = {
   teachers() {
     return `<div class="page-title"><button class="btn btn-primary" onclick="openTeacherForm()">创建教师</button><span class="hint">教师由机构创建，资质需平台审核通过后方可绑定班级</span></div>
     <div class="tbl-wrap"><table>
-      <tr><th>教师姓名</th><th>手机号</th><th>教授方向</th><th>审核状态</th><th>当前负责班级</th><th>本月上课次数</th><th>操作</th></tr>
+      <tr><th>教师姓名</th><th>手机号</th><th>教授方向</th><th>审核状态</th><th>登录账户</th><th>当前负责班级</th><th>本月上课次数</th><th>操作</th></tr>
       ${TEACHERS.map((t) => `<tr>
         <td><b>${t.name}</b></td><td>${t.phone}</td><td>${t.dir}</td><td>${tag(t.status)}</td>
-        <td>${t.classes} 个班</td><td>${t.monthLessons} 次</td>
+        <td>${tag(t.accountInfo ? '已开通' : '未开通')}</td><td>${t.classes} 个班</td><td>${t.monthLessons} 次</td>
         <td><span class="lnk" onclick="teacherDetail('${t.id}')">查看详情</span>
+            <span class="lnk" onclick="openTeacherAccount('${t.id}')">${t.accountInfo ? '复制账户' : '开通账户'}</span>
             <span class="lnk" onclick="teacherLessons('${t.id}')">查看上课记录</span>
             ${t.status === '待平台审核' ? `<span class="lnk warn" onclick="toast('已提交平台审核，请等待审核结果')">提交审核</span>` : ''}</td>
       </tr>`).join('')}
@@ -854,6 +896,9 @@ function teacherDetail(id) {
       <div class="k">资格证照片</div><div class="v">${t.certPhoto || '未上传'}</div>
       <div class="k">个人简介</div><div class="v">${t.bio}</div>
       <div class="k">审核状态</div><div class="v">${tag(t.status)} ${t.status === '待平台审核' ? '<span style="color:var(--muted);font-size:12px">审核通过后方可绑定班级授课</span>' : ''}</div>
+      <div class="k">教师端账户</div><div class="v">${t.accountInfo
+        ? `链接：${esc(t.accountInfo.url)}<br>手机号：${esc(t.accountInfo.username)}<br>初始密码：${esc(t.accountInfo.password)}<br><button class="btn btn-ghost" style="margin-top:8px" onclick="openTeacherAccount('${t.id}')">复制链接和密码</button>`
+        : `<button class="btn btn-primary" onclick="openTeacherAccount('${t.id}')">开通教师端账户</button>`}</div>
     </div>`);
 }
 
@@ -868,7 +913,7 @@ function openTeacherForm() {
     <div class="form-row"><label>教师个人照片</label><input id="tcTeacherPhoto" type="file" accept="image/*"></div>
     <div class="form-row"><label>资格证照片</label><input id="tcCertPhoto" type="file" accept="image/*"></div>
     <div class="form-row"><label>个人简介</label><textarea id="tcBio" rows="3" placeholder="教学经验、擅长方向、获奖情况等"></textarea></div>
-    <div style="font-size:12px;color:var(--muted);line-height:1.7">创建后状态为「待平台审核」，审核通过前不能绑定班级授课。Demo 暂展示上传文件名，正式系统会保存图片材料。</div>`,
+    <div style="font-size:12px;color:var(--muted);line-height:1.7">教师账号统一使用手机号登录；创建后自动开通教师端账户并提交平台审核，审核通过前不能绑定班级授课。Demo 暂展示上传文件名，正式系统会保存图片材料。</div>`,
     `<button class="btn btn-ghost" onclick="closeModal()">取消</button>
      <button class="btn btn-primary" onclick="submitTeacherForm()">提交平台审核</button>`);
 }
@@ -882,8 +927,10 @@ function submitTeacherForm() {
   const certPhoto = document.getElementById('tcCertPhoto').files[0];
   const bio = document.getElementById('tcBio').value.trim();
   if (!name || !phone || !dir || !cert || !teacherPhoto || !certPhoto) return toast('请填写教师信息，并上传个人照片和资格证照片');
-  TEACHERS.unshift({
-    id: 't' + Date.now(),
+  if (TEACHERS.some((t) => t.phone === phone)) return toast('该手机号已创建教师账号，请勿重复添加');
+  const id = 't' + Date.now();
+  const teacher = {
+    id,
     name,
     phone,
     dir,
@@ -895,10 +942,13 @@ function submitTeacherForm() {
     certPhoto: certPhoto.name,
     idcard: idcard || '待补充',
     bio: bio || '待补充',
-  });
+  };
+  teacher.accountInfo = teacherAccount(teacher);
+  TEACHERS.unshift(teacher);
   closeModal();
   render();
-  toast('教师已创建并提交平台审核');
+  openTeacherAccount(id);
+  toast('教师已创建并提交平台审核，教师端账户已开通');
 }
 /* 教师上课记录 */
 function teacherLessons(id) {
