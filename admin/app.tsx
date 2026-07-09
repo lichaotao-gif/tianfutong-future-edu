@@ -786,6 +786,8 @@ function OrgPage({ db, setDb }: any) {
   const [detail, setDetail] = useState<any>(null);
   const [audit, setAudit] = useState<any>(null);
   const [accountTarget, setAccountTarget] = useState<any>(null);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createForm] = Form.useForm();
   const saveLicensePhoto = (org: any, info: any) => {
     const name = info?.file?.name || '营业执照照片.jpg';
     setDb((d: any) => ({ ...d, orgs: patch(d.orgs, org.id, { licensePhoto: name }) }));
@@ -820,8 +822,36 @@ function OrgPage({ db, setDb }: any) {
     message.success(result === '通过' ? '机构审核通过，已开通教师创建与课程发布权限' : '已驳回，原因将通知机构');
     setAudit(null); setDetail(null);
   };
+  const createOrg = () => {
+    createForm.validateFields().then((v: any) => {
+      const id = 'og' + (Date.now() % 100000);
+      const org = {
+        id,
+        name: v.name,
+        contact: v.contact,
+        phone: v.phone,
+        dir: v.dir,
+        submitAt: now().slice(0, 10),
+        status: v.status || '待审核',
+        courses: 0,
+        teachers: 0,
+        account: '未配置',
+        license: v.license || '待补充',
+        licensePhoto: '',
+        legal: v.legal || '待补充',
+        scope: v.scope || v.dir,
+        agreement: '待审核通过后签署',
+        audits: [{ t: now(), who: '平台运营', act: '创建机构档案', note: '平台代建机构，等待补充/审核资质' }],
+      };
+      setDb((d: any) => ({ ...d, orgs: [org, ...d.orgs] }));
+      message.success('机构已创建，可继续上传执照、审核或开通账户');
+      createForm.resetFields();
+      setCreateOpen(false);
+      setDetail(org);
+    });
+  };
   return (
-    <Card size="small" title="培训机构入驻">
+    <Card size="small" title="培训机构入驻" extra={<Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>新增机构</Button>}>
       <Tbl {...tblProps} dataSource={db.orgs} columns={[
         { title: '机构名称', dataIndex: 'name', ellipsis: true }, { title: '联系人', dataIndex: 'contact' }, { title: '电话', dataIndex: 'phone' },
         { title: '服务方向', dataIndex: 'dir' }, { title: '提交时间', dataIndex: 'submitAt' },
@@ -861,6 +891,23 @@ function OrgPage({ db, setDb }: any) {
         <Button key="copy" type="primary" onClick={() => copyText(accountText('机构端', accountTarget, accountTarget.accountInfo))}>复制链接和密码</Button>,
       ]}>
         {accountTarget && <TextArea rows={7} readOnly value={accountText('机构端', accountTarget, accountTarget.accountInfo)} />}
+      </Modal>
+      <Modal open={createOpen} title="新增机构" onCancel={() => setCreateOpen(false)} onOk={createOrg} okText="创建机构" cancelText="取消" width={640}>
+        <Form form={createForm} layout="vertical" initialValues={{ status: '待审核' }}>
+          <Form.Item label="机构名称" name="name" rules={[{ required: true, message: '请输入机构名称' }]}><Input placeholder="如：成都未来科学教育中心" /></Form.Item>
+          <Row gutter={12}>
+            <Col span={12}><Form.Item label="联系人" name="contact" rules={[{ required: true, message: '请输入联系人' }]}><Input placeholder="如：陈老师" /></Form.Item></Col>
+            <Col span={12}><Form.Item label="联系电话" name="phone" rules={[{ required: true, message: '请输入联系电话' }]}><Input placeholder="如：138****2008" /></Form.Item></Col>
+          </Row>
+          <Row gutter={12}>
+            <Col span={12}><Form.Item label="服务方向" name="dir" rules={[{ required: true, message: '请输入服务方向' }]}><Input placeholder="如：科学 / 编程 / 研学" /></Form.Item></Col>
+            <Col span={12}><Form.Item label="审核状态" name="status"><Select options={['待审核', '审核通过', '审核驳回'].map((x) => ({ value: x, label: x }))} /></Form.Item></Col>
+          </Row>
+          <Form.Item label="营业执照编号" name="license"><Input placeholder="统一社会信用代码..." /></Form.Item>
+          <Form.Item label="法人信息" name="legal"><Input placeholder="如：陈某某（法人）" /></Form.Item>
+          <Form.Item label="服务范围" name="scope"><TextArea rows={3} placeholder="填写机构服务范围或经营说明" /></Form.Item>
+          <Alert type="info" showIcon message="创建后默认未上传营业执照照片、未配置结算账户、未开通登录账户，可在机构详情中继续完善。" />
+        </Form>
       </Modal>
       <AuditModal open={!!audit} title={'机构入驻审核：' + (audit?.name || '')} onClose={() => setAudit(null)} onSubmit={doAudit} />
     </Card>
