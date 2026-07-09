@@ -32,6 +32,7 @@ const STC: Record<string, string> = {
   待处理: 'orange', 处理中: 'blue', 机构处理中: 'gold', 平台介入: 'purple', 已完成: 'green',
   正常: 'green', 未签到: 'default', 已签到: 'green', 待确认: 'orange', 已确认: 'green',
   已上传: 'green', 未上传: 'orange',
+  已开通: 'green', 未开通: 'orange',
 };
 /* ---------- 名词解释词典（顶部 ? 查看全量，状态标签悬停即显） ---------- */
 const GLOSSARY: { title: string; items: [string, string][] }[] = [
@@ -183,6 +184,7 @@ const FIELD_DEF: Record<string, string> = {
   课程数量: '机构已维护或已通过审核的课程数量。',
   教师数量: '机构已维护或已通过审核的教师数量。',
   结算账户: '机构用于接收月度结算款的账户配置状态。',
+  登录账户: '机构或教师是否已开通后台登录账号，可复制链接、账号和初始密码发给对应用户。',
   资质类型: '教师提交的资质证书类型，如教师资格证、行业资格证等。',
   材料照片: '教师资质审核所需图片材料，包括教师本人照片和资格证照片。',
   个人照片: '教师本人照片，用于平台核验教师身份与后续账号资料展示。',
@@ -273,7 +275,7 @@ const initDB = {
     { id: 'v6', name: '操场（东侧）', school: '成都华阳实验小学', type: '操场', scene: '校内', cap: 100, time: '周一至周五 16:00-18:00', fit: '体育 / 户外', open: '否', status: '停用' },
   ],
   orgs: [
-    { id: 'og1', name: '成都智创未来教育科技有限公司', contact: '王总', phone: '138****2001', dir: 'AI / 编程 / 科创', submitAt: '2026-05-12', status: '审核通过', courses: 3, teachers: 3, account: '已配置', license: '统一社会信用代码 91510100MA6XXXX01', licensePhoto: '智创未来营业执照.jpg', legal: '王建国（法人）', scope: '面向中小学的人工智能与编程素质教育', agreement: '2026-2027 学年课后服务合作协议（已签署）',
+    { id: 'og1', name: '成都智创未来教育科技有限公司', contact: '王总', phone: '138****2001', dir: 'AI / 编程 / 科创', submitAt: '2026-05-12', status: '审核通过', courses: 3, teachers: 3, account: '已配置', accountInfo: { url: 'https://future-edu.demo/org/', username: 'org_OG1', password: 'TfOG1@2026' }, license: '统一社会信用代码 91510100MA6XXXX01', licensePhoto: '智创未来营业执照.jpg', legal: '王建国（法人）', scope: '面向中小学的人工智能与编程素质教育', agreement: '2026-2027 学年课后服务合作协议（已签署）',
       audits: [{ t: '2026-05-15 10:20', who: '审核员-李敏', act: '审核通过', note: '资质齐全' }, { t: '2026-05-12 14:03', who: '机构', act: '提交入驻申请', note: '' }] },
     { id: 'og2', name: '童心美育艺术中心', contact: '林老师', phone: '139****2002', dir: '美术 / 手工 / 书法', submitAt: '2026-06-28', status: '待审核', courses: 1, teachers: 2, account: '未配置', license: '统一社会信用代码 91510100MA6XXXX02', licensePhoto: '童心美育营业执照.png', legal: '林晓芸（法人）', scope: '少儿美术、创意手工、硬笔书法', agreement: '待审核通过后签署',
       audits: [{ t: '2026-06-28 09:41', who: '机构', act: '提交入驻申请', note: '' }] },
@@ -283,7 +285,7 @@ const initDB = {
       audits: [{ t: '2026-06-12 11:00', who: '审核员-李敏', act: '审核驳回', note: '营业执照经营范围不含教育培训，请补充变更后重新提交' }, { t: '2026-06-10 10:15', who: '机构', act: '提交入驻申请', note: '' }] },
   ],
   teachers: [
-    { id: 't1', name: '王思远', org: '成都智创未来教育科技有限公司', phone: '138****3001', dir: 'AI 启蒙', cert: '教师资格证（小学信息技术）', teacherPhoto: '王思远个人照片.jpg', certPhoto: '王思远教师资格证.jpg', submitAt: '2026-05-20', status: '审核通过', idcard: '5101**********0011', bio: '6 年少儿 AI 教学经验，市级科技社团指导教师。',
+    { id: 't1', name: '王思远', org: '成都智创未来教育科技有限公司', phone: '138****3001', dir: 'AI 启蒙', cert: '教师资格证（小学信息技术）', teacherPhoto: '王思远个人照片.jpg', certPhoto: '王思远教师资格证.jpg', submitAt: '2026-05-20', status: '审核通过', accountInfo: { url: 'https://future-edu.demo/org/teacher/', username: 'teacher_T1', password: 'TfT1@2026' }, idcard: '5101**********0011', bio: '6 年少儿 AI 教学经验，市级科技社团指导教师。',
       audits: [{ t: '2026-05-22 15:00', who: '审核员-李敏', act: '审核通过', note: '' }] },
     { id: 't2', name: '陈亦然', org: '成都智创未来教育科技有限公司', phone: '139****3002', dir: '少儿编程', cert: '教师资格证（小学信息技术）', teacherPhoto: '陈亦然个人照片.jpg', certPhoto: '陈亦然教师资格证.jpg', submitAt: '2026-05-20', status: '审核通过', idcard: '5101**********0022', bio: 'Scratch / Python 项目导师，信息科技骨干教师。',
       audits: [{ t: '2026-05-22 15:05', who: '审核员-李敏', act: '审核通过', note: '' }] },
@@ -385,6 +387,25 @@ const initDB = {
 /* ---------- 工具 ---------- */
 const patch = (list: any[], id: string, ch: any) => list.map((x) => (x.id === id ? { ...x, ...ch } : x));
 const money = (n: number) => '¥' + n.toLocaleString('zh-CN');
+const portalUrl = (path: string) => 'https://future-edu.demo' + path;
+const accountName = (prefix: string, id: string) => prefix + '_' + id.toUpperCase();
+const initialPassword = (id: string) => 'Tf' + id.toUpperCase() + '@2026';
+const accountText = (role: string, target: any, info: any) => [
+  role + '登录信息',
+  '对象：' + target.name,
+  '登录链接：' + info.url,
+  '登录账号：' + info.username,
+  '初始密码：' + info.password,
+  '首次登录后请修改密码。',
+].join('\n');
+const copyText = async (text: string) => {
+  try {
+    await navigator.clipboard.writeText(text);
+    message.success('登录信息已复制，可直接发送给用户');
+  } catch (e) {
+    message.warning('浏览器未允许自动复制，请手动复制弹窗内容');
+  }
+};
 /* 四方分账默认比例：机构 / 平台 / 地方国企 / 天府通通道（不同课程可在审核时单独配置） */
 const DEFAULT_SHARE = { org: 70, platform: 12, region: 13, tf: 5 };
 const tblProps = { size: 'small' as const, rowKey: 'id', pagination: false as const, locale: { emptyText: '暂无数据' }, scroll: { x: 'max-content' } };
@@ -764,11 +785,23 @@ function VenuePage({ db, setDb }: any) {
 function OrgPage({ db, setDb }: any) {
   const [detail, setDetail] = useState<any>(null);
   const [audit, setAudit] = useState<any>(null);
+  const [accountTarget, setAccountTarget] = useState<any>(null);
   const saveLicensePhoto = (org: any, info: any) => {
     const name = info?.file?.name || '营业执照照片.jpg';
     setDb((d: any) => ({ ...d, orgs: patch(d.orgs, org.id, { licensePhoto: name }) }));
     setDetail((cur: any) => cur?.id === org.id ? { ...cur, licensePhoto: name } : cur);
     message.success('营业执照照片已上传（Demo 记录文件名）');
+  };
+  const orgAccount = (org: any) => org.accountInfo || {
+    url: portalUrl('/org/'),
+    username: accountName('org', org.id),
+    password: initialPassword(org.id),
+  };
+  const openOrgAccount = (org: any) => {
+    const info = orgAccount(org);
+    setDb((d: any) => ({ ...d, orgs: patch(d.orgs, org.id, { account: '已配置', accountInfo: info }) }));
+    setDetail((cur: any) => cur?.id === org.id ? { ...cur, account: '已配置', accountInfo: info } : cur);
+    setAccountTarget({ ...org, account: '已配置', accountInfo: info });
   };
   const licensePhotoField = (org: any) => (
     <Space direction="vertical" size={6}>
@@ -794,9 +827,11 @@ function OrgPage({ db, setDb }: any) {
         { title: '服务方向', dataIndex: 'dir' }, { title: '提交时间', dataIndex: 'submitAt' },
         { title: '审核状态', dataIndex: 'status', render: (v: string) => <S v={v} /> },
         { title: '执照照片', render: (_: any, r: any) => <S v={r.licensePhoto ? '已上传' : '未上传'} /> },
+        { title: '登录账户', render: (_: any, r: any) => <S v={r.accountInfo ? '已开通' : '未开通'} /> },
         { title: '课程', dataIndex: 'courses' }, { title: '教师', dataIndex: 'teachers' }, { title: '结算账户', dataIndex: 'account' },
         { title: '操作', render: (_: any, r: any) => <Space><a onClick={() => setDetail(r)}>查看资料</a>
           {r.status === '待审核' && <a style={{ color: '#fa8c16' }} onClick={() => setAudit(r)}>审核</a>}
+          <a onClick={() => openOrgAccount(r)}>{r.accountInfo ? '复制账户' : '开通账户'}</a>
           <a onClick={() => message.info('Demo：编辑机构')}>编辑</a>
           <a style={{ color: '#ff4d4f' }} onClick={() => setDb((d: any) => ({ ...d, orgs: patch(d.orgs, r.id, { status: '已禁用' }) }))}>禁用</a></Space> },
       ]} />
@@ -812,11 +847,21 @@ function OrgPage({ db, setDb }: any) {
             { key: '8', label: '服务范围', span: 2, children: detail.scope },
             { key: '9', label: '课程方向', children: detail.dir }, { key: '10', label: '结算账户', children: detail.account },
             { key: '11', label: '合作协议', span: 2, children: detail.agreement },
+            { key: '12', label: '机构端账户', span: 2, children: detail.accountInfo ? <Space direction="vertical" size={4}>
+              <span>链接：{detail.accountInfo.url}</span><span>账号：{detail.accountInfo.username}</span><span>初始密码：{detail.accountInfo.password}</span>
+              <Button size="small" onClick={() => copyText(accountText('机构端', detail, detail.accountInfo))}>复制链接和密码</Button>
+            </Space> : <Button size="small" type="primary" onClick={() => openOrgAccount(detail)}>开通机构端账户</Button> },
           ]} />
           <Divider>审核记录</Divider>
           <AuditTimeline items={detail.audits} />
         </>}
       </Drawer>
+      <Modal open={!!accountTarget} title="机构端登录信息" onCancel={() => setAccountTarget(null)} footer={[
+        <Button key="close" onClick={() => setAccountTarget(null)}>关闭</Button>,
+        <Button key="copy" type="primary" onClick={() => copyText(accountText('机构端', accountTarget, accountTarget.accountInfo))}>复制链接和密码</Button>,
+      ]}>
+        {accountTarget && <TextArea rows={7} readOnly value={accountText('机构端', accountTarget, accountTarget.accountInfo)} />}
+      </Modal>
       <AuditModal open={!!audit} title={'机构入驻审核：' + (audit?.name || '')} onClose={() => setAudit(null)} onSubmit={doAudit} />
     </Card>
   );
@@ -826,6 +871,18 @@ function OrgPage({ db, setDb }: any) {
 function TeacherPage({ db, setDb }: any) {
   const [detail, setDetail] = useState<any>(null);
   const [audit, setAudit] = useState<any>(null);
+  const [accountTarget, setAccountTarget] = useState<any>(null);
+  const teacherAccount = (teacher: any) => teacher.accountInfo || {
+    url: portalUrl('/org/teacher/'),
+    username: accountName('teacher', teacher.id),
+    password: initialPassword(teacher.id),
+  };
+  const openTeacherAccount = (teacher: any) => {
+    const info = teacherAccount(teacher);
+    setDb((d: any) => ({ ...d, teachers: patch(d.teachers, teacher.id, { accountInfo: info }) }));
+    setDetail((cur: any) => cur?.id === teacher.id ? { ...cur, accountInfo: info } : cur);
+    setAccountTarget({ ...teacher, accountInfo: info });
+  };
   const doAudit = (result: string, reason: string) => {
     const st = result === '通过' ? '审核通过' : '审核驳回';
     setDb((d: any) => ({ ...d, teachers: patch(d.teachers, audit.id, { status: st, audits: [{ t: now(), who: '审核员-李敏', act: st, note: reason }, ...(audit.audits || [])] }) }));
@@ -843,8 +900,10 @@ function TeacherPage({ db, setDb }: any) {
         </Space> },
         { title: '提交时间', dataIndex: 'submitAt' },
         { title: '审核状态', dataIndex: 'status', render: (v: string) => <S v={v} /> },
+        { title: '登录账户', render: (_: any, r: any) => <S v={r.accountInfo ? '已开通' : '未开通'} /> },
         { title: '操作', render: (_: any, r: any) => <Space><a onClick={() => setDetail(r)}>查看</a>
           {r.status === '待审核' && <a style={{ color: '#fa8c16' }} onClick={() => setAudit(r)}>审核</a>}
+          <a onClick={() => openTeacherAccount(r)}>{r.accountInfo ? '复制账户' : '开通账户'}</a>
           <a style={{ color: '#ff4d4f' }} onClick={() => setDb((d: any) => ({ ...d, teachers: patch(d.teachers, r.id, { status: '已停用' }) }))}>停用</a></Space> },
       ]} />
       <Drawer open={!!detail} width={520} title="教师详情" onClose={() => setDetail(null)}
@@ -857,11 +916,21 @@ function TeacherPage({ db, setDb }: any) {
             { key: '7', label: '个人照片', children: detail.teacherPhoto || '未上传' },
             { key: '8', label: '资格证照片', children: detail.certPhoto || '未上传' },
             { key: '9', label: '个人简介', children: detail.bio }, { key: '10', label: '审核状态', children: <S v={detail.status} /> },
+            { key: '11', label: '教师端账户', children: detail.accountInfo ? <Space direction="vertical" size={4}>
+              <span>链接：{detail.accountInfo.url}</span><span>账号：{detail.accountInfo.username}</span><span>初始密码：{detail.accountInfo.password}</span>
+              <Button size="small" onClick={() => copyText(accountText('教师端', detail, detail.accountInfo))}>复制链接和密码</Button>
+            </Space> : <Button size="small" type="primary" onClick={() => openTeacherAccount(detail)}>开通教师端账户</Button> },
           ]} />
           <Divider>审核记录</Divider>
           {(detail.audits || []).length ? <AuditTimeline items={detail.audits} /> : <div style={{ color: '#999' }}>暂无审核记录</div>}
         </>}
       </Drawer>
+      <Modal open={!!accountTarget} title="教师端登录信息" onCancel={() => setAccountTarget(null)} footer={[
+        <Button key="close" onClick={() => setAccountTarget(null)}>关闭</Button>,
+        <Button key="copy" type="primary" onClick={() => copyText(accountText('教师端', accountTarget, accountTarget.accountInfo))}>复制链接和密码</Button>,
+      ]}>
+        {accountTarget && <TextArea rows={7} readOnly value={accountText('教师端', accountTarget, accountTarget.accountInfo)} />}
+      </Modal>
       <AuditModal open={!!audit} title={'教师资质审核：' + (audit?.name || '')} onClose={() => setAudit(null)} onSubmit={doAudit} />
     </Card>
   );
