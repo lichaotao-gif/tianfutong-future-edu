@@ -21,7 +21,7 @@ const {
 
 /* ---------- 状态 → 颜色（全局统一） ---------- */
 const STC: Record<string, string> = {
-  待审核: 'orange', 审核通过: 'green', 审核驳回: 'red', 已暂停: 'default', 已禁用: 'red',
+  待完善: 'gold', 待审核: 'orange', 审核通过: 'green', 审核驳回: 'red', 已暂停: 'default', 已禁用: 'red',
   草稿: 'default', 已入课程库: 'green', 已下架: 'default',
   待合作: 'orange', 已合作: 'green', 暂停合作: 'gold', 已停用: 'default',
   启用: 'green', 禁用: 'red', 已上架: 'green', 未到购买时间: 'gold',
@@ -59,6 +59,7 @@ const GLOSSARY: { title: string; items: [string, string][] }[] = [
     ['机构实收', '应结算金额 − 平台服务费 − 学校服务费 − 退款扣减。'],
   ] },
   { title: '机构状态', items: [
+    ['待完善', '平台已创建机构基础档案，机构可登录后补充营业执照、法人、服务范围等资料，再提交平台审核。'],
     ['待审核', '机构已提交入驻资料，平台审核中；审核通过前不能创建教师、发布课程。'],
     ['审核通过', '入驻审核通过，可创建教师、发布课程。'],
     ['审核驳回', '资料不符合要求，按驳回原因补充后重新提交。'],
@@ -184,7 +185,7 @@ const FIELD_DEF: Record<string, string> = {
   课程数量: '机构已维护或已通过审核的课程数量。',
   教师数量: '机构已维护或已通过审核的教师数量。',
   结算账户: '机构用于接收月度结算款的账户配置状态。',
-  登录账户: '机构或教师是否已开通后台登录账号，可复制链接、账号和初始密码发给对应用户。',
+  登录账户: '机构或教师是否已开通后台登录账号，账号统一使用手机号，可复制链接、手机号和初始密码发给对应用户。',
   资质类型: '教师提交的资质证书类型，如教师资格证、行业资格证等。',
   材料照片: '教师资质审核所需图片材料，包括教师本人照片和资格证照片。',
   个人照片: '教师本人照片，用于平台核验教师身份与后续账号资料展示。',
@@ -275,7 +276,7 @@ const initDB = {
     { id: 'v6', name: '操场（东侧）', school: '成都华阳实验小学', type: '操场', scene: '校内', cap: 100, time: '周一至周五 16:00-18:00', fit: '体育 / 户外', open: '否', status: '停用' },
   ],
   orgs: [
-    { id: 'og1', name: '成都智创未来教育科技有限公司', contact: '王总', phone: '138****2001', dir: 'AI / 编程 / 科创', submitAt: '2026-05-12', status: '审核通过', courses: 3, teachers: 3, account: '已配置', accountInfo: { url: 'https://future-edu.demo/org/', username: 'org_OG1', password: 'TfOG1@2026' }, license: '统一社会信用代码 91510100MA6XXXX01', licensePhoto: '智创未来营业执照.jpg', legal: '王建国（法人）', scope: '面向中小学的人工智能与编程素质教育', agreement: '2026-2027 学年课后服务合作协议（已签署）',
+    { id: 'og1', name: '成都智创未来教育科技有限公司', contact: '王总', phone: '138****2001', dir: 'AI / 编程 / 科创', submitAt: '2026-05-12', status: '审核通过', courses: 3, teachers: 3, account: '已配置', accountInfo: { url: 'https://future-edu.demo/org/', username: '138****2001', password: 'TfOG1@2026' }, license: '统一社会信用代码 91510100MA6XXXX01', licensePhoto: '智创未来营业执照.jpg', legal: '王建国（法人）', scope: '面向中小学的人工智能与编程素质教育', agreement: '2026-2027 学年课后服务合作协议（已签署）',
       audits: [{ t: '2026-05-15 10:20', who: '审核员-李敏', act: '审核通过', note: '资质齐全' }, { t: '2026-05-12 14:03', who: '机构', act: '提交入驻申请', note: '' }] },
     { id: 'og2', name: '童心美育艺术中心', contact: '林老师', phone: '139****2002', dir: '美术 / 手工 / 书法', submitAt: '2026-06-28', status: '待审核', courses: 1, teachers: 2, account: '未配置', license: '统一社会信用代码 91510100MA6XXXX02', licensePhoto: '童心美育营业执照.png', legal: '林晓芸（法人）', scope: '少儿美术、创意手工、硬笔书法', agreement: '待审核通过后签署',
       audits: [{ t: '2026-06-28 09:41', who: '机构', act: '提交入驻申请', note: '' }] },
@@ -285,7 +286,7 @@ const initDB = {
       audits: [{ t: '2026-06-12 11:00', who: '审核员-李敏', act: '审核驳回', note: '营业执照经营范围不含教育培训，请补充变更后重新提交' }, { t: '2026-06-10 10:15', who: '机构', act: '提交入驻申请', note: '' }] },
   ],
   teachers: [
-    { id: 't1', name: '王思远', org: '成都智创未来教育科技有限公司', phone: '138****3001', dir: 'AI 启蒙', cert: '教师资格证（小学信息技术）', teacherPhoto: '王思远个人照片.jpg', certPhoto: '王思远教师资格证.jpg', submitAt: '2026-05-20', status: '审核通过', accountInfo: { url: 'https://future-edu.demo/org/teacher/', username: 'teacher_T1', password: 'TfT1@2026' }, idcard: '5101**********0011', bio: '6 年少儿 AI 教学经验，市级科技社团指导教师。',
+    { id: 't1', name: '王思远', org: '成都智创未来教育科技有限公司', phone: '138****3001', dir: 'AI 启蒙', cert: '教师资格证（小学信息技术）', teacherPhoto: '王思远个人照片.jpg', certPhoto: '王思远教师资格证.jpg', submitAt: '2026-05-20', status: '审核通过', accountInfo: { url: 'https://future-edu.demo/org/teacher/', username: '138****3001', password: 'TfT1@2026' }, idcard: '5101**********0011', bio: '6 年少儿 AI 教学经验，市级科技社团指导教师。',
       audits: [{ t: '2026-05-22 15:00', who: '审核员-李敏', act: '审核通过', note: '' }] },
     { id: 't2', name: '陈亦然', org: '成都智创未来教育科技有限公司', phone: '139****3002', dir: '少儿编程', cert: '教师资格证（小学信息技术）', teacherPhoto: '陈亦然个人照片.jpg', certPhoto: '陈亦然教师资格证.jpg', submitAt: '2026-05-20', status: '审核通过', idcard: '5101**********0022', bio: 'Scratch / Python 项目导师，信息科技骨干教师。',
       audits: [{ t: '2026-05-22 15:05', who: '审核员-李敏', act: '审核通过', note: '' }] },
@@ -388,13 +389,12 @@ const initDB = {
 const patch = (list: any[], id: string, ch: any) => list.map((x) => (x.id === id ? { ...x, ...ch } : x));
 const money = (n: number) => '¥' + n.toLocaleString('zh-CN');
 const portalUrl = (path: string) => 'https://future-edu.demo' + path;
-const accountName = (prefix: string, id: string) => prefix + '_' + id.toUpperCase();
 const initialPassword = (id: string) => 'Tf' + id.toUpperCase() + '@2026';
 const accountText = (role: string, target: any, info: any) => [
   role + '登录信息',
   '对象：' + target.name,
   '登录链接：' + info.url,
-  '登录账号：' + info.username,
+  '登录手机号：' + info.username,
   '初始密码：' + info.password,
   '首次登录后请修改密码。',
 ].join('\n');
@@ -796,7 +796,7 @@ function OrgPage({ db, setDb }: any) {
   };
   const orgAccount = (org: any) => org.accountInfo || {
     url: portalUrl('/org/'),
-    username: accountName('org', org.id),
+    username: org.phone,
     password: initialPassword(org.id),
   };
   const openOrgAccount = (org: any) => {
@@ -822,7 +822,13 @@ function OrgPage({ db, setDb }: any) {
     message.success(result === '通过' ? '机构审核通过，已开通教师创建与课程发布权限' : '已驳回，原因将通知机构');
     setAudit(null); setDetail(null);
   };
-  const createOrg = () => {
+  const submitOrg = (org: any) => {
+    const next = { ...org, status: '待审核', audits: [{ t: now(), who: '平台运营', act: '提交机构入驻审核', note: '资料已补充，进入平台审核' }, ...(org.audits || [])] };
+    setDb((d: any) => ({ ...d, orgs: patch(d.orgs, org.id, next) }));
+    setDetail((cur: any) => cur?.id === org.id ? next : cur);
+    message.success('机构已提交审核');
+  };
+  const createOrg = (submit = false) => {
     createForm.validateFields().then((v: any) => {
       const id = 'og' + (Date.now() % 100000);
       const org = {
@@ -832,7 +838,7 @@ function OrgPage({ db, setDb }: any) {
         phone: v.phone,
         dir: v.dir,
         submitAt: now().slice(0, 10),
-        status: v.status || '待审核',
+        status: submit ? '待审核' : '待完善',
         courses: 0,
         teachers: 0,
         account: '未配置',
@@ -841,10 +847,10 @@ function OrgPage({ db, setDb }: any) {
         legal: v.legal || '待补充',
         scope: v.scope || v.dir,
         agreement: '待审核通过后签署',
-        audits: [{ t: now(), who: '平台运营', act: '创建机构档案', note: '平台代建机构，等待补充/审核资质' }],
+        audits: [{ t: now(), who: '平台运营', act: submit ? '后台代填并提交审核' : '创建机构基础档案', note: submit ? '后台协助补充机构资料，直接进入平台审核' : '机构可登录后补充资料，再提交审核' }],
       };
       setDb((d: any) => ({ ...d, orgs: [org, ...d.orgs] }));
-      message.success('机构已创建，可继续上传执照、审核或开通账户');
+      message.success(submit ? '机构已创建并提交审核' : '机构基础档案已创建，可开通账户给机构补充资料');
       createForm.resetFields();
       setCreateOpen(false);
       setDetail(org);
@@ -866,7 +872,10 @@ function OrgPage({ db, setDb }: any) {
           <a style={{ color: '#ff4d4f' }} onClick={() => setDb((d: any) => ({ ...d, orgs: patch(d.orgs, r.id, { status: '已禁用' }) }))}>禁用</a></Space> },
       ]} />
       <Drawer open={!!detail} width={620} title="机构详情" onClose={() => setDetail(null)}
-        extra={detail?.status === '待审核' && <Button type="primary" onClick={() => setAudit(detail)}>审核</Button>}>
+        extra={detail && <Space>
+          {detail.status === '待完善' && <Button type="primary" onClick={() => submitOrg(detail)}>提交审核</Button>}
+          {detail.status === '待审核' && <Button type="primary" onClick={() => setAudit(detail)}>审核</Button>}
+        </Space>}>
         {detail && <>
           <Descriptions column={2} size="small" bordered items={[
             { key: '1', label: '机构名称', span: 2, children: detail.name },
@@ -878,7 +887,7 @@ function OrgPage({ db, setDb }: any) {
             { key: '9', label: '课程方向', children: detail.dir }, { key: '10', label: '结算账户', children: detail.account },
             { key: '11', label: '合作协议', span: 2, children: detail.agreement },
             { key: '12', label: '机构端账户', span: 2, children: detail.accountInfo ? <Space direction="vertical" size={4}>
-              <span>链接：{detail.accountInfo.url}</span><span>账号：{detail.accountInfo.username}</span><span>初始密码：{detail.accountInfo.password}</span>
+              <span>链接：{detail.accountInfo.url}</span><span>手机号：{detail.accountInfo.username}</span><span>初始密码：{detail.accountInfo.password}</span>
               <Button size="small" onClick={() => copyText(accountText('机构端', detail, detail.accountInfo))}>复制链接和密码</Button>
             </Space> : <Button size="small" type="primary" onClick={() => openOrgAccount(detail)}>开通机构端账户</Button> },
           ]} />
@@ -892,21 +901,24 @@ function OrgPage({ db, setDb }: any) {
       ]}>
         {accountTarget && <TextArea rows={7} readOnly value={accountText('机构端', accountTarget, accountTarget.accountInfo)} />}
       </Modal>
-      <Modal open={createOpen} title="新增机构" onCancel={() => setCreateOpen(false)} onOk={createOrg} okText="创建机构" cancelText="取消" width={640}>
-        <Form form={createForm} layout="vertical" initialValues={{ status: '待审核' }}>
+      <Modal open={createOpen} title="新增机构" onCancel={() => setCreateOpen(false)} footer={[
+        <Button key="cancel" onClick={() => setCreateOpen(false)}>取消</Button>,
+        <Button key="save" onClick={() => createOrg(false)}>保存基础信息</Button>,
+        <Button key="submit" type="primary" onClick={() => createOrg(true)}>后台代填并提交审核</Button>,
+      ]} width={640}>
+        <Form form={createForm} layout="vertical">
           <Form.Item label="机构名称" name="name" rules={[{ required: true, message: '请输入机构名称' }]}><Input placeholder="如：成都未来科学教育中心" /></Form.Item>
           <Row gutter={12}>
             <Col span={12}><Form.Item label="联系人" name="contact" rules={[{ required: true, message: '请输入联系人' }]}><Input placeholder="如：陈老师" /></Form.Item></Col>
             <Col span={12}><Form.Item label="联系电话" name="phone" rules={[{ required: true, message: '请输入联系电话' }]}><Input placeholder="如：138****2008" /></Form.Item></Col>
           </Row>
           <Row gutter={12}>
-            <Col span={12}><Form.Item label="服务方向" name="dir" rules={[{ required: true, message: '请输入服务方向' }]}><Input placeholder="如：科学 / 编程 / 研学" /></Form.Item></Col>
-            <Col span={12}><Form.Item label="审核状态" name="status"><Select options={['待审核', '审核通过', '审核驳回'].map((x) => ({ value: x, label: x }))} /></Form.Item></Col>
+            <Col span={24}><Form.Item label="服务方向" name="dir" rules={[{ required: true, message: '请输入服务方向' }]}><Input placeholder="如：科学 / 编程 / 研学" /></Form.Item></Col>
           </Row>
           <Form.Item label="营业执照编号" name="license"><Input placeholder="统一社会信用代码..." /></Form.Item>
           <Form.Item label="法人信息" name="legal"><Input placeholder="如：陈某某（法人）" /></Form.Item>
           <Form.Item label="服务范围" name="scope"><TextArea rows={3} placeholder="填写机构服务范围或经营说明" /></Form.Item>
-          <Alert type="info" showIcon message="创建后默认未上传营业执照照片、未配置结算账户、未开通登录账户，可在机构详情中继续完善。" />
+          <Alert type="info" showIcon message="只保存基础信息：机构登录后自己补充资料再提交审核；后台代填并提交审核：运营人员已协助补齐资料，直接进入待审核。" />
         </Form>
       </Modal>
       <AuditModal open={!!audit} title={'机构入驻审核：' + (audit?.name || '')} onClose={() => setAudit(null)} onSubmit={doAudit} />
@@ -921,7 +933,7 @@ function TeacherPage({ db, setDb }: any) {
   const [accountTarget, setAccountTarget] = useState<any>(null);
   const teacherAccount = (teacher: any) => teacher.accountInfo || {
     url: portalUrl('/org/teacher/'),
-    username: accountName('teacher', teacher.id),
+    username: teacher.phone,
     password: initialPassword(teacher.id),
   };
   const openTeacherAccount = (teacher: any) => {
@@ -964,7 +976,7 @@ function TeacherPage({ db, setDb }: any) {
             { key: '8', label: '资格证照片', children: detail.certPhoto || '未上传' },
             { key: '9', label: '个人简介', children: detail.bio }, { key: '10', label: '审核状态', children: <S v={detail.status} /> },
             { key: '11', label: '教师端账户', children: detail.accountInfo ? <Space direction="vertical" size={4}>
-              <span>链接：{detail.accountInfo.url}</span><span>账号：{detail.accountInfo.username}</span><span>初始密码：{detail.accountInfo.password}</span>
+              <span>链接：{detail.accountInfo.url}</span><span>手机号：{detail.accountInfo.username}</span><span>初始密码：{detail.accountInfo.password}</span>
               <Button size="small" onClick={() => copyText(accountText('教师端', detail, detail.accountInfo))}>复制链接和密码</Button>
             </Space> : <Button size="small" type="primary" onClick={() => openTeacherAccount(detail)}>开通教师端账户</Button> },
           ]} />
