@@ -8,7 +8,7 @@ const { useState, useMemo } = React;
 const {
   Layout, Menu, Table: AntTable, Tag, Button, Modal, Drawer, Descriptions, Card, Statistic,
   Row, Col, Space, Input, Select, Steps, message, Tabs, Divider, Form, InputNumber,
-  Checkbox, Timeline, Alert, Progress, Radio, Avatar, Tooltip, List,
+  Checkbox, Timeline, Alert, Progress, Radio, Avatar, Tooltip, List, Upload,
 } = antd;
 const { Header, Sider, Content } = Layout;
 const { TextArea } = Input;
@@ -31,6 +31,7 @@ const STC: Record<string, string> = {
   待生成: 'default', 结算中: 'blue', 已结算: 'green', 结算异常: 'red', 已驳回: 'red',
   待处理: 'orange', 处理中: 'blue', 机构处理中: 'gold', 平台介入: 'purple', 已完成: 'green',
   正常: 'green', 未签到: 'default', 已签到: 'green', 待确认: 'orange', 已确认: 'green',
+  已上传: 'green', 未上传: 'orange',
 };
 /* ---------- 名词解释词典（顶部 ? 查看全量，状态标签悬停即显） ---------- */
 const GLOSSARY: { title: string; items: [string, string][] }[] = [
@@ -272,13 +273,13 @@ const initDB = {
     { id: 'v6', name: '操场（东侧）', school: '成都华阳实验小学', type: '操场', scene: '校内', cap: 100, time: '周一至周五 16:00-18:00', fit: '体育 / 户外', open: '否', status: '停用' },
   ],
   orgs: [
-    { id: 'og1', name: '成都智创未来教育科技有限公司', contact: '王总', phone: '138****2001', dir: 'AI / 编程 / 科创', submitAt: '2026-05-12', status: '审核通过', courses: 3, teachers: 3, account: '已配置', license: '统一社会信用代码 91510100MA6XXXX01', legal: '王建国（法人）', scope: '面向中小学的人工智能与编程素质教育', agreement: '2026-2027 学年课后服务合作协议（已签署）',
+    { id: 'og1', name: '成都智创未来教育科技有限公司', contact: '王总', phone: '138****2001', dir: 'AI / 编程 / 科创', submitAt: '2026-05-12', status: '审核通过', courses: 3, teachers: 3, account: '已配置', license: '统一社会信用代码 91510100MA6XXXX01', licensePhoto: '智创未来营业执照.jpg', legal: '王建国（法人）', scope: '面向中小学的人工智能与编程素质教育', agreement: '2026-2027 学年课后服务合作协议（已签署）',
       audits: [{ t: '2026-05-15 10:20', who: '审核员-李敏', act: '审核通过', note: '资质齐全' }, { t: '2026-05-12 14:03', who: '机构', act: '提交入驻申请', note: '' }] },
-    { id: 'og2', name: '童心美育艺术中心', contact: '林老师', phone: '139****2002', dir: '美术 / 手工 / 书法', submitAt: '2026-06-28', status: '待审核', courses: 1, teachers: 2, account: '未配置', license: '统一社会信用代码 91510100MA6XXXX02', legal: '林晓芸（法人）', scope: '少儿美术、创意手工、硬笔书法', agreement: '待审核通过后签署',
+    { id: 'og2', name: '童心美育艺术中心', contact: '林老师', phone: '139****2002', dir: '美术 / 手工 / 书法', submitAt: '2026-06-28', status: '待审核', courses: 1, teachers: 2, account: '未配置', license: '统一社会信用代码 91510100MA6XXXX02', licensePhoto: '童心美育营业执照.png', legal: '林晓芸（法人）', scope: '少儿美术、创意手工、硬笔书法', agreement: '待审核通过后签署',
       audits: [{ t: '2026-06-28 09:41', who: '机构', act: '提交入驻申请', note: '' }] },
-    { id: 'og3', name: '星辰体育培训中心', contact: '赵教练', phone: '137****2003', dir: '篮球 / 田径 / 体适能', submitAt: '2026-06-30', status: '待审核', courses: 0, teachers: 1, account: '未配置', license: '统一社会信用代码 91510100MA6XXXX03', legal: '赵刚（法人）', scope: '青少年体育培训与体适能训练', agreement: '待审核通过后签署',
+    { id: 'og3', name: '星辰体育培训中心', contact: '赵教练', phone: '137****2003', dir: '篮球 / 田径 / 体适能', submitAt: '2026-06-30', status: '待审核', courses: 0, teachers: 1, account: '未配置', license: '统一社会信用代码 91510100MA6XXXX03', licensePhoto: '', legal: '赵刚（法人）', scope: '青少年体育培训与体适能训练', agreement: '待审核通过后签署',
       audits: [{ t: '2026-06-30 16:22', who: '机构', act: '提交入驻申请', note: '' }] },
-    { id: 'og4', name: '快乐星球机器人俱乐部', contact: '孙老师', phone: '136****2004', dir: '机器人 / 无人机', submitAt: '2026-06-10', status: '审核驳回', courses: 0, teachers: 0, account: '未配置', license: '统一社会信用代码 91510100MA6XXXX04', legal: '孙志强（法人）', scope: '机器人搭建与竞赛培训', agreement: '—',
+    { id: 'og4', name: '快乐星球机器人俱乐部', contact: '孙老师', phone: '136****2004', dir: '机器人 / 无人机', submitAt: '2026-06-10', status: '审核驳回', courses: 0, teachers: 0, account: '未配置', license: '统一社会信用代码 91510100MA6XXXX04', licensePhoto: '快乐星球营业执照.jpg', legal: '孙志强（法人）', scope: '机器人搭建与竞赛培训', agreement: '—',
       audits: [{ t: '2026-06-12 11:00', who: '审核员-李敏', act: '审核驳回', note: '营业执照经营范围不含教育培训，请补充变更后重新提交' }, { t: '2026-06-10 10:15', who: '机构', act: '提交入驻申请', note: '' }] },
   ],
   teachers: [
@@ -763,6 +764,23 @@ function VenuePage({ db, setDb }: any) {
 function OrgPage({ db, setDb }: any) {
   const [detail, setDetail] = useState<any>(null);
   const [audit, setAudit] = useState<any>(null);
+  const saveLicensePhoto = (org: any, info: any) => {
+    const name = info?.file?.name || '营业执照照片.jpg';
+    setDb((d: any) => ({ ...d, orgs: patch(d.orgs, org.id, { licensePhoto: name }) }));
+    setDetail((cur: any) => cur?.id === org.id ? { ...cur, licensePhoto: name } : cur);
+    message.success('营业执照照片已上传（Demo 记录文件名）');
+  };
+  const licensePhotoField = (org: any) => (
+    <Space direction="vertical" size={6}>
+      <Space size={6}>
+        <S v={org.licensePhoto ? '已上传' : '未上传'} />
+        <span>{org.licensePhoto || '请上传营业执照照片'}</span>
+      </Space>
+      <Upload accept="image/*,.pdf" beforeUpload={() => false} showUploadList={false} onChange={(info: any) => saveLicensePhoto(org, info)}>
+        <Button size="small" icon={<PlusOutlined />}>{org.licensePhoto ? '重新上传' : '上传营业执照照片'}</Button>
+      </Upload>
+    </Space>
+  );
   const doAudit = (result: string, reason: string) => {
     const st = result === '通过' ? '审核通过' : '审核驳回';
     setDb((d: any) => ({ ...d, orgs: patch(d.orgs, audit.id, { status: st, audits: [{ t: now(), who: '审核员-李敏', act: st, note: reason }, ...audit.audits] }) }));
@@ -775,6 +793,7 @@ function OrgPage({ db, setDb }: any) {
         { title: '机构名称', dataIndex: 'name', ellipsis: true }, { title: '联系人', dataIndex: 'contact' }, { title: '电话', dataIndex: 'phone' },
         { title: '服务方向', dataIndex: 'dir' }, { title: '提交时间', dataIndex: 'submitAt' },
         { title: '审核状态', dataIndex: 'status', render: (v: string) => <S v={v} /> },
+        { title: '执照照片', render: (_: any, r: any) => <S v={r.licensePhoto ? '已上传' : '未上传'} /> },
         { title: '课程', dataIndex: 'courses' }, { title: '教师', dataIndex: 'teachers' }, { title: '结算账户', dataIndex: 'account' },
         { title: '操作', render: (_: any, r: any) => <Space><a onClick={() => setDetail(r)}>查看资料</a>
           {r.status === '待审核' && <a style={{ color: '#fa8c16' }} onClick={() => setAudit(r)}>审核</a>}
@@ -788,10 +807,11 @@ function OrgPage({ db, setDb }: any) {
             { key: '1', label: '机构名称', span: 2, children: detail.name },
             { key: '2', label: '审核状态', children: <S v={detail.status} /> }, { key: '3', label: '提交时间', children: detail.submitAt },
             { key: '4', label: '营业执照', span: 2, children: detail.license },
-            { key: '5', label: '法人信息', children: detail.legal }, { key: '6', label: '联系人', children: detail.contact + ' / ' + detail.phone },
-            { key: '7', label: '服务范围', span: 2, children: detail.scope },
-            { key: '8', label: '课程方向', children: detail.dir }, { key: '9', label: '结算账户', children: detail.account },
-            { key: '10', label: '合作协议', span: 2, children: detail.agreement },
+            { key: '5', label: '营业执照照片', span: 2, children: licensePhotoField(detail) },
+            { key: '6', label: '法人信息', children: detail.legal }, { key: '7', label: '联系人', children: detail.contact + ' / ' + detail.phone },
+            { key: '8', label: '服务范围', span: 2, children: detail.scope },
+            { key: '9', label: '课程方向', children: detail.dir }, { key: '10', label: '结算账户', children: detail.account },
+            { key: '11', label: '合作协议', span: 2, children: detail.agreement },
           ]} />
           <Divider>审核记录</Divider>
           <AuditTimeline items={detail.audits} />
