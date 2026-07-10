@@ -442,6 +442,7 @@
     const a = parseSlot(time);
     if (!a) return null;
     for (const o of DB.orders) {
+      if (o.studentId && o.studentId !== DB.currentStudentId) continue;
       if (!['forming', 'formed', 'scheduled', 'ongoing'].includes(o.status)) continue;
       if (o.school && o.school !== currentStudent().school) continue;
       const b = parseSlot(o.time);
@@ -480,8 +481,19 @@
     </div>`;
   }
 
+  /* 同一学生对同一课程存在进行中的报名时，禁止重复报名（待支付的引导去支付） */
+  const ACTIVE_STATUS = ['to-preauth', 'preauth', 'forming', 'formed', 'scheduled', 'ongoing', 'to-confirm'];
+  const activeOrderFor = (cid) => DB.orders.find((o) => o.courseId === routeId(cid)
+    && (!o.studentId || o.studentId === DB.currentStudentId)
+    && ACTIVE_STATUS.includes(o.status));
+
   function confirmConflictAndGo(cid, cls) {
     const c = courseById(cid);
+    const dup = activeOrderFor(cid);
+    if (dup) {
+      if (dup.status === 'to-preauth') { toast(`「${c ? c.name : dup.courseName}」已有待支付订单，请到「我的报名」完成支付`); return go('#/orders'); }
+      return toast(`${currentStudent().name} 已报名「${c ? c.name : dup.courseName}」，请勿重复报名`);
+    }
     const win = c ? buyWindow(c, cls) : { state: 'open' };
     if (win.state === 'future') return noticeBuyTime(cid, cls.id);
     if (win.state === 'ended') return toast('该班级已过购买结束时间');
@@ -568,6 +580,11 @@
   function screenEnroll(id, classId) {
     const c = courseById(id);
     if (!c) return screenHome();
+    const dup = activeOrderFor(c.id);
+    if (dup) {
+      toast(dup.status === 'to-preauth' ? '该课程已有待支付订单，请先完成支付' : '该学生已报名该课程，请勿重复报名');
+      return screenOrders();
+    }
     const s = currentStudent();
     const classes = (c.classes || []).filter((k) => !k.school || k.school === currentStudent().school);
     enrollClass = classes.find((k) => k.id === routeId(classId || ''))
@@ -666,6 +683,35 @@
     if (m) m.classList.remove('show');
   }
 
+  /* 支付成功后真实落地：锁定名额（enrolled +1）并生成报名订单 */
+  function createEnrollOrder(c, cls) {
+    const s = currentStudent();
+    const seatBase = cls || c;
+    seatBase.enrolled += 1;
+    const order = {
+      id: 'order-' + Date.now(),
+      studentId: s.id,
+      courseId: c.id,
+      courseName: c.name,
+      cover: c.cover,
+      status: 'forming',
+      amount: cls?.price || c.price,
+      payState: 'preauth',
+      school: s.school,
+      place: cls?.place || c.place,
+      time: cls?.time || c.time,
+      enrolled: seatBase.enrolled,
+      minClass: cls?.minClass || c.minClass,
+      maxSeats: seatBase.maxSeats,
+      teacher: c.teacher ? c.teacher.name : '待安排',
+      startDate: '待成班后通知',
+      lessons: c.lessons,
+      schedule: (c.syllabus || []).map((t, i) => `第 ${i + 1} 次：${t}`),
+    };
+    DB.orders.unshift(order);
+    return order;
+  }
+
   function confirmWxpay(id) {
     const btn = $('#wxPayBtn');
     if (btn.disabled) return;
@@ -673,6 +719,11 @@
     btn.textContent = '支付中…';
     setTimeout(() => {
       btn.textContent = '✓ 支付成功';
+      const c = courseById(id);
+      if (c && !activeOrderFor(c.id)) {
+        const cls = enrollClass && (c.classes || []).includes(enrollClass) ? enrollClass : null;
+        createEnrollOrder(c, cls);
+      }
       setTimeout(() => { closeWxpay(); go('#/preauth/' + id); }, 600);
     }, 900);
   }
@@ -686,7 +737,7 @@
     const seatBase = cls || c;
     const price = cls?.price || c.price;
     const min = cls?.minClass || c.minClass;
-    const enrolledNow = seatBase.enrolled + 1;
+    const enrolledNow = seatBase.enrolled; // 支付成功时已真实 +1，这里直接展示
     render(`
     <div class="screen">
       ${navbar('报名结果', { back: false })}
@@ -768,9 +819,11 @@
             </div>
             ${isPay
               ? `<button class="btn btn-primary btn-sm" onclick="location.hash='#/result/${o.id}'">查看并确认</button>`
-              : o.result
-                ? `<button class="btn btn-line btn-sm" onclick="location.hash='#/result/${o.id}'">查看成果</button>`
-                : `<button class="btn btn-line btn-sm" onclick="location.hash='#/schedule/${o.id}'">查看详情</button>`}
+              : o.status === 'to-preauth'
+                ? `<button class="btn btn-primary btn-sm" onclick="App.payOrder('${o.id}')">去支付</button>`
+                : o.result
+                  ? `<button class="btn btn-line btn-sm" onclick="location.hash='#/result/${o.id}'">查看成果</button>`
+                  : `<button class="btn btn-line btn-sm" onclick="location.hash='#/schedule/${o.id}'">查看详情</button>`}
           </div>
         </div>
       </div>`;
@@ -1013,6 +1066,48 @@
 
   function confirmPay(id) {
     go('#/paid/' + id);
+  }
+
+  /* ---------- 待支付订单：继续支付（我的报名入口） ---------- */
+  let payingOrderId = null;
+  function orderPaySheet(o) {
+    return `
+    <div class="sheet-mask" id="opMask" onclick="if(event.target===this)App.closeOrderPay()">
+      <div class="sheet wxpay">
+        <div class="wx-head"><span class="wx-close" onclick="App.closeOrderPay()">✕</span>微信支付</div>
+        <div class="wx-amount"><span class="y">¥</span>${o.amount}.00</div>
+        <div class="wx-sub">资金由平台监管账户托管 · 按课时结算</div>
+        <div class="wx-rows">
+          <div class="wx-row"><span class="k">商户</span><span class="v">天府未来教育中心</span></div>
+          <div class="wx-row"><span class="k">商品</span><span class="v">${esc(o.courseName)}（课程报名费）</span></div>
+          <div class="wx-row"><span class="k">支付方式</span><span class="v wx-method">${wxLogo}零钱</span></div>
+        </div>
+        <button class="wx-btn" id="opBtn" onclick="App.confirmOrderPay()">确认支付</button>
+      </div>
+    </div>`;
+  }
+  function payOrder(orderId) {
+    const o = orderById(orderId);
+    if (!o || o.status !== 'to-preauth') return;
+    payingOrderId = o.id;
+    $('#opMask')?.remove();
+    app.insertAdjacentHTML('beforeend', orderPaySheet(o));
+    requestAnimationFrame(() => $('#opMask').classList.add('show'));
+  }
+  function closeOrderPay() { $('#opMask')?.classList.remove('show'); }
+  function confirmOrderPay() {
+    const o = orderById(payingOrderId || '');
+    const btn = $('#opBtn');
+    if (!o || !btn || btn.disabled) return;
+    btn.disabled = true;
+    btn.textContent = '支付中…';
+    setTimeout(() => {
+      btn.textContent = '✓ 支付成功';
+      o.status = 'forming';
+      o.payState = 'preauth';
+      o.startDate = o.startDate === '待支付后确认' ? '待成班后通知' : o.startDate;
+      setTimeout(() => { payingOrderId = null; screenOrders(); toast('支付成功，费用已托管，等待成班'); }, 600);
+    }, 900);
   }
 
   /* ============================================================
@@ -1549,7 +1644,7 @@
 
   /* 暴露给内联事件 */
   window.App = {
-    toggleEnrollConfirm, submitEnroll, closeWxpay, confirmWxpay, confirmPay, switchStudent, openSwitchSheet, closeSwitchSheet, adminTap, soonTip: () => toast('功能开发中'),
+    toggleEnrollConfirm, submitEnroll, closeWxpay, confirmWxpay, confirmPay, payOrder, closeOrderPay, confirmOrderPay, switchStudent, openSwitchSheet, closeSwitchSheet, adminTap, soonTip: () => toast('功能开发中'),
     openSkuSheet, closeSkuSheet, selectSku, confirmSku, startEnroll, confirmClassEnroll, noticeBuyTime,
     openReview, closeReview, setStars, submitReview,
     confirmLesson, openDispute, closeDispute, selectDispute, submitDispute,
