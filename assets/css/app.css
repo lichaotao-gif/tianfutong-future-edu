@@ -117,6 +117,23 @@ body {
 .tag.blue { background: #eaf2ff; color: var(--blue); }
 .tag.gray { background: #f1f2f4; color: var(--muted); }
 
+/* 首页业务快捷入口（胶囊区，未上线标开发中） */
+.quick-caps { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; -webkit-overflow-scrolling: touch; }
+.quick-caps::-webkit-scrollbar { display: none; }
+.qcap {
+  flex-shrink: 0; display: inline-flex; align-items: center; gap: 5px;
+  background: #fff; border: 1px solid var(--line); border-radius: 18px;
+  padding: 8px 14px; font-size: 13px; font-weight: 600; color: var(--sub);
+  cursor: pointer; box-shadow: var(--shadow-sm);
+}
+.qcap.on { background: var(--orange-grad); color: #fff; border-color: transparent; box-shadow: 0 6px 14px rgba(12,134,160,.25); }
+.qcap .qcap-dev { font-size: 10px; font-weight: 500; color: var(--muted); background: #f1f2f4; border-radius: 8px; padding: 1px 6px; }
+
+/* 校内/校外筛选 tab */
+.venue-tabs { display: flex; gap: 4px; background: #eef0f4; border-radius: 16px; padding: 3px; }
+.venue-tabs .vt { padding: 4px 12px; border-radius: 13px; font-size: 12px; color: var(--muted); cursor: pointer; font-weight: 600; }
+.venue-tabs .vt.on { background: #fff; color: var(--orange-deep); box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+
 /* 状态徽章 */
 .badge { font-size: 12px; padding: 3px 9px; border-radius: 20px; font-weight: 600; }
 .st-wait { background: #fff4e6; color: var(--warn); }

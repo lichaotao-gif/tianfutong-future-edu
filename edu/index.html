@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>天府未来教育中心 · 教育局端 Demo</title>
+<style>
+  :root {
+    --primary: #722ed1; --primary-soft: #f9f0ff;
+    --blue: #1677ff; --blue-soft: #e6f4ff;
+    --green: #52c41a; --green-soft: #f6ffed;
+    --orange: #fa8c16; --orange-soft: #fff7e6;
+    --red: #ff4d4f; --red-soft: #fff1f0;
+    --cyan: #13c2c2; --cyan-soft: #e6fffb;
+    --text: #1f2329; --muted: #8a919f; --line: #eef0f3; --bg: #f5f6f8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; }
+
+  .layout { display: flex; min-height: 100vh; }
+  .sider { width: 208px; background: #1a0a33; color: rgba(255,255,255,.72); flex-shrink: 0; display: flex; flex-direction: column; }
+  .sider .brand { display: flex; align-items: center; gap: 10px; padding: 18px 16px; color: #fff; }
+  .sider .brand .logo { width: 34px; height: 34px; border-radius: 8px; background: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; }
+  .sider .brand b { font-size: 14px; line-height: 1.3; }
+  .sider .brand .sub { font-size: 11px; opacity: .6; font-weight: 400; }
+  .menu { padding: 6px 0; flex: 1; }
+  .menu-item { padding: 11px 20px; cursor: pointer; font-size: 14px; transition: background .15s, color .15s; }
+  .menu-item:hover { color: #fff; }
+  .menu-item.active { background: var(--primary); color: #fff; }
+  .side-links { flex-shrink: 0; padding: 12px 14px 16px; border-top: 1px solid rgba(255,255,255,.12); }
+  .side-links .side-title { color: rgba(255,255,255,.45); font-size: 12px; margin-bottom: 8px; }
+  .side-links a { display: block; color: rgba(255,255,255,.82); font-size: 13px; text-decoration: none; padding: 3px 0; cursor: pointer; }
+  .side-links a:hover { color: #fff; }
+
+  .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .topbar { height: 56px; background: #fff; box-shadow: 0 1px 4px rgba(0,21,41,.06); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; position: sticky; top: 0; z-index: 20; }
+  .topbar .title { font-size: 16px; font-weight: 700; }
+  .top-right { display: flex; align-items: center; gap: 12px; font-size: 13px; }
+  .top-right .who { color: var(--muted); }
+  .top-right .who b { color: var(--text); }
+  .help-btn { border: 1px solid #d9dce3; background: #fff; color: var(--muted); border-radius: 14px; padding: 5px 12px; font-size: 12px; cursor: pointer; font-family: inherit; }
+  .help-btn:hover { color: var(--primary); border-color: var(--primary); }
+  .scope-banner { background: var(--primary-soft); color: #3f1d7a; border-bottom: 1px solid #e2ccff; padding: 8px 24px; font-size: 12.5px; }
+
+  .content { padding: 20px 24px; flex: 1; }
+  .page-title { font-size: 15px; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; }
+  .page-title .hint { font-size: 12px; font-weight: 400; color: var(--muted); }
+
+  .card { background: #fff; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,21,41,.05); padding: 16px; }
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 16px; }
+  .stat { background: #fff; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,21,41,.05); padding: 16px; }
+  .stat .t { color: var(--muted); font-size: 13px; margin-bottom: 6px; }
+  .stat .v { font-size: 24px; font-weight: 700; }
+  .stat .v small { font-size: 13px; font-weight: 400; color: var(--muted); margin-left: 2px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .mt { margin-top: 14px; }
+  .card h4 { font-size: 14px; margin-bottom: 10px; }
+
+  table { width: 100%; border-collapse: collapse; background: #fff; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); font-size: 13px; white-space: nowrap; }
+  th { background: #fafbfc; color: var(--muted); font-weight: 600; }
+  tr:hover td { background: #fcfaff; }
+  .tbl-wrap { overflow-x: auto; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,21,41,.05); }
+  .ell { max-width: 200px; overflow: hidden; text-overflow: ellipsis; }
+  .qi { display: inline-flex; align-items: center; justify-content: center; width: 15px; height: 15px; margin-left: 4px; border-radius: 50%; border: 1px solid #d9dce3; color: var(--muted); font-size: 11px; line-height: 1; cursor: help; background: #fff; vertical-align: 1px; }
+
+  .tag { display: inline-block; font-size: 12px; padding: 2px 10px; border-radius: 10px; font-weight: 500; }
+  .tag[title] { cursor: help; }
+  .tg-blue { background: var(--blue-soft); color: var(--blue); }
+  .tg-green { background: var(--green-soft); color: var(--green); }
+  .tg-orange { background: var(--orange-soft); color: var(--orange); }
+  .tg-red { background: var(--red-soft); color: var(--red); }
+  .tg-cyan { background: var(--cyan-soft); color: var(--cyan); }
+  .tg-purple { background: var(--primary-soft); color: var(--primary); }
+  .tg-gray { background: #f0f1f4; color: var(--muted); }
+
+  .lnk { color: var(--primary); cursor: pointer; margin-right: 10px; font-size: 13px; }
+  .lnk:hover { text-decoration: underline; }
+
+  .mask { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: none; align-items: flex-start; justify-content: center; z-index: 100; padding: 60px 20px 40px; overflow-y: auto; }
+  .mask.show { display: flex; }
+  .modal { background: #fff; border-radius: 10px; width: 640px; max-width: 100%; }
+  .modal .m-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--line); font-weight: 700; }
+  .modal .m-close { cursor: pointer; color: var(--muted); font-size: 16px; padding: 2px 6px; }
+  .modal .m-body { padding: 18px; max-height: 68vh; overflow-y: auto; }
+  .modal .m-foot { padding: 12px 18px; border-top: 1px solid var(--line); text-align: right; }
+  .desc { display: grid; grid-template-columns: 110px 1fr; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; font-size: 13px; }
+  .desc .k { background: #fafbfc; color: var(--muted); padding: 9px 12px; border-bottom: 1px solid var(--line); }
+  .desc .v { padding: 9px 12px; border-bottom: 1px solid var(--line); }
+  .desc .k:nth-last-child(2), .desc .v:last-child { border-bottom: 0; }
+  .m-body h5 { font-size: 13px; margin: 14px 0 8px; }
+  .btn { border: 0; border-radius: 6px; padding: 8px 18px; cursor: pointer; font-size: 13px; font-family: inherit; background: #fff; border: 1px solid #d9dce3; }
+
+  .notice-item { display: flex; gap: 12px; padding: 13px 4px; border-bottom: 1px solid var(--line); align-items: flex-start; }
+  .notice-item .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--primary); margin-top: 6px; flex-shrink: 0; }
+  .notice-item.read .dot { background: #d9dce3; }
+  .notice-item .nt { font-weight: 600; margin-bottom: 2px; }
+  .notice-item .nd { color: var(--muted); font-size: 12px; }
+  .empty { text-align: center; color: var(--muted); padding: 40px 0; }
+
+  .toast { position: fixed; top: 70px; left: 50%; transform: translateX(-50%); background: rgba(20,22,30,.88); color: #fff; padding: 10px 20px; border-radius: 8px; font-size: 13px; z-index: 200; opacity: 0; pointer-events: none; transition: opacity .25s; }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sider">
+    <div class="brand">
+      <div class="logo">局</div>
+      <b>天府未来教育中心<div class="sub">教育局端 · 监管 Demo</div></b>
+    </div>
+    <nav class="menu" id="menu"></nav>
+    <div class="side-links">
+      <div class="side-title">友情链接</div>
+      <a href="../">家长端</a>
+      <a href="../admin/">平台管理后台</a>
+      <a href="../org/">机构端 / 教师端</a>
+      <a href="../school/">学校端</a>
+    </div>
+  </aside>
+  <div class="main">
+    <header class="topbar">
+      <div class="title" id="pageTitle">首页看板</div>
+      <div class="top-right">
+        <button class="help-btn" onclick="showGlossary()">？ 名词解释</button>
+        <span class="who">天府新区教育局 · <b>监管账号（只读）</b></span>
+      </div>
+    </header>
+    <div class="scope-banner">监管数据范围：全区所有合作学校与校外点位 · <b>仅展示已成班（已成班 / 已排课 / 上课中 / 已结课）班级数据</b>，报名中 / 未成班班级不纳入上报 · 全端只读、不含任何资金信息</div>
+    <main class="content" id="content"></main>
+  </div>
+</div>
+
+<div class="mask" id="mask" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="m-head"><span id="mTitle"></span><span class="m-close" onclick="closeModal()">✕</span></div>
+    <div class="m-body" id="mBody"></div>
+    <div class="m-foot"><button class="btn" onclick="closeModal()">关闭</button></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+ * 天府未来教育中心 · 教育局端（监管，只读）
+ * 范围：全区所有学校；口径：仅已成班班级；不含资金信息
+ * ============================================================ */
+
+/* ---------- Mock：全区已成班数据 ---------- */
+const SCHOOLS = [
+  { name: '成都天府新区实验小学', area: '天府新区', scene: '校内', contact: '李主任', classes: 3, students: 83, orgs: 2, todayLessons: 1 },
+  { name: '成都天府新区第七小学', area: '天府新区', scene: '校内', contact: '吴主任', classes: 1, students: 28, orgs: 1, todayLessons: 1 },
+  { name: '成都麓湖小学', area: '天府新区', scene: '校内', contact: '郑校长', classes: 1, students: 30, orgs: 1, todayLessons: 0 },
+  { name: '麓山社区党群服务中心', area: '天府新区', scene: '校外', contact: '地方平台 · 王站长', classes: 1, students: 11, orgs: 1, todayLessons: 0 },
+];
+
+/* 仅已成班：已成班 / 已排课 / 上课中 / 已结课 */
+const CLASSES = [
+  { id: 'k1', name: '人工智能启蒙课·周三班', course: '人工智能启蒙课', school: '成都天府新区实验小学', scene: '校内', org: '成都启智未来教育', teacher: '王老师', venue: '科技教室 A', time: '每周三 16:30-17:30', enrolled: 28, total: 8, done: 4, status: '上课中' },
+  { id: 'k2', name: '少儿编程思维课·周二班', course: '少儿编程思维课', school: '成都天府新区实验小学', scene: '校内', org: '成都启智未来教育', teacher: '陈老师', venue: '计算机教室 1', time: '每周二 16:30-17:30', enrolled: 25, total: 8, done: 6, status: '上课中' },
+  { id: 'k3', name: '科学实验探索课·周二班', course: '科学实验探索课', school: '成都天府新区实验小学', scene: '校内', org: '星火科学教育', teacher: '刘老师', venue: '科学教室', time: '每周二 16:30-17:30', enrolled: 30, total: 8, done: 8, status: '已结课' },
+  { id: 'k4', name: '科学实验探索课·一班', course: '科学实验探索课', school: '成都天府新区第七小学', scene: '校内', org: '星火科学教育', teacher: '张老师', venue: '科学实验室', time: '每周四 16:30-17:30', enrolled: 28, total: 8, done: 3, status: '上课中' },
+  { id: 'k5', name: '科学实验探索课·周四班', course: '科学实验探索课', school: '成都麓湖小学', scene: '校内', org: '星火科学教育', teacher: '张老师', venue: '科学教室', time: '每周四 16:30-17:30', enrolled: 30, total: 8, done: 0, status: '已排课' },
+  { id: 'k6', name: '社区创意美术体验课·周六班', course: '社区创意美术体验课', school: '麓山社区党群服务中心', scene: '校外', org: '艺彩教育', teacher: '许老师', venue: '美育教室', time: '每周六 10:00-11:30', enrolled: 11, total: 6, done: 0, status: '已成班' },
+];
+
+const ORGS = [
+  { name: '成都启智未来教育科技有限公司', dir: 'AI / 编程', status: '审核通过', teachers: 3, classes: 3, joined: '2026-05-15' },
+  { name: '星火科学教育', dir: '科学实验', status: '审核通过', teachers: 2, classes: 3, joined: '2026-05-20' },
+  { name: '艺彩教育', dir: '美术 / 艺术', status: '审核通过', teachers: 1, classes: 1, joined: '2026-06-02' },
+];
+
+const TEACHERS = [
+  { name: '王老师', org: '成都启智未来教育', dir: 'AI 启蒙', cert: '教师资格证（小学信息技术）', status: '审核通过' },
+  { name: '陈老师', org: '成都启智未来教育', dir: '少儿编程', cert: '教师资格证（小学信息技术）', status: '审核通过' },
+  { name: '刘老师', org: '星火科学教育', dir: '科学实验', cert: '教师资格证（小学科学）', status: '审核通过' },
+  { name: '张老师', org: '星火科学教育', dir: '科学实验', cert: '教师资格证（小学科学）', status: '审核通过' },
+  { name: '许老师', org: '艺彩教育', dir: '少儿美术', cert: '美术教师资格证', status: '审核通过' },
+];
+
+const NOTICES = [
+  { t: '数据上报', d: '2026 年 7 月已成班班级数据已同步（6 个班级 / 152 名学生），含校内 5 班、校外 1 班。', time: '2026-07-13 09:00', read: false },
+  { t: '校外点位备案', d: '「麓山社区党群服务中心」新增承办班级 1 个（社区创意美术体验课），场地已备案。', time: '2026-07-12 15:20', read: false },
+  { t: '师资备案更新', d: '本月新增备案教师 1 名（许老师 · 美术教师资格证），全部资质经平台审核。', time: '2026-07-10 10:12', read: true },
+  { t: '结课报备', d: '「科学实验探索课·周二班」（实验小学）已结课，8 课时全部完成。', time: '2026-07-08 17:30', read: true },
+];
+
+/* ---------- 状态标签 ---------- */
+const TAG = { 已成班: 'tg-green', 已排课: 'tg-cyan', 上课中: 'tg-blue', 已结课: 'tg-gray', 审核通过: 'tg-green', 校内: 'tg-blue', 校外: 'tg-purple' };
+const GLOSSARY = [
+  ['监管口径', '教育局端为只读监管视角：覆盖全区所有合作学校与校外点位，仅展示已成班（已成班/已排课/上课中/已结课）班级；报名中、未成班班级不纳入上报；不含任何资金与结算信息。'],
+  ['已成班', '达到最低成班人数、正式开班的班级，纳入监管上报范围。'],
+  ['已排课', '已确定上课时间、场地与教师，待开课。'],
+  ['上课中', '班级正常上课中，出勤与课堂记录由平台留痕。'],
+  ['已结课', '全部课时完成并报备。'],
+  ['校内 / 校外', '校内 = 学校场地开展的课后服务；校外 = 社区党群服务中心等社会点位（由地方平台负责运营管理），两类数据分开管理。'],
+  ['机构白名单', '经平台审核入驻的培训机构名单，教师资质均经平台核验备案。'],
+];
+const DEF = Object.fromEntries(GLOSSARY);
+const tag = (v) => `<span class="tag ${TAG[v] || 'tg-gray'}" ${DEF[v] ? `title="${DEF[v]}"` : ''}>${v}</span>`;
+
+const COLDEF = {
+  '成班班级数': '该校当前纳入上报的已成班班级数量（含已排课/上课中/已结课）。',
+  '在读学生数': '已成班班级的报名学生合计。',
+  '参与机构': '在该点位承办课程的机构数量。',
+  '点位类型': '校内（学校场地）或校外（社区等社会点位，由地方平台管理）。',
+  '课时进度': '已完成课时 / 总课时。',
+  '报名人数': '该班级已报名学生数（仅已成班班级）。',
+  '班级状态': '仅展示已成班口径下的四种状态，悬停标签查看含义。',
+  '资质类型': '平台备案的教师资质证书。',
+  '承办班级': '该点位当前承办的已成班班级数。',
+};
+function decorateTh(root) {
+  (root || document).querySelectorAll('th').forEach((th) => {
+    if (th.dataset.qi) return;
+    const d = COLDEF[th.textContent.trim()];
+    if (d) { th.dataset.qi = '1'; th.innerHTML = `${th.textContent.trim()} <span class="qi" title="${d}">?</span>`; }
+  });
+}
+
+/* ---------- 路由 ---------- */
+let page = 'dash';
+const MENUS = [
+  ['dash', '首页看板'], ['schools', '学校数据'], ['classes', '成班班级'], ['outside', '校外点位'],
+  ['orgs', '机构白名单'], ['teachers', '师资备案'], ['notices', '数据通知'],
+];
+function go(p) { page = p; render(); }
+function render() {
+  document.getElementById('menu').innerHTML = MENUS.map(([k, l]) => `<div class="menu-item ${page === k ? 'active' : ''}" onclick="go('${k}')">${l}</div>`).join('');
+  document.getElementById('pageTitle').textContent = Object.fromEntries(MENUS)[page] || '';
+  document.getElementById('content').innerHTML = PAGES[page]();
+  decorateTh(document.getElementById('content'));
+}
+
+const totalStudents = CLASSES.reduce((a, c) => a + c.enrolled, 0);
+const doneLessons = CLASSES.reduce((a, c) => a + c.done, 0);
+
+/* ---------- 页面 ---------- */
+const PAGES = {
+  dash() {
+    const stats = [
+      ['合作学校', SCHOOLS.filter((s) => s.scene === '校内').length, '所'],
+      ['校外点位', SCHOOLS.filter((s) => s.scene === '校外').length, '个'],
+      ['已成班班级', CLASSES.length, '个'],
+      ['在读学生', totalStudents, '人'],
+      ['入驻机构', ORGS.length, '家'],
+      ['备案教师', TEACHERS.length, '名'],
+      ['累计完成课时', doneLessons, '节'],
+      ['今日上课班级', SCHOOLS.reduce((a, s) => a + s.todayLessons, 0), '个'],
+    ];
+    return `<div class="stats">
+      ${stats.map(([t, v, u]) => `<div class="stat"><div class="t">${t}</div><div class="v">${v}<small>${u}</small></div></div>`).join('')}
+    </div>
+    <div class="grid2">
+      <div class="card"><h4>各学校 / 点位成班统计</h4><div class="tbl-wrap"><table>
+        <tr><th>学校 / 点位</th><th>点位类型</th><th>成班班级数</th><th>在读学生数</th></tr>
+        ${SCHOOLS.map((s) => `<tr><td class="ell"><b>${s.name}</b></td><td>${tag(s.scene)}</td><td>${s.classes} 个</td><td>${s.students} 人</td></tr>`).join('')}
+      </table></div></div>
+      <div class="card"><h4>今日上课安排（全区）</h4><div class="tbl-wrap"><table>
+        <tr><th>班级</th><th>学校 / 点位</th><th>时间</th><th>状态</th></tr>
+        <tr><td>少儿编程思维课·周二班</td><td>成都天府新区实验小学</td><td>16:30-17:30</td><td>${tag('上课中')}</td></tr>
+        <tr><td>科学实验探索课·一班</td><td>成都天府新区第七小学</td><td>16:30-17:30</td><td>${tag('上课中')}</td></tr>
+      </table></div></div>
+    </div>
+    <div class="card mt"><h4>已成班班级概览（按状态）</h4><div class="tbl-wrap"><table>
+      <tr><th>班级状态</th><th>数量</th><th>说明</th></tr>
+      ${['已成班', '已排课', '上课中', '已结课'].map((st) => `<tr><td>${tag(st)}</td><td>${CLASSES.filter((c) => c.status === st).length} 个</td><td style="color:var(--muted)">${DEF[st]}</td></tr>`).join('')}
+    </table></div></div>`;
+  },
+
+  schools() {
+    return `<div class="page-title"><span></span><span class="hint">全区所有合作学校与校外点位 · 数据为已成班口径</span></div>
+    <div class="tbl-wrap"><table>
+      <tr><th>学校 / 点位</th><th>点位类型</th><th>区域</th><th>联系人</th><th>成班班级数</th><th>在读学生数</th><th>参与机构</th><th>操作</th></tr>
+      ${SCHOOLS.map((s, i) => `<tr>
+        <td class="ell"><b>${s.name}</b></td><td>${tag(s.scene)}</td><td>${s.area}</td><td>${s.contact}</td>
+        <td>${s.classes} 个</td><td>${s.students} 人</td><td>${s.orgs} 家</td>
+        <td><span class="lnk" onclick="schoolDetail(${i})">查看班级</span></td>
+      </tr>`).join('')}
+    </table></div>`;
+  },
+
+  classes() {
+    return `<div class="page-title"><span></span><span class="hint">全区已成班班级 · 报名中 / 未成班不在监管范围</span></div>
+    <div class="tbl-wrap"><table>
+      <tr><th>班级名称</th><th>学校 / 点位</th><th>点位类型</th><th>所属机构</th><th>任课教师</th><th>上课时间</th><th>场地</th><th>报名人数</th><th>课时进度</th><th>班级状态</th></tr>
+      ${CLASSES.map((c) => `<tr>
+        <td class="ell"><b>${c.name}</b></td><td class="ell">${c.school}</td><td>${tag(c.scene)}</td><td>${c.org}</td><td>${c.teacher}</td>
+        <td>${c.time}</td><td>${c.venue}</td><td>${c.enrolled} 人</td><td>${c.done} / ${c.total} 节</td><td>${tag(c.status)}</td>
+      </tr>`).join('')}
+    </table></div>`;
+  },
+
+  outside() {
+    const pts = SCHOOLS.filter((s) => s.scene === '校外');
+    const cls = CLASSES.filter((c) => c.scene === '校外');
+    return `<div class="page-title"><span></span><span class="hint">校外点位由地方平台负责运营管理 · 仅上报已承办班级的场地数据</span></div>
+    <div class="tbl-wrap"><table>
+      <tr><th>点位名称</th><th>区域</th><th>管理方</th><th>承办班级</th><th>在读学生数</th></tr>
+      ${pts.map((s) => `<tr><td><b>${s.name}</b></td><td>${s.area}</td><td>${s.contact}</td><td>${s.classes} 个</td><td>${s.students} 人</td></tr>`).join('')}
+    </table></div>
+    <div class="card mt"><h4>校外承办班级明细</h4><div class="tbl-wrap"><table>
+      <tr><th>班级名称</th><th>点位</th><th>机构</th><th>教师</th><th>时间</th><th>报名人数</th><th>班级状态</th></tr>
+      ${cls.map((c) => `<tr><td><b>${c.name}</b></td><td class="ell">${c.school}</td><td>${c.org}</td><td>${c.teacher}</td><td>${c.time}</td><td>${c.enrolled} 人</td><td>${tag(c.status)}</td></tr>`).join('')}
+    </table></div></div>`;
+  },
+
+  orgs() {
+    return `<div class="page-title"><span></span><span class="hint">经平台审核入驻的机构白名单</span></div>
+    <div class="tbl-wrap"><table>
+      <tr><th>机构名称</th><th>课程方向</th><th>入驻时间</th><th>备案教师</th><th>承办班级</th><th>审核状态</th></tr>
+      ${ORGS.map((o) => `<tr><td class="ell"><b>${o.name}</b></td><td>${o.dir}</td><td>${o.joined}</td><td>${o.teachers} 名</td><td>${o.classes} 个</td><td>${tag(o.status)}</td></tr>`).join('')}
+    </table></div>`;
+  },
+
+  teachers() {
+    return `<div class="page-title"><span></span><span class="hint">教师资质均经平台审核备案（仅展示基础信息，个人信息脱敏保护）</span></div>
+    <div class="tbl-wrap"><table>
+      <tr><th>教师姓名</th><th>所属机构</th><th>教授方向</th><th>资质类型</th><th>审核状态</th></tr>
+      ${TEACHERS.map((t) => `<tr><td><b>${t.name}</b></td><td>${t.org}</td><td>${t.dir}</td><td>${t.cert}</td><td>${tag(t.status)}</td></tr>`).join('')}
+    </table></div>`;
+  },
+
+  notices() {
+    return `<div class="card">
+      ${NOTICES.map((n) => `<div class="notice-item ${n.read ? 'read' : ''}">
+        <span class="dot"></span>
+        <div style="flex:1"><div class="nt">${n.t}</div><div style="font-size:13px;color:#52565e">${n.d}</div><div class="nd">${n.time}</div></div>
+      </div>`).join('')}
+    </div>`;
+  },
+};
+
+/* ---------- 弹窗 ---------- */
+function openModal(title, body) {
+  document.getElementById('mTitle').textContent = title;
+  document.getElementById('mBody').innerHTML = body;
+  document.getElementById('mask').classList.add('show');
+  decorateTh(document.getElementById('mBody'));
+}
+function closeModal() { document.getElementById('mask').classList.remove('show'); }
+
+function schoolDetail(i) {
+  const s = SCHOOLS[i];
+  const rows = CLASSES.filter((c) => c.school === s.name);
+  openModal(s.name + ' · 已成班班级（' + rows.length + ' 个）', rows.length ? `
+    <div class="tbl-wrap"><table>
+      <tr><th>班级名称</th><th>机构</th><th>教师</th><th>时间</th><th>报名人数</th><th>课时进度</th><th>班级状态</th></tr>
+      ${rows.map((c) => `<tr><td><b>${c.name}</b></td><td>${c.org}</td><td>${c.teacher}</td><td>${c.time}</td><td>${c.enrolled} 人</td><td>${c.done}/${c.total}</td><td>${tag(c.status)}</td></tr>`).join('')}
+    </table></div>` : '<div class="empty">暂无已成班班级</div>');
+}
+
+function showGlossary() {
+  openModal('教育局端名词解释', GLOSSARY.map(([t, d]) => `
+    <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px">
+      <span style="flex-shrink:0">${tag(t.split(' / ')[0])}</span>
+      <span style="font-size:13px;color:#52565e;line-height:1.7">${d}</span>
+    </div>`).join(''));
+}
+
+render();
+</script>
+</body>
+</html>

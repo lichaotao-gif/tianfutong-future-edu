@@ -159,8 +159,10 @@
   .m-body ol { padding-left: 20px; color: #52565e; font-size: 13px; line-height: 2; }
   .form-row { margin-bottom: 12px; }
   .form-row label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
-  .form-row textarea, .form-row input { width: 100%; border: 1px solid #d9dce3; border-radius: 6px; padding: 9px 10px; font-size: 13px; font-family: inherit; resize: vertical; }
-  .form-row textarea:focus, .form-row input:focus { outline: none; border-color: var(--primary); }
+  .form-row textarea, .form-row input, .form-row select { width: 100%; border: 1px solid #d9dce3; border-radius: 6px; padding: 9px 10px; font-size: 13px; font-family: inherit; resize: vertical; background: #fff; }
+  .form-row textarea:focus, .form-row input:focus, .form-row select:focus { outline: none; border-color: var(--primary); }
+  .photo-up { flex: 1; border: 1.5px dashed #d9dce3; border-radius: 8px; padding: 16px 0; text-align: center; font-size: 13px; color: var(--muted); cursor: pointer; background: #fafbfc; }
+  .photo-up:hover { border-color: var(--primary); color: var(--primary); }
 
   .toast { position: fixed; top: 70px; left: 50%; transform: translateX(-50%) translateY(-8px); background: rgba(20,22,30,.88); color: #fff; padding: 10px 20px; border-radius: 8px; font-size: 13px; z-index: 200; opacity: 0; pointer-events: none; transition: all .25s; }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
@@ -186,6 +188,7 @@
       <a href="../">家长端</a>
       <a href="../admin/">平台管理后台</a>
       <a href="../school/">学校端</a>
+      <a href="../edu/">教育局端</a>
     </div>
   </aside>
   <div class="main">
@@ -252,7 +255,7 @@ const COURSES = [
     intro: '图形化编程入门，培养逻辑思维，独立完成小游戏作品。',
     syllabus: ['认识编程', '顺序结构', '循环结构', '条件判断', '变量计分', '角色交互', '关卡设计（一）', '关卡设计（二）', '调试优化', '音效界面', '作品完善', '项目展示'],
     audits: [{ t: '2026-06-29 16:00', act: '机构提交课程审核', by: '张经理' }] },
-  { id: 'c3', name: '科学实验探索课', cat: '科学', grade: '1-4 年级', lessons: 8, price: 640, status: '审核通过', schools: 2,
+  { id: 'c3', name: '科学实验探索课', cat: '科学', grade: '1-4 年级', lessons: 8, price: 640, status: '已进入课程库', schools: 2,
     teacher: '张老师', venue: '科学教室', device: '实验器材包',
     intro: '趣味科学实验，在动手中观察、提问、验证，培养科学探究精神。',
     syllabus: ['观察与猜想', '浮沉与密度', '磁力探索', '气压与流动', '植物观察', '声音传播', '自制小装置', '实验报告展示'],
@@ -307,6 +310,11 @@ const CHECKINS = [
   },
 ];
 
+const COURSE_CATEGORY_OPTIONS = ['课后素质', 'AI 素质', '编程', '科学实验', '艺术美育', '书法', '体育体适能', '研学实践', '赛事活动', '升学规划', '心理健康'];
+const COURSE_GRADE_OPTIONS = ['幼小衔接', '1-2 年级', '1-3 年级', '2-4 年级', '3-5 年级', '4-6 年级', '1-6 年级', '初中', '高中'];
+const COURSE_VENUE_OPTIONS = ['普通教室', '科技教室', '计算机教室', '科学实验室', '美术教室', '音乐教室', '多功能室', '操场 / 体育馆', '校外分中心', '研学基地'];
+const COURSE_DEVICE_OPTIONS = ['无需特殊设备', '平板 / 投影', '电脑机房', '实验器材包', '画材 / 手工材料', '体育器材', '音乐器材', '机器人套件', '研学物料包'];
+
 const RECORDS = [
   { id: 'r1', cls: '成都天府新区实验小学 - AI启蒙一班', clsId: 'cl1', tid: 't1', no: 4, date: '2026-07-01', content: '训练自己的小模型', attend: 27, absent: 1, mood: '课堂气氛活跃，动手环节完成度高', comment: '整体掌握良好，个别学生需课后巩固', status: '已提交' },
   { id: 'r2', cls: '成都天府新区实验小学 - AI启蒙一班', clsId: 'cl1', tid: 't1', no: 5, date: '2026-07-08', content: '', attend: 0, absent: 0, mood: '', comment: '', status: '待填写' },
@@ -319,7 +327,7 @@ const LESSONS = [
   { course: '人工智能启蒙课', cls: '成都天府新区实验小学 - AI启蒙一班', school: '成都天府新区实验小学', venue: '科技教室 A', no: 3, date: '2026-06-24', time: '17:00-18:00', teacher: '王老师', tid: 't1', due: 28, actual: 28, sign: '已签到', tSubmit: '已提交', confirm: '已确认', status: '已计入结算', amount: 2240 },
   { course: '人工智能启蒙课', cls: '成都天府新区实验小学 - AI启蒙一班', school: '成都天府新区实验小学', venue: '科技教室 A', no: 5, date: '2026-07-08', time: '17:00-18:00', teacher: '王老师', tid: 't1', due: 28, actual: 0, sign: '未签到', tSubmit: '未提交', confirm: '—', status: '待上课', amount: 0 },
   { course: '人工智能启蒙课', cls: '成都天府新区实验小学 - AI启蒙一班', school: '成都天府新区实验小学', venue: '科技教室 A', no: 6, date: '2026-07-15', time: '17:00-18:00', teacher: '王老师', tid: 't1', due: 28, actual: 0, sign: '未签到', tSubmit: '未提交', confirm: '—', status: '待上课', amount: 0 },
-  { course: '人工智能启蒙课', cls: '成都天府新区第七小学 - AI启蒙一班', school: '成都天府新区第七小学', venue: '科学实验室', no: 2, date: '2026-07-03', time: '17:00-18:00', teacher: '王老师', tid: 't1', due: 24, actual: 24, sign: '已签到', tSubmit: '已提交', confirm: '待确认', status: '已上课待确认', amount: 1920 },
+  { course: '人工智能启蒙课', cls: '成都天府新区第七小学 - AI启蒙一班', school: '成都天府新区第七小学', venue: '科学实验室', no: 2, date: '2026-07-03', time: '17:00-18:00', teacher: '王老师', tid: 't1', due: 24, actual: 24, sign: '已签到', tSubmit: '已提交', confirm: '待确认', status: '部分确认', amount: 1920 },
   { course: '人工智能启蒙课', cls: '成都天府新区第七小学 - AI启蒙一班', school: '成都天府新区第七小学', venue: '科学实验室', no: 3, date: '2026-07-10', time: '17:00-18:00', teacher: '王老师', tid: 't1', due: 24, actual: 0, sign: '未签到', tSubmit: '未提交', confirm: '—', status: '待上课', amount: 0 },
   { course: '科学实验探索课', cls: '成都麓湖小学 - 科学探索一班', school: '成都麓湖小学', venue: '科学教室', no: 1, date: '2026-06-30', time: '17:00-18:00', teacher: '张老师', tid: 't3', due: 18, actual: 17, sign: '已签到', tSubmit: '已提交', confirm: '已确认', status: '已确认销课', amount: 1360 },
   { course: '科学实验探索课', cls: '成都麓湖小学 - 科学探索一班', school: '成都麓湖小学', venue: '科学教室', no: 2, date: '2026-07-07', time: '17:00-18:00', teacher: '张老师', tid: 't3', due: 18, actual: 16, sign: '已签到', tSubmit: '已提交', confirm: '待确认', status: '异常', amount: 0, note: '实到人数与签到不符，待补充说明' },
@@ -333,7 +341,7 @@ const AFTERSALES = [
 
 const SETTLES = [
   { id: 'JS202607-01', month: '2026年7月', schools: '成都天府新区实验小学、成都天府新区第七小学、成都麓湖小学', clsCount: 3, lessons: 42,
-    gross: 33600, fee: 3360, refund: 800, net: 29440, status: '待审核',
+    gross: 33600, refund: 800, ratio: '90%', net: 29520, status: '待审核', // 机构实收 =（应结算 − 退款扣减）× 机构分成比例；平台侧扣项不对机构展示
     detail: [
       { cls: '成都天府新区实验小学 - AI启蒙一班', lessons: 18, amount: 14400 },
       { cls: '成都天府新区第七小学 - AI启蒙一班', lessons: 14, amount: 11200 },
@@ -354,7 +362,7 @@ const NOTICES = [
 /* ---------- 状态 → 标签色 ---------- */
 const TAG = {
   审核通过: 'tg-green', 已进入课程库: 'tg-green', 已确认: 'tg-green', 已提交: 'tg-green', 已报名: 'tg-green', 已完成: 'tg-green', 已到: 'tg-green', 已签到: 'tg-green', 已上: 'tg-green', 已开通: 'tg-green',
-  待平台审核: 'tg-orange', 待确认: 'tg-orange', 待填写: 'tg-orange', 待审核: 'tg-orange', 待处理: 'tg-orange', 已上课待确认: 'tg-orange', 迟到: 'tg-orange', 机构需反馈: 'tg-orange', 待签到: 'tg-orange', 未签到: 'tg-orange', 未提交: 'tg-orange', 未开通: 'tg-orange',
+  待平台审核: 'tg-orange', 待确认: 'tg-orange', 待填写: 'tg-orange', 待审核: 'tg-orange', 待处理: 'tg-orange', 已上课待确认: 'tg-orange', 部分确认: 'tg-orange', 全部确认: 'tg-green', 迟到: 'tg-orange', 机构需反馈: 'tg-orange', 待签到: 'tg-orange', 未签到: 'tg-orange', 未提交: 'tg-orange', 未开通: 'tg-orange',
   上课中: 'tg-blue', 平台处理中: 'tg-blue', 请假: 'tg-blue', 结算中: 'tg-blue',
   已确认销课: 'tg-green', 已计入结算: 'tg-cyan', 待上课: 'tg-gray', 未上: 'tg-gray', 审核驳回: 'tg-red', 异常: 'tg-red', 缺勤: 'tg-red', 已退款: 'tg-red',
 };
@@ -362,7 +370,9 @@ const TAG = {
 const GLOSSARY = [
   { title: '销课状态（核心流程）', items: [
     ['待上课', '课程已排期、尚未到上课时间，本节不产生任何费用。'],
-    ['已上课待确认', '教师已完成签到并提交课堂记录，等待平台或学校确认；确认之前本节不计入结算。'],
+    ['已上课待确认', '教师已提交课堂记录，等待家长确认（3 天未确认自动转全部确认）；确认前本节不计入结算。'],
+    ['部分确认', '本节课已有部分家长确认，其余家长确认或 3 天后自动转为全部确认。'],
+    ['全部确认', '本节课全部家长确认完成（含自动确认），费用进入当月可结算范围。'],
     ['已确认销课', '平台/学校已确认本节课真实完成，本节费用进入当月可结算范围。'],
     ['异常', '本节课数据存疑：如实到人数与签到不符、教师未签到、家长投诉课程未上等，暂停计费。处理方式：机构在 2 个工作日内补充说明或更正记录，平台复核后转为「已确认销课」，或作废本节（不计费）。'],
     ['已计入结算', '本节课已随月度结算单锁定，金额不再变动。'],
@@ -377,10 +387,10 @@ const GLOSSARY = [
   ] },
   { title: '结算相关名词', items: [
     ['应结算金额', '当月所有「已确认销课」节次的金额合计。'],
-    ['平台服务费', '按合作协议比例（本 Demo 为 10%）从应结算金额中扣除。'],
+    ['机构分成比例', '合同约定的机构分成比例（不同课程可不同），机构端仅展示自身实得比例。'],
     ['学校服务费', '涉及学校服务费时按约定比例扣除（规则预留，Demo 为 5%）。'],
     ['退款扣减', '当月发生退款的订单，对应金额从机构结算中扣回。'],
-    ['机构实收', '应结算金额 − 平台服务费 − 学校服务费 − 退款扣减。'],
+    ['机构实收', '（应结算金额 − 退款扣减）× 机构分成比例。'],
   ] },
   { title: '教师状态', items: [
     ['待平台审核', '机构已创建教师并提交资质，平台审核中；审核通过前不能绑定班级授课。'],
@@ -391,7 +401,7 @@ const GLOSSARY = [
   { title: '课程状态', items: [
     ['草稿', '机构编辑中，尚未提交平台审核。'],
     ['待审核 / 待平台审核', '课程已提交，平台审核中（重点审核课程内容与资质合规）。'],
-    ['审核通过', '课程审核通过，待进入课程库。'],
+    ['已进入课程库', '课程审核通过即自动进入课程库（单一状态自动流转），由平台分发到学校后该校家长方可见。'],
     ['已进入课程库', '课程进入平台课程库，由平台分发到指定学校后该校家长方可见；机构不直接对家长上架。'],
     ['已下架', '课程停止分发与报名。'],
   ] },
@@ -413,9 +423,9 @@ const GLOSSARY = [
   ] },
   { title: '通用名词', items: [
     ['资金托管', '家长报名费一次性支付后进入平台监管账户，不直接支付给机构；机构按已确认销课的课时逐节累计结算。'],
-    ['销课', '每完成一节课形成一条销课记录，经平台/学校确认后机构累计一节可结算费用；按月汇总生成结算单。'],
+    ['销课', '每完成一节课形成一条销课记录，经家长逐节确认（3 天未确认自动确认）后机构累计一节可结算费用；按月汇总生成结算单。'],
     ['成班人数', '开班所需的最低报名人数，未达标班级将取消并自动退款。'],
-    ['课程分发', '平台将课程库中的课程配置到指定合作学校；学校确认开放、时间和场地后，该校家长端才可见对应班级。'],
+    ['课程分发', '平台将课程库中的课程配置到指定合作学校（场地与时间由平台运营与学校线下确认后配置），发布后该校家长端可见对应班级。'],
   ] },
 ];
 const DEF = {};
@@ -434,6 +444,7 @@ DEF['已签到'] = '本节课已完成学生签到，下一步填写或查看课
 const tag = (v) => `<span class="tag ${TAG[v] || 'tg-gray'}" ${DEF[v] ? `title="${DEF[v].replace(/"/g, '&quot;')}"` : ''}>${v}</span>`;
 const money = (n) => '¥' + n.toLocaleString('zh-CN');
 const esc = (v) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const selectOptions = (items, placeholder) => `<option value="">${placeholder}</option>${items.map((x) => `<option value="${esc(x)}">${esc(x)}</option>`).join('')}`;
 const teacherAccount = (t) => t.accountInfo || {
   url: 'https://future-edu.demo/org/teacher/',
   username: t.phone,
@@ -481,13 +492,13 @@ const COLDEF = {
   '登录账户': '教师端登录账号统一使用手机号，可复制登录链接、手机号和初始密码给老师。',
   '当前负责班级': '该教师正在带的班级数量（仅审核通过的教师可带班）。',
   '本月上课次数': '本月已完成并提交记录的上课节次。',
-  '分类': '课程所属类目（AI / 编程 / 科学 / 美术等）。',
-  '适合年级': '建议报名的学生年级范围。',
+  '分类': '课程所属平台统一类目，用于审核、分发和家长端筛选。',
+  '适合年级': '平台统一年级标签，用于按孩子年级精准展示可报名课程。',
   '总课时': '一期课程包含的上课节次总数。',
   '建议价格': '机构建议售价；实际报名价格以平台分发到各学校时的配置为准。',
   '分发学校': '课程被平台分发（配置）到的学校数量；未分发学校的家长看不到该课程。',
-  '场地': '学校提供的上课教室 / 场馆。',
-  '上课场地': '学校提供的上课教室 / 场馆。',
+  '场地': '平台统一场地类型，后续分发到学校时再绑定具体教室 / 点位。',
+  '上课场地': '学校提供的具体上课教室 / 场馆。',
   '课时进度': '已上节次 / 总节次。',
   '报名': '当前报名人数 / 班级最大容量。',
   '状态': '当前业务状态，悬停状态标签可看含义，全量见右上角「名词解释」。',
@@ -499,7 +510,7 @@ const COLDEF = {
   '出勤情况': '已出勤节次 / 应出勤节次。',
   '第几节': '本班课程的第几节课。',
   '节次': '本班课程的第几节课。',
-  '签到状态': '本节课教师是否已完成学生签到。',
+  '考勤状态': '本节课教师是否已完成学生考勤（教师填写课程记录即视为到岗）。',
   '课堂记录': '本节课的教学内容、课堂情况和课后评语，是进入销课流程的重要依据。',
   '时间': '本节课上课时间。',
   '地点': '学校与具体上课教室 / 场馆。',
@@ -510,7 +521,7 @@ const COLDEF = {
   '课后评语': '本节课的随堂评语，区别于结课后的结课评价。',
   '应到/实到': '应到 = 班级报名人数；实到 = 实际到课人数。两者与签到不符会触发销课异常。',
   '教师提交': '教师是否已签到并提交本节课堂记录，销课以此为依据。',
-  '平台/学校确认': '平台或学校对本节课真实完成的确认，确认后本节方可计费。',
+  '确认状态': '家长对本节课的确认（3 天未确认自动转全部确认），平台兜底核实；已剔除学校确认环节。',
   '销课状态': '本节课的计费流转状态（待上课 → 已上课待确认 → 已确认销课 → 已计入结算；异常节次暂停计费）。',
   '可结算金额': '本节课确认销课后计入当月结算的金额；待上课 / 异常节次不计费。',
   '售后编号': '售后工单编号。',
@@ -521,12 +532,12 @@ const COLDEF = {
   '结算月份': '结算所属自然月，月底按当月已确认销课生成。',
   '涉及学校': '本结算单包含的上课学校。',
   '班级数': '本结算单涉及的班级数量。',
-  '已确认销课': '当月经平台/学校确认、可计费的课时数。',
-  '已确认课时': '当月经平台/学校确认、可计费的课时数。',
+  '已确认销课': '当月经家长确认（含自动确认）、可计费的课时数。',
+  '已确认课时': '当月经家长确认（含自动确认）、可计费的课时数。',
   '应结算金额': '当月所有已确认销课节次的金额合计。',
-  '平台服务费': '按合作协议比例（Demo 为 10%）从应结算金额中扣除。',
+  '机构分成比例': '合同约定的机构分成比例（不同课程可不同）。',
   '退款扣减': '当月退款订单对应金额，从结算中扣回。',
-  '机构实收': '应结算金额 − 平台服务费 − 学校服务费 − 退款扣减。',
+  '机构实收': '（应结算金额 − 退款扣减）× 机构分成比例。',
   '时间': '上课时间段（课后延时服务时段）。',
   '上课时间': '固定周期的上课时间（课后延时服务时段）。',
   '上课日期': '本节课实际上课日期。',
@@ -565,12 +576,12 @@ const ME_TEACHER = TEACHERS[0];
 const MENUS = {
   org: [
     ['dash', '首页看板'], ['orginfo', '机构信息'], ['teachers', '教师管理'], ['courses', '课程管理'],
-    ['classes', '分发班级'], ['students', '学生名单'], ['checkin', '上课签到'], ['records', '课堂记录'],
+    ['classes', '课程实施'], ['students', '学生名单'], ['checkin', '考勤管理'], ['records', '课堂记录'],
     ['lessons', '销课管理'], ['aftersale', '售后管理'], ['settle', '结算管理'], ['notices', '消息通知'],
   ],
   teacher: [
     ['dash', '首页看板'], ['classes', '我的班级'], ['students', '学生名单'],
-    ['checkin', '上课签到'], ['records', '课堂记录'], ['lessons', '我的销课'], ['notices', '消息通知'],
+    ['checkin', '考勤管理'], ['records', '课堂记录'], ['lessons', '我的销课'], ['notices', '消息通知'],
   ],
 };
 
@@ -626,7 +637,7 @@ const lessonAction = (l) => {
   return `<button class="btn btn-ghost" onclick="viewLessonDetail('${l.tid}', ${l.no}, '${l.date}')">查看</button>`;
 };
 const lessonPlanTable = (list, showAmount = false) => `<div class="tbl-wrap"><table>
-  <tr><th>上课状态</th><th>课程</th><th>班级</th><th>学校</th><th>场地</th><th>节次</th><th>日期</th><th>时间</th><th>教师</th><th>签到状态</th><th>课堂记录</th><th>销课状态</th>${showAmount ? '<th>可结算金额</th>' : ''}<th>操作</th></tr>
+  <tr><th>上课状态</th><th>课程</th><th>班级</th><th>学校</th><th>场地</th><th>节次</th><th>日期</th><th>时间</th><th>教师</th><th>考勤状态</th><th>课堂记录</th><th>销课状态</th>${showAmount ? '<th>可结算金额</th>' : ''}<th>操作</th></tr>
   ${list.map((l) => `<tr>
     <td>${tag(lessonStage(l))}</td><td>${l.course}</td><td class="ell" title="${l.cls}">${l.cls}</td><td>${l.school}</td><td>${l.venue || '—'}</td>
     <td>第 ${l.no} 节</td><td>${l.date}</td><td>${l.time || '—'}</td><td>${l.teacher}</td>
@@ -745,7 +756,7 @@ const PAGES = {
     </table></div>`;
   },
 
-  /* 分发班级 / 我的班级 */
+  /* 课程实施（平台分发的课程与班级，机构只读；实际管理权限在平台端） */
   classes() {
     const list = myClasses();
     return `<div class="page-title"><span></span><span class="hint">${role === 'teacher' ? '仅展示我负责的班级' : '课程由平台分发到学校后形成班级，家长报名的是具体班级'}</span></div>
@@ -782,7 +793,7 @@ const PAGES = {
     const lessonPlan = myLessonPlan();
     return `<div class="page-title"><span></span><span class="hint">${role === 'teacher' ? '先处理今天的签到/课堂记录，再查看后续排课' : '机构可查看今日待办，并跟踪全部成班课次'}</span></div>
     <div class="card"><h4>今日上课待办<span style="color:var(--muted);font-size:12px;font-weight:400;margin-left:8px">今天需要签到、补课堂记录或查看记录的课次</span></h4><div class="tbl-wrap"><table>
-      <tr><th>课程</th><th>班级</th><th>学校</th><th>地点</th><th>时间</th><th>教师</th><th>签到状态</th><th>课堂记录</th><th>操作</th></tr>
+      <tr><th>课程</th><th>班级</th><th>学校</th><th>地点</th><th>时间</th><th>教师</th><th>考勤状态</th><th>课堂记录</th><th>操作</th></tr>
       ${tasks.map((task) => {
         const r = recordOfTask(task);
         const recordStatus = r ? r.status : '待填写';
@@ -823,7 +834,7 @@ const PAGES = {
   lessons() {
     const list = myLessons();
     const isT = role === 'teacher';
-    return `<div class="page-title"><span></span><span class="hint">${isT ? '仅展示我的课次和销课状态（教师端不展示金额）' : '已上和未上课次统一展示；平台/学校确认后计入结算'}</span></div>
+    return `<div class="page-title"><span></span><span class="hint">${isT ? '仅展示我的课次和销课状态（教师端不展示金额）' : '已上和未上课次统一展示；家长逐节确认（3 天未确认自动确认）后计入结算'}</span></div>
     ${lessonPlanTable(list, !isT)}`;
   },
 
@@ -840,12 +851,12 @@ const PAGES = {
 
   /* 结算管理 */
   settle() {
-    return `<div class="page-title"><span></span><span class="hint">按月结算：已确认销课累计 − 平台服务费 − 退款扣减 = 机构实收</span></div>
+    return `<div class="page-title"><span></span><span class="hint">按月结算：机构实收 =（应结算金额 − 退款扣减）× 机构分成比例</span></div>
     <div class="tbl-wrap"><table>
-      <tr><th>结算单号</th><th>结算月份</th><th>涉及学校</th><th>班级数</th><th>已确认销课</th><th>应结算金额</th><th>平台服务费</th><th>退款扣减</th><th>机构实收</th><th>状态</th><th>操作</th></tr>
+      <tr><th>结算单号</th><th>结算月份</th><th>涉及学校</th><th>班级数</th><th>已确认销课</th><th>应结算金额</th><th>退款扣减</th><th>机构分成比例</th><th>机构实收</th><th>状态</th><th>操作</th></tr>
       ${SETTLES.map((s, i) => `<tr>
         <td>${s.id}</td><td>${s.month}</td><td class="ell" title="${s.schools}">${s.schools}</td><td>${s.clsCount}</td><td>${s.lessons} 节</td>
-        <td>${money(s.gross)}</td><td>− ${money(s.fee)}</td><td>− ${money(s.refund)}</td>
+        <td>${money(s.gross)}</td><td>− ${money(s.refund)}</td><td>${s.ratio}</td>
         <td><b style="color:var(--primary)">${money(s.net)}</b></td><td>${tag(s.status)}</td>
         <td><span class="lnk" onclick="settleDetail(${i})">查看详情</span></td>
       </tr>`).join('')}
@@ -984,21 +995,21 @@ function openCourseForm() {
   const approvedTeachers = TEACHERS.filter((t) => t.status === '审核通过');
   openModal('添加课程', `
     <div class="form-row"><label>课程名称</label><input id="ccName" placeholder="如：人工智能启蒙课"></div>
-    <div class="form-row"><label>课程分类</label><input id="ccCat" placeholder="如：AI 素质 / 编程 / 科学 / 美术"></div>
-    <div class="form-row"><label>适合年级</label><input id="ccGrade" placeholder="如：1-3 年级"></div>
+    <div class="form-row"><label>课程分类</label><select id="ccCat">${selectOptions(COURSE_CATEGORY_OPTIONS, '请选择平台课程分类')}</select></div>
+    <div class="form-row"><label>适合年级</label><select id="ccGrade">${selectOptions(COURSE_GRADE_OPTIONS, '请选择适合年级')}</select></div>
     <div class="form-row"><label>总课时</label><input id="ccLessons" type="number" min="1" placeholder="如：8"></div>
     <div class="form-row"><label>建议价格（元/期）</label><input id="ccPrice" type="number" min="0" placeholder="如：399"></div>
     <div class="form-row"><label>关联教师</label>
-      <select id="ccTeacher" style="width:100%;border:1px solid #d9dce3;border-radius:6px;padding:9px 10px;font-size:13px;font-family:inherit">
+      <select id="ccTeacher">
         <option value="">请选择已审核教师</option>
         ${approvedTeachers.map((t) => `<option value="${t.name}">${t.name} · ${t.dir}</option>`).join('')}
       </select>
     </div>
-    <div class="form-row"><label>所需场地</label><input id="ccVenue" placeholder="如：科技教室 / 计算机教室"></div>
-    <div class="form-row"><label>所需设备</label><input id="ccDevice" placeholder="如：平板、投影、实验器材包"></div>
+    <div class="form-row"><label>所需场地</label><select id="ccVenue">${selectOptions(COURSE_VENUE_OPTIONS, '请选择平台场地类型')}</select></div>
+    <div class="form-row"><label>所需设备</label><select id="ccDevice">${selectOptions(COURSE_DEVICE_OPTIONS, '请选择所需设备')}</select></div>
     <div class="form-row"><label>课程介绍</label><textarea id="ccIntro" rows="3" placeholder="面向家长展示的课程介绍、学习目标和课程亮点"></textarea></div>
     <div class="form-row"><label>课程大纲（每行一节课标题）</label><textarea id="ccSyllabus" rows="6" placeholder="第 1 节：认识人工智能&#10;第 2 节：和 AI 对话&#10;第 3 节：AI 画图体验"></textarea></div>
-    <div style="font-size:12px;color:var(--muted);line-height:1.7">提交后进入「待平台审核」，审核通过并进入课程库后，需由平台分发到学校，家长端才可见。</div>`,
+    <div style="font-size:12px;color:var(--muted);line-height:1.7">课程分类、适合年级、场地和设备采用平台统一模板，便于审核、分发和家长端筛选。提交后进入「待平台审核」，审核通过并进入课程库后，需由平台分发到学校，家长端才可见。</div>`,
     `<button class="btn btn-ghost" onclick="closeModal()">取消</button>
      <button class="btn btn-primary" onclick="submitCourseForm()">提交平台审核</button>`);
 }
@@ -1009,8 +1020,8 @@ function submitCourseForm() {
   const lessons = parseInt(document.getElementById('ccLessons').value, 10) || 0;
   const price = parseInt(document.getElementById('ccPrice').value, 10) || 0;
   const teacher = document.getElementById('ccTeacher').value;
-  const venue = document.getElementById('ccVenue').value.trim();
-  const device = document.getElementById('ccDevice').value.trim();
+  const venue = document.getElementById('ccVenue').value;
+  const device = document.getElementById('ccDevice').value;
   const intro = document.getElementById('ccIntro').value.trim();
   const syllabus = document.getElementById('ccSyllabus').value.split('\n').map((s) => s.trim()).filter(Boolean);
   if (!name || !cat || !grade || !lessons || !price || !teacher || !venue || !intro || !syllabus.length) {
@@ -1057,9 +1068,9 @@ function settleDetail(i) {
     <h5>结算计算</h5>
     <div class="desc">
       <div class="k">应结算金额</div><div class="v">${money(s.gross)}</div>
-      <div class="k">平台服务费</div><div class="v">− ${money(s.fee)}（10%）</div>
       <div class="k">退款扣减</div><div class="v">− ${money(s.refund)}</div>
-      <div class="k">机构实收</div><div class="v"><b style="color:var(--primary);font-size:15px">${money(s.net)}</b></div>
+      <div class="k">机构分成比例</div><div class="v">${s.ratio}</div>
+      <div class="k">机构实收</div><div class="v"><b style="color:var(--primary);font-size:15px">${money(s.net)}</b> <span style="color:var(--muted);font-size:12px">=（应结算 − 退款扣减）× ${s.ratio}</span></div>
       <div class="k">结算状态</div><div class="v">${tag(s.status)}</div>
     </div>`);
 }
@@ -1092,7 +1103,7 @@ function viewLessonDetail(tid, no, date) {
       <div class="k">应到 / 实到</div><div class="v">${lesson.due} 人 / ${lesson.actual || '—'} 人</div>
     </div>
     <h5>签到明细</h5>
-    ${task ? `<div class="tbl-wrap"><table><tr><th>学生</th><th>签到状态</th></tr>${rows}</table></div>` : '<div class="empty">暂无签到明细</div>'}
+    ${task ? `<div class="tbl-wrap"><table><tr><th>学生</th><th>考勤状态</th></tr>${rows}</table></div>` : '<div class="empty">暂无签到明细</div>'}
     <h5>课堂记录</h5>
     ${record ? `
       <div class="desc">
@@ -1163,6 +1174,13 @@ function openRecordForm(id) {
     <div class="form-row"><label>本节课内容</label><input id="rcContent" value="${esc(r.content)}" placeholder="如：AI 故事创作"></div>
     <div class="form-row"><label>课堂情况</label><textarea id="rcMood" rows="2" placeholder="课堂气氛、学生参与度等">${esc(r.mood)}</textarea></div>
     <div class="form-row"><label>课后评语</label><textarea id="rcComment" rows="2" placeholder="给家长/学生的整体评语">${esc(r.comment)}</textarea></div>
+    <div class="form-row"><label>课前 / 课后照片核验 <span style="color:var(--muted);font-weight:400">（仅平台内部监管可见，家长不可见）</span></label>
+      <div style="display:flex;gap:10px">
+        <div class="photo-up" onclick="toast('Demo：调起拍照，上传课前教室/设备照片')">📷 课前照片</div>
+        <div class="photo-up" onclick="toast('Demo：调起拍照，上传课后关门关灯/设备归位照片')">📷 课后照片</div>
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-top:6px">重点教室须核验设备与关门关灯情况，照片与原始记录比对留痕</div>
+    </div>
     <div class="form-row"><label>备注（选填）</label><input id="rcNote" placeholder="需要机构或平台注意的事项"></div>`,
     `<button class="btn btn-ghost" onclick="closeModal()">取消</button>
      <button class="btn btn-primary" onclick="submitRecord('${id}')">${r.status === '已提交' ? '保存修改' : '提交记录'}</button>`);

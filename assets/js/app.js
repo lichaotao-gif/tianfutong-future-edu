@@ -87,6 +87,10 @@
     .filter((course) => course.status !== 'hidden')
     .map((course) => ({ course, classes: schoolClasses(course).filter((cls) => parentVisibleClass(course, cls)) }))
     .filter(({ classes }) => classes.length);
+  /* 首页课程点位筛选：全部 / 校内（学校场地）/ 校外（社区中心等社会点位） */
+  let homeVenueFilter = '全部';
+  const filteredCourseItems = () => visibleCourseItems()
+    .filter(({ course }) => homeVenueFilter === '全部' || (course.venueType || '校内') === homeVenueFilter);
   const courseById = (id) => DB.courses.find((c) => c.id === routeId(id));
   const orderById = (id) => DB.orders.find((o) => o.id === routeId(id));
   const studentByOrder = (order) => {
@@ -263,7 +267,7 @@
         <div class="cc-cover">${coverImg(c.cover, c.name)}</div>
         <div class="cc-body">
           <div class="cc-title-row"><div class="cc-name">${esc(c.name)}</div>${statusBadge(primaryStatus)}</div>
-          <div style="margin-bottom:4px">${c.tags.map((t, i) => `<span class="tag ${i ? 'gray' : ''}">${esc(t)}</span>`).join('')}</div>
+          <div style="margin-bottom:4px"><span class="tag ${(c.venueType || '校内') === '校外' ? 'blue' : ''}">${esc(c.venueType || '校内')}</span>${c.tags.map((t) => `<span class="tag gray">${esc(t)}</span>`).join('')}</div>
           <div class="cc-meta">${esc(c.gradeRange)} · 共 ${c.lessons} 次课</div>
           <div class="cc-schedule">${esc(classSummary)}${classes.length > shownClasses.length ? ` 等 ${classes.length} 个班` : ''}</div>
           ${firstClass ? `<div class="small muted" style="margin-top:3px">购买时间：${esc(buyRangeText(c, firstClass))}</div>` : ''}
@@ -296,8 +300,23 @@
           </div>
         </div>
 
-        <div class="mx mt"><div class="section-title">本校可报名课程</div></div>
-        ${visibleCourseItems().map(courseCard).join('') || '<div class="empty">当前学校暂无开放报名课程</div>'}
+        <div class="mx" style="margin-top:14px">
+          <div class="quick-caps">
+            ${[['选课报名', true], ['研学', false], ['赛事活动', false], ['志愿活动', false], ['素质评价', false]].map(([t, on]) => `
+              <div class="qcap ${on ? 'on' : ''}" onclick="${on ? '' : `App.soonTip('${t}')`}">${esc(t)}${on ? '' : '<span class="qcap-dev">开发中</span>'}</div>`).join('')}
+          </div>
+        </div>
+
+        <div class="mx mt">
+          <div class="row between">
+            <div class="section-title" style="margin-bottom:0">可报名的课程</div>
+            <div class="venue-tabs">
+              ${['全部', '校内', '校外'].map((v) => `<span class="vt ${homeVenueFilter === v ? 'on' : ''}" onclick="App.setVenueFilter('${v}')">${v}</span>`).join('')}
+            </div>
+          </div>
+        </div>
+        ${filteredCourseItems().map(courseCard).join('') || '<div class="empty">该分类下暂无可报名课程</div>'}
+        ${homeVenueFilter !== '校内' ? '<div class="mx mt small muted center" style="padding:4px 0 8px">校外课程为社区中心等社会点位，就近上课、不限校籍</div>' : ''}
       </div>
       ${tabbar('home')}
       ${switchSheet()}
@@ -1644,7 +1663,9 @@
 
   /* 暴露给内联事件 */
   window.App = {
-    toggleEnrollConfirm, submitEnroll, closeWxpay, confirmWxpay, confirmPay, payOrder, closeOrderPay, confirmOrderPay, switchStudent, openSwitchSheet, closeSwitchSheet, adminTap, soonTip: () => toast('功能开发中'),
+    toggleEnrollConfirm, submitEnroll, closeWxpay, confirmWxpay, confirmPay, payOrder, closeOrderPay, confirmOrderPay, switchStudent, openSwitchSheet, closeSwitchSheet, adminTap,
+    soonTip: (name) => toast((name ? `「${name}」` : '') + '功能开发中，敬请期待'),
+    setVenueFilter: (v) => { homeVenueFilter = v; route(); },
     openSkuSheet, closeSkuSheet, selectSku, confirmSku, startEnroll, confirmClassEnroll, noticeBuyTime,
     openReview, closeReview, setStars, submitReview,
     confirmLesson, openDispute, closeDispute, selectDispute, submitDispute,
