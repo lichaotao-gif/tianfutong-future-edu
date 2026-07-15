@@ -169,12 +169,14 @@ const FIELD_DEF: Record<string, string> = {
   最近登录: '该账号最近一次登录后台的时间。',
   说明: '角色或字段的业务说明。',
   权限点: '该角色拥有的后台功能权限数量。',
-  学校名称: '合作学校的标准名称。',
-  区域: '学校所属行政区域。',
+  学校名称: '合作学校或校外点位的标准名称；校内为学校，校外为社区/街道等点位。',
+  '学校/点位名称': '校内记录学校名称；校外记录社区、街道、党群服务中心等点位名称。',
+  类型: '校内表示学校；校外表示社区、街道、公共服务中心等点位。',
+  区域: '学校或校外点位所属行政区域。',
   地址: '学校详细地址。',
   联系人: '学校或机构对接联系人。',
   电话: '对接联系人电话。',
-  合作状态: '学校与平台的合作进度和可用状态。',
+  合作状态: '学校/点位与平台的合作进度和可用状态。',
   已配置课程: '已分发到该学校、可在家长端展示的课程数量。',
   场地名称: '学校场地的名称。',
   所属学校: '场地归属的学校。',
@@ -262,10 +264,11 @@ const Table = (props: any) => <AntTable {...props} columns={explainColumns(props
 /* ---------- Mock 数据 ---------- */
 const initDB = {
   schools: [
-    { id: 'sc1', name: '成都天府新区实验小学', area: '天府新区', addr: '天府大道南段 1 号', contact: '周校长', phone: '138****1001', status: '已合作', courses: 3, venues: 3 },
-    { id: 'sc2', name: '成都天府新区第七小学', area: '天府新区', addr: '科学城中路 88 号', contact: '吴主任', phone: '139****1002', status: '已合作', courses: 2, venues: 2 },
-    { id: 'sc3', name: '成都麓湖小学', area: '天府新区', addr: '麓湖生态城 12 号', contact: '郑老师', phone: '137****1003', status: '待合作', courses: 0, venues: 1 },
-    { id: 'sc4', name: '成都华阳实验小学', area: '双流区', addr: '华阳大道二段 66 号', contact: '刘校长', phone: '136****1004', status: '暂停合作', courses: 1, venues: 2 },
+    { id: 'sc1', scene: '校内', name: '成都天府新区实验小学', area: '天府新区', addr: '天府大道南段 1 号', contact: '周校长', phone: '138****1001', status: '已合作', courses: 3, venues: 3 },
+    { id: 'sc2', scene: '校内', name: '成都天府新区第七小学', area: '天府新区', addr: '科学城中路 88 号', contact: '吴主任', phone: '139****1002', status: '已合作', courses: 2, venues: 2 },
+    { id: 'sc3', scene: '校内', name: '成都麓湖小学', area: '天府新区', addr: '麓湖生态城 12 号', contact: '郑老师', phone: '137****1003', status: '待合作', courses: 0, venues: 1 },
+    { id: 'sc4', scene: '校内', name: '成都华阳实验小学', area: '双流区', addr: '华阳大道二段 66 号', contact: '刘校长', phone: '136****1004', status: '暂停合作', courses: 1, venues: 2 },
+    { id: 'sc5', scene: '校外', name: '华阳街道党群服务中心', area: '天府新区', addr: '华阳街道社区服务中心 3 楼', contact: '陈主任', phone: '135****1105', status: '已合作', courses: 1, venues: 2 },
   ],
   venues: [
     { id: 'v1', name: '科技教室 A', school: '成都天府新区实验小学', type: '科技教室', scene: '校内', cap: 30, time: '周一至周五 16:00-18:00', fit: 'AI / 编程 / 科创', open: '否', status: '启用' },
@@ -322,13 +325,13 @@ const initDB = {
     { id: 'd1', course: '人工智能启蒙课', org: '智创未来', school: '成都天府新区实验小学', className: '周三班', time: '每周三 16:30-17:30', venue: '科技教室 A', teacher: '王思远', enrolled: 18, max: 30, min: 10, price: 800, signupStart: '2026-07-01', deadline: '2026-07-08', formed: '已成班', shelf: '已上架' },
     { id: 'd1b', course: '人工智能启蒙课', org: '智创未来', school: '成都天府新区实验小学', className: '周五拓展班', time: '每周五 17:00-18:00', venue: '计算机教室 1', teacher: '王思远', enrolled: 6, max: 24, min: 10, price: 820, signupStart: '2026-07-12', deadline: '2026-07-20', formed: '未到购买时间', shelf: '已上架' },
     { id: 'd2', course: '人工智能启蒙课', org: '智创未来', school: '成都天府新区第七小学', className: '周五班', time: '每周五 16:30-17:30', venue: '科学实验室', teacher: '王思远', enrolled: 8, max: 30, min: 10, price: 780, signupStart: '2026-07-01', deadline: '2026-07-10', formed: '待成班', shelf: '已上架' },
-    { id: 'd3', course: '少儿编程思维课', org: '智创未来', school: '成都天府新区实验小学', className: '周二班', time: '每周二 16:30-17:30', venue: '计算机教室 1', teacher: '陈亦然', enrolled: 25, max: 30, min: 12, price: 900, signupStart: '2026-07-02', deadline: '2026-07-12', formed: '已成班', shelf: '已上架' },
+    { id: 'd3', course: '少儿编程思维课', org: '智创未来', school: '成都天府新区实验小学', className: '周二/周四班', time: '每周二 16:30-17:30、每周四 17:00-18:00', schedule: [{ day: '周二', slot: '16:30-17:30' }, { day: '周四', slot: '17:00-18:00' }], venue: '计算机教室 1', teacher: '陈亦然', enrolled: 25, max: 30, min: 12, price: 900, signupStart: '2026-07-02', deadline: '2026-07-12', formed: '已成班', shelf: '已上架' },
     { id: 'd4', course: '少儿编程思维课', org: '智创未来', school: '成都华阳实验小学', className: '周四班', time: '每周四 16:30-17:30', venue: '多功能室', teacher: '陈亦然', enrolled: 5, max: 30, min: 12, price: 850, signupStart: '2026-07-12', deadline: '2026-07-20', formed: '未到购买时间', shelf: '已上架' },
   ],
   classes: [
     { id: 'cl1', name: '人工智能启蒙课·周三班', course: '人工智能启蒙课', org: '智创未来', school: '成都天府新区实验小学', venue: '科技教室 A', time: '每周三 16:30-17:30', teacher: '王思远', total: 10, done: 4, min: 10, max: 30, enrolled: 18, status: '上课中' },
     { id: 'cl2', name: '人工智能启蒙课·周五班', course: '人工智能启蒙课', org: '智创未来', school: '成都天府新区第七小学', venue: '科学实验室', time: '每周五 16:30-17:30', teacher: '王思远', total: 10, done: 0, min: 10, max: 30, enrolled: 8, status: '待成班' },
-    { id: 'cl3', name: '少儿编程思维课·周二班', course: '少儿编程思维课', org: '智创未来', school: '成都天府新区实验小学', venue: '计算机教室 1', time: '每周二 16:30-17:30', teacher: '陈亦然', total: 10, done: 6, min: 12, max: 30, enrolled: 25, status: '上课中' },
+    { id: 'cl3', name: '少儿编程思维课·周二/周四班', course: '少儿编程思维课', org: '智创未来', school: '成都天府新区实验小学', venue: '计算机教室 1', time: '每周二 16:30-17:30、每周四 17:00-18:00', schedule: [{ day: '周二', slot: '16:30-17:30' }, { day: '周四', slot: '17:00-18:00' }], teacher: '陈亦然', total: 10, done: 6, min: 12, max: 30, enrolled: 25, status: '上课中' },
     { id: 'cl4', name: '创意水彩画课·周一班', course: '创意水彩画课', org: '童心美育', school: '成都天府新区实验小学', venue: '美术教室', time: '每周一 16:30-17:30', teacher: '林晓芸', total: 12, done: 0, min: 8, max: 28, enrolled: 3, status: '报名中' },
     { id: 'cl5', name: '科学实验探索课·周四班', course: '科学实验探索课', org: '智创未来', school: '成都天府新区第七小学', venue: '科学实验室', time: '每周四 16:30-17:30', teacher: '刘嘉敏', total: 8, done: 8, min: 10, max: 30, enrolled: 28, status: '已结课' },
   ],
@@ -455,8 +458,8 @@ const COLDEF: Record<string, string> = {
   '所属单位': '账号归属的平台 / 学校 / 机构。',
   '最近登录': '最近一次登录系统的时间。',
   '权限点': '该角色拥有的功能权限数量，点「权限分配」查看明细。',
-  '区域': '学校所在行政区域。',
-  '合作状态': '学校与平台的合作签约状态，已合作方可分发课程。',
+  '区域': '学校或点位所在行政区域。',
+  '合作状态': '学校/点位与平台的合作签约状态，已合作方可分发课程。',
   '已配置课程': '已分发到该校并配置班级的课程数量。',
   '场地': '学校可用于课后服务的场地数量。',
   '场地类型': '教室 / 场馆类型，决定可承接的课程类别。',
@@ -525,6 +528,76 @@ const colTip = (cols: any[]) => (cols || []).map((c: any) =>
 const Tbl = (props: any) => <Table {...props} columns={colTip(props.columns)} />;
 const now = () => '2026-07-01 ' + new Date().toTimeString().slice(0, 5);
 
+/* ---------- 通用列表筛选（下拉框，默认全部，可组合多个，一键重置） ---------- */
+// 生成「全部 + 去重可选值」的下拉项
+const optsOf = (list: any[], key: string, label: string) =>
+  [{ value: '', label: '全部' + label }, ...Array.from(new Set(list.map((r) => r[key]).filter((v) => v != null && v !== ''))).map((v: any) => ({ value: v, label: String(v) }))];
+// 筛选状态 Hook：configs = [{ key, label, options, match? }]
+function useTableFilter(configs: any[]) {
+  const [vals, setVals] = useState<Record<string, string>>({});
+  const dirty = configs.some((c) => vals[c.key]);
+  const bar = (
+    <Space wrap size={8}>
+      {configs.map((c) => (
+        <Select key={c.key} size="small" style={{ minWidth: c.width || 150 }}
+          value={vals[c.key] ?? ''} options={c.options}
+          onChange={(v) => setVals((s) => ({ ...s, [c.key]: v }))} />
+      ))}
+      {dirty && <Button size="small" type="link" onClick={() => setVals({})}>重置筛选</Button>}
+    </Space>
+  );
+  const apply = (list: any[]) => list.filter((row) => configs.every((c) => {
+    const v = vals[c.key];
+    if (!v) return true;
+    return c.match ? c.match(row, v) : row[c.key] === v;
+  }));
+  return { bar, apply };
+}
+// 把筛选条放在表格上方的统一容器
+const FilterRow = ({ children }: any) => <div style={{ marginBottom: 12 }}>{children}</div>;
+
+/* ---------- 上课时间安排：一个班次可含多个「星期 + 时段」，各不相同 ---------- */
+const WEEKDAYS = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+const TIME_SLOTS = ['16:00-17:00', '16:30-17:30', '17:00-18:00', '17:30-18:30', '09:00-10:30', '10:00-11:30', '14:30-16:00'];
+// 时间段数组 → 展示文案，如「每周二 16:30-17:30、每周四 17:00-18:00」
+const scheduleText = (sch: any[]) => (sch || []).length
+  ? sch.map((s) => `每${s.day} ${s.slot}`).join('、')
+  : '未设置';
+// 兼容旧数据：字符串 time → 单条 schedule
+const toSchedule = (row: any) => {
+  if (Array.isArray(row?.schedule) && row.schedule.length) return row.schedule;
+  const m = String(row?.time || '').match(/每?周([一二三四五六日])\s*([\d:：\-~至\s]+)/);
+  return m ? [{ day: '周' + m[1], slot: m[2].trim().replace(/：/g, ':') }] : [];
+};
+// 每周课次数
+const weeklyCount = (row: any) => toSchedule(row).length || 1;
+
+/* 时间安排编辑器：可加多条，每条独立选星期与时段 */
+function ScheduleEditor({ value = [], onChange }: any) {
+  const list = value.length ? value : [{ day: '周三', slot: '16:30-17:30' }];
+  const update = (i: number, key: string, v: string) => onChange(list.map((x: any, j: number) => j === i ? { ...x, [key]: v } : x));
+  const add = () => onChange([...list, { day: '周四', slot: '17:00-18:00' }]);
+  const remove = (i: number) => onChange(list.filter((_: any, j: number) => j !== i));
+  return (
+    <div>
+      {list.map((s: any, i: number) => (
+        <Space key={i} style={{ display: 'flex', marginBottom: 8 }} align="baseline">
+          <Select style={{ width: 96 }} value={s.day} onChange={(v: string) => update(i, 'day', v)}
+            options={WEEKDAYS.map((d) => ({ value: d, label: d }))} />
+          <Select style={{ width: 150 }} value={s.slot} onChange={(v: string) => update(i, 'slot', v)}
+            showSearch popupMatchSelectWidth={false}
+            options={Array.from(new Set([...TIME_SLOTS, s.slot])).map((t) => ({ value: t, label: t }))} />
+          <Button type="text" danger size="small" disabled={list.length <= 1} onClick={() => remove(i)}>删除</Button>
+          {i === list.length - 1 && <Button type="link" size="small" onClick={add}>+ 添加一节</Button>}
+        </Space>
+      ))}
+      <div style={{ color: '#8a919f', fontSize: 12 }}>
+        每周 <b>{list.length}</b> 节 · {scheduleText(list)}（各节星期与时段可不同，如需隔周/单次调整由机构在排课中处理）
+      </div>
+    </div>
+  );
+}
+
 /* ---------- 通用：审核弹窗 ---------- */
 function AuditModal({ open, title, onClose, onSubmit }: any) {
   const [result, setResult] = useState('通过');
@@ -562,7 +635,7 @@ const AuditTimeline = ({ items }: { items: any[] }) => (
 /* 一、首页看板 */
 function Dashboard({ db, go }: any) {
   const stat = [
-    { t: '合作学校', v: db.schools.filter((s: any) => s.status === '已合作').length, u: '所', k: 'school' },
+    { t: '合作学校/点位', v: db.schools.filter((s: any) => s.status === '已合作').length, u: '个', k: 'school' },
     { t: '入驻机构', v: db.orgs.filter((o: any) => o.status === '审核通过').length, u: '家', k: 'org' },
     { t: '课程库课程', v: db.courses.filter((c: any) => c.status === '已入课程库').length, u: '门', k: 'course' },
     { t: '待审核事项', v: db.orgs.filter((o: any) => o.status === '待审核').length + db.teachers.filter((t: any) => t.status === '待审核').length + db.courses.filter((c: any) => c.status === '待审核').length, u: '项', k: 'org', warn: true },
@@ -579,7 +652,7 @@ function Dashboard({ db, go }: any) {
   return (
     <div>
       <Card size="small" style={{ marginBottom: 16 }}>
-        <Steps size="small" items={['创建学校/场地', '机构入驻审核', '教师资质审核', '课程审核入库', '课程分发学校', '家长报名付费', '按节上课销课', '按月结算机构'].map((t) => ({ title: t, status: 'finish' }))} />
+        <Steps size="small" items={['创建学校/点位/场地', '机构入驻审核', '教师资质审核', '课程审核入库', '课程分发学校/点位', '家长报名付费', '按节上课销课', '按月结算机构'].map((t) => ({ title: t, status: 'finish' }))} />
       </Card>
       <Row gutter={[16, 16]}>
         {stat.map((s, i) => (
@@ -660,8 +733,8 @@ function UserPage({ db, setDb }: any) {
             <Modal open={!!permRole} title={'权限分配：' + (permRole?.name || '')} okText="保存" cancelText="取消" onCancel={() => setPermRole(null)}
               onOk={() => { setPermRole(null); message.success('Demo：权限已保存'); }}>
               <Checkbox.Group style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}
-                defaultValue={['看板', '学校管理', '机构审核']}
-                options={['看板', '用户管理', '学校管理', '场地管理', '机构审核', '教师审核', '课程审核', '课程配置', '成班管理', '订单管理', '销课管理', '结算管理', '售后管理', '操作日志'].map((x) => ({ label: x, value: x }))} />
+                defaultValue={['看板', '学校/点位管理', '机构审核']}
+                options={['看板', '用户管理', '学校/点位管理', '场地管理', '机构审核', '教师审核', '课程审核', '课程配置', '成班管理', '订单管理', '销课管理', '结算管理', '售后管理', '操作日志'].map((x) => ({ label: x, value: x }))} />
             </Modal>
           </Card>
         ),
@@ -670,48 +743,85 @@ function UserPage({ db, setDb }: any) {
   );
 }
 
-/* 三、学校管理 */
+/* 三、学校/点位管理 */
 function SchoolPage({ db, setDb, go }: any) {
   const [addOpen, setAddOpen] = useState(false);
   const [detail, setDetail] = useState<any>(null);
+  const [form] = Form.useForm();
+  const sceneWatch = Form.useWatch('scene', form) || '校内';
+  const flt = useTableFilter([
+    { key: 'scene', label: '类型', options: optsOf(db.schools, 'scene', '类型') },
+    { key: 'area', label: '区域', options: optsOf(db.schools, 'area', '区域') },
+    { key: 'status', label: '合作状态', options: optsOf(db.schools, 'status', '状态') },
+  ]);
+  const createSchoolOrSite = () => {
+    form.validateFields().then((v: any) => {
+      const row = {
+        id: 'sc' + Date.now(),
+        scene: v.scene,
+        name: v.name,
+        area: v.area,
+        addr: v.addr,
+        contact: v.contact,
+        phone: v.phone,
+        status: '待合作',
+        courses: 0,
+        venues: 0,
+        openOutside: v.openOutside || '否',
+      };
+      setDb((d: any) => ({ ...d, schools: [row, ...d.schools] }));
+      setAddOpen(false);
+      form.resetFields();
+      setDetail(row);
+      message.success((row.scene === '校外' ? '校外点位' : '学校') + '已创建，状态为「待合作」');
+    });
+  };
   return (
-    <Card size="small" title="合作学校" extra={<Button type="primary" icon={<PlusOutlined />} onClick={() => setAddOpen(true)}>新增学校</Button>}>
-      <Tbl {...tblProps} dataSource={db.schools} columns={[
-        { title: '学校名称', dataIndex: 'name' }, { title: '区域', dataIndex: 'area' }, { title: '地址', dataIndex: 'addr', ellipsis: true },
+    <Card size="small" title="合作学校/点位" extra={<Button type="primary" icon={<PlusOutlined />} onClick={() => setAddOpen(true)}>新增学校/点位</Button>}>
+      <FilterRow>{flt.bar}</FilterRow>
+      <Tbl {...tblProps} dataSource={flt.apply(db.schools)} columns={[
+        { title: '学校/点位名称', dataIndex: 'name' },
+        { title: '类型', dataIndex: 'scene', render: (v: string) => <Tag color={v === '校外' ? 'purple' : 'geekblue'}>{v || '校内'}</Tag> },
+        { title: '区域', dataIndex: 'area' }, { title: '地址', dataIndex: 'addr', ellipsis: true },
         { title: '联系人', dataIndex: 'contact' }, { title: '电话', dataIndex: 'phone' },
         { title: '合作状态', dataIndex: 'status', render: (v: string) => <S v={v} /> },
         { title: '已配置课程', dataIndex: 'courses', render: (v: number) => v + ' 门' }, { title: '场地', dataIndex: 'venues', render: (v: number) => v + ' 个' },
-        { title: '操作', render: (_: any, r: any) => <Space><a onClick={() => setDetail(r)}>查看</a><a onClick={() => message.info('Demo：编辑学校')}>编辑</a><a onClick={() => go('venue')}>场地管理</a><a onClick={() => go('deploy')}>课程配置</a></Space> },
+        { title: '操作', render: (_: any, r: any) => <Space><a onClick={() => setDetail(r)}>查看</a><a onClick={() => message.info('Demo：编辑学校/点位')}>编辑</a><a onClick={() => go('venue')}>场地管理</a><a onClick={() => go('deploy')}>课程配置</a></Space> },
       ]} />
-      <Modal open={addOpen} width={560} title="新增学校" okText="创建" cancelText="取消" onCancel={() => setAddOpen(false)}
-        onOk={() => { setAddOpen(false); message.success('Demo：学校创建成功，状态为「待合作」'); }}>
-        <Form layout="vertical">
+      <Modal open={addOpen} width={560} title="新增学校/点位" okText="创建" cancelText="取消" onCancel={() => { setAddOpen(false); form.resetFields(); }}
+        onOk={createSchoolOrSite}>
+        <Form form={form} layout="vertical" initialValues={{ scene: '校内', openOutside: '否' }}>
+          <Alert type="info" showIcon style={{ marginBottom: 12 }} message="校内按学校管理；校外按社区/街道/公共服务中心等点位管理。" />
+          <Form.Item label="类型" name="scene" rules={[{ required: true, message: '请选择类型' }]}>
+            <Radio.Group><Radio value="校内">校内（学校）</Radio><Radio value="校外">校外（点位）</Radio></Radio.Group>
+          </Form.Item>
           <Row gutter={12}>
-            <Col span={12}><Form.Item label="学校名称"><Input placeholder="请输入学校全称" /></Form.Item></Col>
-            <Col span={12}><Form.Item label="所属区域"><Select placeholder="请选择" options={['天府新区', '双流区', '武侯区', '高新区'].map((x) => ({ value: x, label: x }))} /></Form.Item></Col>
+            <Col span={12}><Form.Item label={sceneWatch === '校外' ? '点位名称' : '学校名称'} name="name" rules={[{ required: true, message: sceneWatch === '校外' ? '请输入点位名称' : '请输入学校名称' }]}><Input placeholder={sceneWatch === '校外' ? '如：华阳街道党群服务中心' : '请输入学校全称'} /></Form.Item></Col>
+            <Col span={12}><Form.Item label="所属区域" name="area" rules={[{ required: true, message: '请选择所属区域' }]}><Select placeholder="请选择" options={['天府新区', '双流区', '武侯区', '高新区'].map((x) => ({ value: x, label: x }))} /></Form.Item></Col>
           </Row>
-          <Form.Item label="学校地址"><Input placeholder="请输入详细地址" /></Form.Item>
+          <Form.Item label={sceneWatch === '校外' ? '点位地址' : '学校地址'} name="addr" rules={[{ required: true, message: '请输入详细地址' }]}><Input placeholder="请输入详细地址" /></Form.Item>
           <Row gutter={12}>
-            <Col span={12}><Form.Item label="学校联系人"><Input placeholder="姓名" /></Form.Item></Col>
-            <Col span={12}><Form.Item label="联系电话"><Input placeholder="手机号" /></Form.Item></Col>
+            <Col span={12}><Form.Item label={sceneWatch === '校外' ? '点位联系人' : '学校联系人'} name="contact" rules={[{ required: true, message: '请输入联系人' }]}><Input placeholder="姓名" /></Form.Item></Col>
+            <Col span={12}><Form.Item label="联系电话" name="phone" rules={[{ required: true, message: '请输入联系电话' }]}><Input placeholder="手机号" /></Form.Item></Col>
           </Row>
           <Row gutter={12}>
-            <Col span={12}><Form.Item label="学校管理员账号"><Input placeholder="手机号（自动创建账号）" /></Form.Item></Col>
-            <Col span={12}><Form.Item label="是否允许外校学生报名"><Radio.Group defaultValue="否"><Radio value="是">是</Radio><Radio value="否">否</Radio></Radio.Group></Form.Item></Col>
+            <Col span={12}><Form.Item label={sceneWatch === '校外' ? '点位管理员账号' : '学校管理员账号'} name="adminPhone"><Input placeholder="手机号（自动创建账号）" /></Form.Item></Col>
+            <Col span={12}><Form.Item label={sceneWatch === '校外' ? '是否面向周边开放' : '是否允许外校学生报名'} name="openOutside"><Radio.Group><Radio value="是">是</Radio><Radio value="否">否</Radio></Radio.Group></Form.Item></Col>
           </Row>
           <Form.Item label="备注"><TextArea rows={2} placeholder="选填" /></Form.Item>
         </Form>
       </Modal>
-      <Drawer open={!!detail} width={520} title="学校详情" onClose={() => setDetail(null)}>
+      <Drawer open={!!detail} width={520} title={(detail?.scene === '校外' ? '点位详情' : '学校详情')} onClose={() => setDetail(null)}>
         {detail && <>
           <Descriptions column={1} size="small" bordered items={[
-            { key: '1', label: '学校名称', children: detail.name }, { key: '2', label: '所属区域', children: detail.area },
-            { key: '3', label: '学校地址', children: detail.addr }, { key: '4', label: '联系人', children: detail.contact + ' / ' + detail.phone },
-            { key: '5', label: '合作状态', children: <S v={detail.status} /> },
-            { key: '6', label: '已配置课程', children: detail.courses + ' 门' }, { key: '7', label: '场地数量', children: detail.venues + ' 个' },
+            { key: '1', label: '学校/点位名称', children: detail.name }, { key: '2', label: '类型', children: <Tag color={detail.scene === '校外' ? 'purple' : 'geekblue'}>{detail.scene || '校内'}</Tag> },
+            { key: '3', label: '所属区域', children: detail.area },
+            { key: '4', label: detail.scene === '校外' ? '点位地址' : '学校地址', children: detail.addr }, { key: '5', label: '联系人', children: detail.contact + ' / ' + detail.phone },
+            { key: '6', label: '合作状态', children: <S v={detail.status} /> },
+            { key: '7', label: '已配置课程', children: detail.courses + ' 门' }, { key: '8', label: '场地数量', children: detail.venues + ' 个' },
           ]} />
-          <Divider>本校场地</Divider>
-          <Tbl {...tblProps} dataSource={db.venues.filter((v: any) => v.school === detail.name)} columns={[
+          <Divider>{detail.scene === '校外' ? '本点位场地' : '本校场地'}</Divider>
+          <Tbl {...tblProps} dataSource={db.venues.filter((v: any) => detail.scene === '校外' ? v.site === detail.name : v.school === detail.name)} columns={[
             { title: '场地', dataIndex: 'name' }, { title: '类型', dataIndex: 'type' }, { title: '容纳', dataIndex: 'cap' }, { title: '状态', dataIndex: 'status', render: (v: string) => <S v={v} /> },
           ]} />
         </>}
@@ -725,14 +835,20 @@ function VenuePage({ db, setDb }: any) {
   const [addOpen, setAddOpen] = useState(false);
   const [schedule, setSchedule] = useState<any>(null);
   const [form] = Form.useForm();
+  const sceneWatch = Form.useWatch('scene', form);
+  const isOutside = sceneWatch === '校外';
   const createVenue = async () => {
     const values = await form.validateFields();
-    const duplicate = db.venues.some((v: any) => v.school === values.school && v.name === values.name);
-    if (duplicate) return message.warning('该学校已存在同名场地，请更换名称');
+    // 校内：归属学校；校外：归属社区点位（无学校）
+    const place = values.scene === '校外' ? values.site : values.school;
+    const duplicate = db.venues.some((v: any) => (v.school || v.site) === place && v.name === values.name);
+    if (duplicate) return message.warning('该' + (values.scene === '校外' ? '点位' : '学校') + '已存在同名场地，请更换名称');
     const venue = {
       id: 'v' + Date.now(),
       name: values.name,
-      school: values.school,
+      scene: values.scene,
+      school: values.scene === '校外' ? '' : values.school,
+      site: values.scene === '校外' ? values.site : '',
       type: values.type,
       cap: values.cap,
       time: values.time,
@@ -743,16 +859,24 @@ function VenuePage({ db, setDb }: any) {
     setDb((d: any) => ({
       ...d,
       venues: [venue, ...d.venues],
-      schools: d.schools.map((s: any) => s.name === values.school ? { ...s, venues: d.venues.filter((v: any) => v.school === s.name).length + 1 } : s),
+      schools: values.scene === '校外' ? d.schools : d.schools.map((s: any) => s.name === values.school ? { ...s, venues: d.venues.filter((v: any) => v.school === s.name).length + 1 } : s),
     }));
     setAddOpen(false);
     form.resetFields();
-    message.success('场地创建成功，可在课程分发时选择使用');
+    message.success((values.scene === '校外' ? '校外点位场地' : '校内场地') + '创建成功，可在课程分发时选择使用');
   };
+  const flt = useTableFilter([
+    { key: 'school', label: '所属学校', width: 200, options: optsOf(db.venues, 'school', '学校') },
+    { key: 'scene', label: '场景', width: 110, options: optsOf(db.venues, 'scene', '场景') },
+    { key: 'type', label: '类型', options: optsOf(db.venues, 'type', '类型') },
+    { key: 'status', label: '状态', width: 110, options: optsOf(db.venues, 'status', '状态') },
+  ]);
   return (
     <Card size="small" title="场地管理" extra={<Button type="primary" icon={<PlusOutlined />} onClick={() => setAddOpen(true)}>新增场地</Button>}>
-      <Tbl {...tblProps} dataSource={db.venues} columns={[
-        { title: '场地名称', dataIndex: 'name' }, { title: '所属学校', dataIndex: 'school', ellipsis: true },
+      <FilterRow>{flt.bar}</FilterRow>
+      <Tbl {...tblProps} dataSource={flt.apply(db.venues)} columns={[
+        { title: '场地名称', dataIndex: 'name' },
+        { title: '所属学校 / 点位', ellipsis: true, render: (_: any, r: any) => r.scene === '校外' ? (r.site || r.school || '—') + ' · 校外点位' : (r.school || '—') },
         { title: '场景', dataIndex: 'scene', render: (v: string) => <Tag color={v === '校外' ? 'purple' : 'geekblue'}>{v || '校内'}</Tag> },
         { title: '类型', dataIndex: 'type', render: (v: string) => <Tag>{v}</Tag> }, { title: '容纳人数', dataIndex: 'cap' },
         { title: '可用时间', dataIndex: 'time' }, { title: '适合课程', dataIndex: 'fit' }, { title: '对外开放', dataIndex: 'open' },
@@ -763,11 +887,15 @@ function VenuePage({ db, setDb }: any) {
       ]} />
       <Modal open={addOpen} title="新增场地" okText="创建" cancelText="取消" onCancel={() => { setAddOpen(false); form.resetFields(); }}
         onOk={createVenue}>
-        <Alert type="info" showIcon style={{ marginBottom: 12 }} message="平台后台可为任意合作学校代建场地；课程分发配置班级时，只能选择该学校已创建且启用的场地。" />
+        <Alert type="info" showIcon style={{ marginBottom: 12 }} message={isOutside ? '校外场地归属社区党群服务中心等社会点位，由地方平台运营，不挂靠学校。' : '校内场地挂靠合作学校；课程分发配置班级时，只能选择该学校已创建且启用的场地。'} />
         <Form form={form} layout="vertical" initialValues={{ open: '否', status: '启用', scene: '校内' }}>
           <Row gutter={12}>
-            <Col span={12}><Form.Item label="所属学校" name="school" rules={[{ required: true, message: '请选择学校' }]}><Select placeholder="请选择学校" options={db.schools.map((s: any) => ({ value: s.name, label: s.name }))} /></Form.Item></Col>
             <Col span={12}><Form.Item label="场景" name="scene"><Radio.Group><Radio value="校内">校内</Radio><Radio value="校外">校外</Radio></Radio.Group></Form.Item></Col>
+            <Col span={12}>
+              {isOutside
+                ? <Form.Item label="所属点位（地点名称）" name="site" rules={[{ required: true, message: '请输入点位地点名称' }]}><Input placeholder="如：天府少年宫 / 万象城商场 / 麓山社区党群服务中心" /></Form.Item>
+                : <Form.Item label="所属学校" name="school" rules={[{ required: true, message: '请选择学校' }]}><Select placeholder="请选择学校" options={db.schools.map((s: any) => ({ value: s.name, label: s.name }))} /></Form.Item>}
+            </Col>
           </Row>
           <Form.Item label="场地名称" name="name" rules={[{ required: true, message: '请输入场地名称' }]}><Input placeholder="如：科技教室 B" /></Form.Item>
           <Row gutter={12}>
@@ -869,9 +997,14 @@ function OrgPage({ db, setDb }: any) {
       setDetail(org);
     });
   };
+  const flt = useTableFilter([
+    { key: 'status', label: '审核状态', options: optsOf(db.orgs, 'status', '审核状态') },
+    { key: 'account', label: '结算账户', options: optsOf(db.orgs, 'account', '账户状态') },
+  ]);
   return (
     <Card size="small" title="培训机构入驻" extra={<Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>新增机构</Button>}>
-      <Tbl {...tblProps} dataSource={db.orgs} columns={[
+      <FilterRow>{flt.bar}</FilterRow>
+      <Tbl {...tblProps} dataSource={flt.apply(db.orgs)} columns={[
         { title: '机构名称', dataIndex: 'name', ellipsis: true }, { title: '联系人', dataIndex: 'contact' }, { title: '电话', dataIndex: 'phone' },
         { title: '服务方向', dataIndex: 'dir' }, { title: '提交时间', dataIndex: 'submitAt' },
         { title: '审核状态', dataIndex: 'status', render: (v: string) => <S v={v} /> },
@@ -961,9 +1094,15 @@ function TeacherPage({ db, setDb }: any) {
     message.success(result === '通过' ? '教师审核通过，可绑定到课程和班级' : '已驳回');
     setAudit(null); setDetail(null);
   };
+  const flt = useTableFilter([
+    { key: 'org', label: '所属机构', width: 240, options: optsOf(db.teachers, 'org', '机构') },
+    { key: 'dir', label: '教授方向', options: optsOf(db.teachers, 'dir', '方向') },
+    { key: 'status', label: '审核状态', options: optsOf(db.teachers, 'status', '审核状态') },
+  ]);
   return (
     <Card size="small" title="机构教师审核" extra={<Alert type="info" showIcon message="教师审核通过后，才能被绑定到课程或班级" style={{ padding: '2px 10px' }} />}>
-      <Tbl {...tblProps} dataSource={db.teachers} columns={[
+      <FilterRow>{flt.bar}</FilterRow>
+      <Tbl {...tblProps} dataSource={flt.apply(db.teachers)} columns={[
         { title: '教师姓名', dataIndex: 'name' }, { title: '所属机构', dataIndex: 'org', ellipsis: true }, { title: '手机号', dataIndex: 'phone' },
         { title: '教授方向', dataIndex: 'dir' }, { title: '资质类型', dataIndex: 'cert', ellipsis: true },
         { title: '材料照片', render: (_: any, r: any) => <Space size={4}>
@@ -1038,19 +1177,19 @@ function CoursePage({ db, setDb }: any) {
     message.success(result === '通过' ? '课程已进入课程库，可分发到合作学校' : '已驳回');
     setAudit(null); setDetail(null);
   };
-  const filterOf = (field: string) => Array.from(new Set(db.courses.map((c: any) => c[field]).filter(Boolean)))
-    .map((v: any) => ({ text: v, value: v }));
-  const orgFilters = filterOf('org');
-  const statusFilters = filterOf('status');
-  const catFilters = filterOf('cat');
+  const flt = useTableFilter([
+    { key: 'org', label: '所属机构', width: 240, options: optsOf(db.courses, 'org', '机构') },
+    { key: 'cat', label: '课程分类', options: optsOf(db.courses, 'cat', '分类') },
+    { key: 'status', label: '审核状态', options: optsOf(db.courses, 'status', '状态') },
+  ]);
   const cols = (isLib: boolean) => [
     { title: '课程名称', dataIndex: 'name' },
-    { title: '所属机构', dataIndex: 'org', ellipsis: true, filters: orgFilters, onFilter: (v: any, r: any) => r.org === v },
-    { title: '分类', dataIndex: 'cat', filters: catFilters, onFilter: (v: any, r: any) => r.cat === v, render: (v: string) => <Tag>{v}</Tag> },
+    { title: '所属机构', dataIndex: 'org', ellipsis: true },
+    { title: '分类', dataIndex: 'cat', render: (v: string) => <Tag>{v}</Tag> },
     { title: '适合年级', dataIndex: 'grade' },
     { title: '课时', dataIndex: 'lessons' }, { title: '建议价格', dataIndex: 'price', render: money },
     { title: '成班/上限', render: (_: any, r: any) => r.min + ' / ' + r.max }, { title: '所需场地', dataIndex: 'venue' },
-    { title: '状态', dataIndex: 'status', filters: statusFilters, onFilter: (v: any, r: any) => r.status === v, render: (v: string) => <S v={v} /> },
+    { title: '状态', dataIndex: 'status', render: (v: string) => <S v={v} /> },
     { title: '操作', render: (_: any, r: any) => <Space><a onClick={() => openDetail(r)}>查看</a>
       {r.status === '待审核' && <a style={{ color: '#fa8c16' }} onClick={() => setAudit(r)}>审核</a>}
       {isLib && ['已入课程库', '已下架'].includes(r.status) && <a onClick={() => setDb((d: any) => ({ ...d, courses: patch(d.courses, r.id, { status: r.status === '已入课程库' ? '已下架' : '已入课程库' }) }))}>{r.status === '已入课程库' ? '下架' : '上架'}</a>}</Space> },
@@ -1060,7 +1199,8 @@ function CoursePage({ db, setDb }: any) {
   const lib = db.courses.filter((c: any) => ['已入课程库', '已下架'].includes(c.status));
   const tableCard = (data: any[], isLib = false, title?: string) => (
     <Card size="small" title={title}>
-      <Tbl {...tblProps} dataSource={data} columns={cols(isLib)} />
+      <FilterRow>{flt.bar}</FilterRow>
+      <Tbl {...tblProps} dataSource={flt.apply(data)} columns={cols(isLib)} />
     </Card>
   );
   return (
@@ -1141,7 +1281,7 @@ function DeployPage({ db, setDb }: any) {
   const [step, setStep] = useState(0);
   const [selCourse, setSelCourse] = useState<string>();
   const [selSchools, setSelSchools] = useState<string[]>([]);
-  const [cfg, setCfg] = useState<any>({ className: '周三班', time: '每周三 16:30-17:30（课后延时）', venues: {}, price: 800, min: 10, max: 30, signupStart: '2026-07-01', deadline: '2026-07-15', openDate: '2026-09-01' });
+  const [cfg, setCfg] = useState<any>({ className: '周三班', schedule: [{ day: '周三', slot: '16:30-17:30' }], venues: {}, price: 800, min: 10, max: 30, signupStart: '2026-07-01', deadline: '2026-07-15', openDate: '2026-09-01' });
   const libCourses = db.courses.filter((c: any) => c.status === '已入课程库');
   const course = libCourses.find((c: any) => c.name === selCourse);
   const venueOptionsFor = (schoolName: string) => db.venues
@@ -1174,6 +1314,12 @@ function DeployPage({ db, setDb }: any) {
     status: g.items.some((x: any) => x.formed === '报名中') ? '报名中' : g.items.some((x: any) => x.formed === '未到购买时间') ? '未到购买时间' : g.items[0]?.formed,
   }));
   const activeSlotDetail = slotDetail ? deploymentGroups.find((g: any) => g.id === slotDetail.id) || slotDetail : null;
+  const deployFlt = useTableFilter([
+    { key: 'course', label: '课程', width: 200, options: optsOf(deploymentGroups, 'course', '课程') },
+    { key: 'school', label: '投放学校', width: 200, options: optsOf(deploymentGroups, 'school', '学校') },
+    { key: 'status', label: '成班状态', options: optsOf(deploymentGroups, 'status', '成班状态') },
+    { key: 'shelf', label: '上架状态', options: optsOf(deploymentGroups, 'shelf', '上架状态') },
+  ]);
   const reset = () => { setWizOpen(false); setStep(0); setSelCourse(undefined); setSelSchools([]); };
   const openSlotForm = (group: any, row?: any) => {
     if (!group) return;
@@ -1183,7 +1329,7 @@ function DeployPage({ db, setDb }: any) {
       id: row?.id,
       oldClassName: row?.className,
       className: row?.className || '',
-      time: base.time || '每周三 16:30-17:30',
+      schedule: toSchedule(row || base).length ? toSchedule(row || base) : [{ day: '周三', slot: '16:30-17:30' }],
       venue: row?.venue || venueOptionsFor(group.school)[0]?.value || base.venue || '',
       teacher: base.teacher || '',
       price: base.price || group.minPrice || 800,
@@ -1199,9 +1345,10 @@ function DeployPage({ db, setDb }: any) {
   const saveSlot = () => {
     if (!slotTarget) return;
     if (!slotDraft.className?.trim()) return message.warning('请输入班次名称');
-    if (!slotDraft.time?.trim()) return message.warning('请输入上课时间');
+    if (!slotDraft.schedule?.length) return message.warning('请至少设置一节上课时间');
     if (!slotDraft.venue) return message.warning('请选择上课场地');
     const courseInfo = db.courses.find((c: any) => c.name === slotTarget.course) || {};
+    const slotTime = scheduleText(slotDraft.schedule); // 兼容旧字段：同时写入展示用 time
     if (slotDraft.id) {
       const nextName = slotTarget.course + '·' + slotDraft.className.trim();
       const oldName = slotTarget.course + '·' + (slotDraft.oldClassName || slotDraft.className).trim();
@@ -1209,7 +1356,8 @@ function DeployPage({ db, setDb }: any) {
         ...d,
         deployments: patch(d.deployments, slotDraft.id, {
           className: slotDraft.className.trim(),
-          time: slotDraft.time,
+          time: slotTime,
+          schedule: slotDraft.schedule,
           venue: slotDraft.venue,
           teacher: slotDraft.teacher || courseInfo.teacher || '',
           max: slotDraft.max,
@@ -1225,7 +1373,8 @@ function DeployPage({ db, setDb }: any) {
             ...x,
             name: nextName,
             venue: slotDraft.venue,
-            time: slotDraft.time,
+            time: slotTime,
+            schedule: slotDraft.schedule,
             teacher: slotDraft.teacher || courseInfo.teacher || '',
             min: slotDraft.min,
             max: slotDraft.max,
@@ -1240,13 +1389,13 @@ function DeployPage({ db, setDb }: any) {
     const id = 'd' + Date.now();
     const row = {
       id, course: slotTarget.course, org: slotTarget.org, school: slotTarget.school,
-      className: slotDraft.className.trim(), time: slotDraft.time, venue: slotDraft.venue, teacher: slotDraft.teacher || courseInfo.teacher || '',
+      className: slotDraft.className.trim(), time: slotTime, schedule: slotDraft.schedule, venue: slotDraft.venue, teacher: slotDraft.teacher || courseInfo.teacher || '',
       enrolled: 0, max: slotDraft.max, min: slotDraft.min, price: slotDraft.price,
       signupStart: slotDraft.signupStart, deadline: slotDraft.deadline, formed: slotDraft.formed, shelf: slotDraft.shelf,
     };
     const clsRow = {
       id: 'cl' + Date.now(), name: slotTarget.course + '·' + row.className, course: slotTarget.course, org: slotTarget.org, school: slotTarget.school,
-      venue: row.venue, time: row.time, teacher: row.teacher, total: courseInfo.lessons || 8, done: 0, min: row.min, max: row.max, enrolled: 0, status: row.formed,
+      venue: row.venue, time: row.time, schedule: row.schedule, teacher: row.teacher, total: courseInfo.lessons || 8, done: 0, min: row.min, max: row.max, enrolled: 0, status: row.formed,
     };
     setDb((d: any) => ({ ...d, deployments: [row, ...d.deployments], classes: [clsRow, ...d.classes] }));
     message.success('已创建上课班次');
@@ -1273,12 +1422,12 @@ function DeployPage({ db, setDb }: any) {
     if (hasMissingVenue) return message.warning('请先为每所学校选择已创建且启用的场地');
     const rows = selSchools.map((sc, i) => ({
       id: 'd' + Date.now() + i, course: course.name, org: course.org.slice(2, 6), school: sc,
-      className: cfg.className, time: cfg.time, venue: venueOf(sc), teacher: course.teacher,
+      className: cfg.className, time: scheduleText(cfg.schedule), schedule: cfg.schedule, venue: venueOf(sc), teacher: course.teacher,
       enrolled: 0, max: cfg.max, min: cfg.min, price: cfg.price, signupStart: cfg.signupStart, deadline: cfg.deadline, formed: '未到购买时间', shelf: '待上架确认',
     }));
     const clsRows = selSchools.map((sc, i) => ({
       id: 'cl' + Date.now() + i, name: course.name + '·' + cfg.className, course: course.name, org: course.org.slice(2, 6), school: sc,
-      venue: venueOf(sc), time: cfg.time, teacher: course.teacher, total: course.lessons, done: 0, min: cfg.min, max: cfg.max, enrolled: 0, status: '待确认',
+      venue: venueOf(sc), time: scheduleText(cfg.schedule), schedule: cfg.schedule, teacher: course.teacher, total: course.lessons, done: 0, min: cfg.min, max: cfg.max, enrolled: 0, status: '待确认',
     }));
     setDb((d: any) => ({ ...d, deployments: [...rows, ...d.deployments], classes: [...clsRows, ...d.classes] }));
     message.success(`已将「${course.name}」分发到 ${selSchools.length} 所学校，并创建首个上课班次`);
@@ -1287,7 +1436,8 @@ function DeployPage({ db, setDb }: any) {
   return (
     <Card size="small" title="学校课程配置"
       extra={<Space><Alert type="warning" showIcon message="课程分发后由平台运营与学校线下核对场地时间、确认上架，该校家长端才可见" style={{ padding: '2px 10px' }} /><Button type="primary" icon={<SendOutlined />} onClick={() => setWizOpen(true)}>分发课程到学校</Button></Space>}>
-      <Tbl {...tblProps} dataSource={deploymentGroups} columns={[
+      <FilterRow>{deployFlt.bar}</FilterRow>
+      <Tbl {...tblProps} dataSource={deployFlt.apply(deploymentGroups)} columns={[
         { title: '课程名称', dataIndex: 'course' }, { title: '机构', dataIndex: 'org' }, { title: '投放学校', dataIndex: 'school', ellipsis: true },
         { title: '上课班次', render: (_: any, r: any) => <Space><b>{r.classCount}</b><span style={{ color: '#999' }}>个班次</span></Space> },
         { title: '总报名/上限', render: (_: any, r: any) => `${r.enrolled} / ${r.max}` },
@@ -1318,8 +1468,10 @@ function DeployPage({ db, setDb }: any) {
           <Form layout="vertical">
             <Row gutter={12}>
               <Col span={8}><Form.Item label="班次名称"><Input value={cfg.className} onChange={(e: any) => setCfg({ ...cfg, className: e.target.value })} /></Form.Item></Col>
-              <Col span={16}><Form.Item label="上课时间（课后延时时段）"><Input value={cfg.time} onChange={(e: any) => setCfg({ ...cfg, time: e.target.value })} /></Form.Item></Col>
             </Row>
+            <Form.Item label="上课时间安排（每周可多节，各节星期与时段可不同）">
+              <ScheduleEditor value={cfg.schedule || []} onChange={(v: any) => setCfg({ ...cfg, schedule: v })} />
+            </Form.Item>
             <Row gutter={12}>
               <Col span={8}><Form.Item label="课程价格（元/期）"><InputNumber style={{ width: '100%' }} value={cfg.price} onChange={(v: any) => setCfg({ ...cfg, price: v })} /></Form.Item></Col>
               <Col span={8}><Form.Item label="报名开始时间"><Input value={cfg.signupStart} onChange={(e: any) => setCfg({ ...cfg, signupStart: e.target.value })} /></Form.Item></Col>
@@ -1351,7 +1503,7 @@ function DeployPage({ db, setDb }: any) {
           <Descriptions column={2} size="small" bordered items={[
             { key: '1', label: '课程', span: 2, children: course.name + '（' + course.org + '）' },
             { key: '2', label: '投放学校', span: 2, children: selSchools.join('、') },
-            { key: '3', label: '班次', children: cfg.className }, { key: '4', label: '时间', children: cfg.time },
+            { key: '3', label: '班次', children: cfg.className }, { key: '4', label: '上课时间', children: `每周 ${(cfg.schedule || []).length} 节 · ${scheduleText(cfg.schedule)}` },
             { key: '5', label: '场地', span: 2, children: selectedVenueItems.map((x) => `${x.school}：${x.venue}`).join('；') }, { key: '6', label: '价格', children: money(cfg.price) + ' /期' },
             { key: '7', label: '成班/上限', children: cfg.min + ' / ' + cfg.max + ' 人' },
             { key: '8', label: '报名时间', children: cfg.signupStart + ' 至 ' + cfg.deadline }, { key: '9', label: '开课时间', children: cfg.openDate },
@@ -1379,8 +1531,10 @@ function DeployPage({ db, setDb }: any) {
         <Form layout="vertical">
           <Row gutter={12}>
             <Col span={8}><Form.Item label="班次名称" required><Input value={slotDraft.className} placeholder="如 周五拓展班" onChange={(e: any) => setSlotDraft({ ...slotDraft, className: e.target.value })} /></Form.Item></Col>
-            <Col span={16}><Form.Item label="上课时间" required><Input value={slotDraft.time} onChange={(e: any) => setSlotDraft({ ...slotDraft, time: e.target.value })} /></Form.Item></Col>
           </Row>
+          <Form.Item label="上课时间安排（每周可多节，各节星期与时段可不同）" required>
+            <ScheduleEditor value={slotDraft.schedule || []} onChange={(v: any) => setSlotDraft({ ...slotDraft, schedule: v })} />
+          </Form.Item>
           <Row gutter={12}>
             <Col span={12}><Form.Item label="上课场地" required><Select value={slotDraft.venue || undefined} options={slotTarget ? venueOptionsFor(slotTarget.school) : []} onChange={(v: string) => setSlotDraft({ ...slotDraft, venue: v })} /></Form.Item></Col>
             <Col span={12}><Form.Item label="任课老师"><Input value={slotDraft.teacher} onChange={(e: any) => setSlotDraft({ ...slotDraft, teacher: e.target.value })} /></Form.Item></Col>
@@ -1404,18 +1558,27 @@ function DeployPage({ db, setDb }: any) {
 /* 九、成班管理（原班级管理，0713 更名；财务结算以实际销课为准而非成班状态） */
 function ClassPage({ db, setDb }: any) {
   const [roster, setRoster] = useState<any>(null);
+  const flt = useTableFilter([
+    { key: 'school', label: '学校', width: 200, options: optsOf(db.classes, 'school', '学校') },
+    { key: 'org', label: '机构', options: optsOf(db.classes, 'org', '机构') },
+    { key: 'course', label: '课程', width: 200, options: optsOf(db.classes, 'course', '课程') },
+    { key: 'status', label: '班级状态', options: optsOf(db.classes, 'status', '状态') },
+  ]);
   return (
     <Card size="small" title="成班管理" extra={<Alert type="info" showIcon message="达到最低成班人数可成班；达到上限自动停止报名；未达标可取消 / 延期 / 转班" style={{ padding: '2px 10px' }} />}>
-      <Tbl {...tblProps} dataSource={db.classes} columns={[
+      <FilterRow>{flt.bar}</FilterRow>
+      <Tbl {...tblProps} dataSource={flt.apply(db.classes)} columns={[
         { title: '班级名称', dataIndex: 'name', ellipsis: true }, { title: '机构', dataIndex: 'org' }, { title: '学校', dataIndex: 'school', ellipsis: true },
-        { title: '场地', dataIndex: 'venue' }, { title: '时间', dataIndex: 'time', ellipsis: true }, { title: '教师', dataIndex: 'teacher' },
+        { title: '场地', dataIndex: 'venue' },
+        { title: '上课时间', ellipsis: true, render: (_: any, r: any) => <Tooltip title={scheduleText(toSchedule(r))}><span>每周 {weeklyCount(r)} 节 · {scheduleText(toSchedule(r))}</span></Tooltip> },
+        { title: '教师', dataIndex: 'teacher' },
         { title: '课时进度', render: (_: any, r: any) => <Tooltip title={`已上 ${r.done} / 共 ${r.total} 节`}><Progress size="small" style={{ width: 90 }} percent={Math.round((r.done / r.total) * 100)} /></Tooltip> },
         { title: '报名（成班 ' + '/上限）', render: (_: any, r: any) => <span style={{ color: r.enrolled >= r.min ? '#52c41a' : '#fa8c16' }}>{r.enrolled}<span style={{ color: '#999' }}>（{r.min}/{r.max}）</span></span> },
         { title: '班级状态', dataIndex: 'status', render: (v: string, r: any) => <Space size={4}><S v={v} />{r.enrolled >= r.min && ['报名中', '待成班'].includes(v) && <Tag color="green">可成班</Tag>}</Space> },
         { title: '操作', render: (_: any, r: any) => <Space>
           <a onClick={() => setRoster(r)}>查看名单</a>
           {r.enrolled >= r.min && ['报名中', '待成班'].includes(r.status) && <a style={{ color: '#52c41a' }} onClick={() => { setDb((d: any) => ({ ...d, classes: patch(d.classes, r.id, { status: '已成班' }) })); message.success('已成班，可通知机构排课'); }}>标记成班</a>}
-          <a onClick={() => message.info('Demo：排课日历')}>排课</a><a onClick={() => message.info('Demo：上课记录')}>上课记录</a>
+          <a onClick={() => message.info('Demo：上课记录')}>上课记录</a>
           <a style={{ color: '#ff4d4f' }} onClick={() => message.info('Demo：关闭报名')}>关闭报名</a></Space> },
       ]} />
       <Drawer open={!!roster} width={480} title={'报名名单：' + (roster?.name || '')} onClose={() => setRoster(null)}>
@@ -1431,9 +1594,16 @@ function ClassPage({ db, setDb }: any) {
 /* 十、订单管理 */
 function OrderPage({ db, setDb }: any) {
   const [refund, setRefund] = useState<any>(null);
+  const flt = useTableFilter([
+    { key: 'school', label: '学校', width: 200, options: optsOf(db.orders, 'school', '学校') },
+    { key: 'course', label: '课程', width: 200, options: optsOf(db.orders, 'course', '课程') },
+    { key: 'pay', label: '支付状态', options: optsOf(db.orders, 'pay', '支付状态') },
+    { key: 'way', label: '支付方式', options: optsOf(db.orders, 'way', '支付方式') },
+  ]);
   return (
     <Card size="small" title="订单管理（家长一次性付费，资金进入平台监管账户）">
-      <Tbl {...tblProps} dataSource={db.orders} columns={[
+      <FilterRow>{flt.bar}</FilterRow>
+      <Tbl {...tblProps} dataSource={flt.apply(db.orders)} columns={[
         { title: '订单编号', dataIndex: 'id' }, { title: '家长', dataIndex: 'parent' }, { title: '学生', dataIndex: 'student' },
         { title: '学校', dataIndex: 'school', ellipsis: true }, { title: '课程', dataIndex: 'course' }, { title: '班级', dataIndex: 'cls' },
         { title: '金额', dataIndex: 'amount', render: money }, { title: '支付方式', dataIndex: 'way' },
@@ -1457,9 +1627,16 @@ function OrderPage({ db, setDb }: any) {
 /* 十一、上课销课管理 */
 function LessonPage({ db, setDb }: any) {
   const [detail, setDetail] = useState<any>(null);
+  const flt = useTableFilter([
+    { key: 'school', label: '学校', width: 200, options: optsOf(db.lessons, 'school', '学校') },
+    { key: 'org', label: '机构', options: optsOf(db.lessons, 'org', '机构') },
+    { key: 'course', label: '课程', width: 200, options: optsOf(db.lessons, 'course', '课程') },
+    { key: 'status', label: '销课状态', options: optsOf(db.lessons, 'status', '销课状态') },
+  ]);
   return (
     <Card size="small" title="上课销课（教师上完课提交记录 → 确认状态 → 计入可结算）">
-      <Tbl {...tblProps} dataSource={db.lessons} columns={[
+      <FilterRow>{flt.bar}</FilterRow>
+      <Tbl {...tblProps} dataSource={flt.apply(db.lessons)} columns={[
         { title: '班级', dataIndex: 'cls', ellipsis: true }, { title: '机构', dataIndex: 'org' }, { title: '学校', dataIndex: 'school', ellipsis: true },
         { title: '上课日期', dataIndex: 'date' }, { title: '节次', dataIndex: 'no', render: (v: number) => '第 ' + v + ' 节' }, { title: '教师', dataIndex: 'teacher' },
         { title: '应到/实到', render: (_: any, r: any) => `${r.due} / ${r.actual || '—'}` },
@@ -1492,10 +1669,16 @@ function LessonPage({ db, setDb }: any) {
 /* 十二、结算管理 */
 function SettlePage({ db, setDb }: any) {
   const [detail, setDetail] = useState<any>(null);
+  const flt = useTableFilter([
+    { key: 'org', label: '机构', width: 240, options: optsOf(db.settlements, 'org', '机构') },
+    { key: 'month', label: '结算月份', options: optsOf(db.settlements, 'month', '月份') },
+    { key: 'status', label: '结算状态', options: optsOf(db.settlements, 'status', '状态') },
+  ]);
   return (
     <Card size="small" title="机构结算（按月：销课累计 − 平台服务费 − 学校服务费 − 退款扣减）"
       extra={<Button type="primary" onClick={() => message.success('Demo：已按 2026-07 销课记录生成结算单草稿')}>生成本月结算单</Button>}>
-      <Tbl {...tblProps} dataSource={db.settlements} columns={[
+      <FilterRow>{flt.bar}</FilterRow>
+      <Tbl {...tblProps} dataSource={flt.apply(db.settlements)} columns={[
         { title: '结算单号', dataIndex: 'id' }, { title: '机构名称', dataIndex: 'org', ellipsis: true }, { title: '月份', dataIndex: 'month' },
         { title: '涉及学校', dataIndex: 'schools', ellipsis: true }, { title: '班级数', dataIndex: 'clsCount' }, { title: '完成课时', dataIndex: 'doneLessons' },
         { title: '应结算', dataIndex: 'gross', render: money }, { title: '平台服务费', dataIndex: 'fee', render: money },
@@ -1583,7 +1766,7 @@ const LogPage = ({ db }: any) => (
 const MENUS = [
   { key: 'dash', icon: <DashboardOutlined />, label: '首页看板' },
   { key: 'user', icon: <TeamOutlined />, label: '平台用户管理' },
-  { key: 'school', icon: <BankOutlined />, label: '学校管理' },
+  { key: 'school', icon: <BankOutlined />, label: '学校/点位管理' },
   { key: 'venue', icon: <EnvironmentOutlined />, label: '场地管理' },
   { key: 'org', icon: <ShopOutlined />, label: '机构入驻管理' },
   { key: 'teacher', icon: <IdcardOutlined />, label: '教师审核管理' },
