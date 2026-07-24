@@ -9,6 +9,7 @@
     --primary: #7c3aed; --primary-soft: #f3e8ff;
     --org-sider: #21133f; --org-sider-deep: #170c2d; --org-sider-active: #7c3aed;
     --green: #52c41a; --green-soft: #f6ffed;
+    --blue-soft: #e6f4ff;
     --orange: #fa8c16; --orange-soft: #fff7e6;
     --red: #ff4d4f; --red-soft: #fff1f0;
     --cyan: #13c2c2; --cyan-soft: #e6fffb;
@@ -45,6 +46,20 @@
   .seg button.on { background: #fff; color: var(--primary); font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
   .help-btn { border: 1px solid #d9dce3; background: #fff; color: var(--muted); border-radius: 14px; padding: 5px 12px; font-size: 12px; cursor: pointer; font-family: inherit; }
   .help-btn:hover { color: var(--primary); border-color: var(--primary); }
+  /* 演示状态切换（按钮循环 + 下拉直选） */
+  .demo-wrap { display: inline-flex; align-items: stretch; }
+  .demo-btn { border: 1px dashed #b37feb; border-right: 0; background: #f9f0ff; color: #722ed1; border-radius: 14px 0 0 14px; padding: 5px 12px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; }
+  .demo-btn:hover { background: #efdbff; }
+  .demo-sel { border: 1px dashed #b37feb; background: #f9f0ff; color: #722ed1; border-radius: 0 14px 14px 0; font-size: 12px; padding: 0 2px 0 4px; cursor: pointer; font-family: inherit; width: 34px; text-indent: -999px; }
+  /* 审核结果提示条 */
+  .notice-ok { background: var(--green-soft); border: 1px solid #b7eb8f; color: #237804; border-radius: 10px; padding: 12px 16px; font-size: 13px; line-height: 1.7; }
+  .notice-bad { background: var(--red-soft); border: 1px solid #ffa39e; color: #a8071a; border-radius: 10px; padding: 12px 16px; font-size: 13px; line-height: 1.8; }
+  .notice-info { background: var(--blue-soft); border: 1px solid #91caff; color: #0958d9; border-radius: 10px; padding: 12px 16px; font-size: 13px; line-height: 1.8; }
+  /* 机构信息内联编辑输入框 */
+  .inp { width: 100%; border: 1px solid #d9dce3; border-radius: 6px; padding: 5px 8px; font-size: 13px; font-family: inherit; }
+  .inp:focus { outline: none; border-color: var(--primary); }
+  .btn-sm { padding: 5px 12px; font-size: 12px; }
+  .notice-wait { background: var(--orange-soft); border: 1px solid #ffd591; color: #ad4e00; border-radius: 10px; padding: 12px 16px; font-size: 13px; line-height: 1.8; }
   .tag[title] { cursor: help; }
 
   .content { padding: 20px 24px; flex: 1; }
@@ -195,6 +210,10 @@
     <header class="topbar">
       <div class="title" id="pageTitle">首页看板</div>
       <div class="role-switch">
+        <span class="demo-wrap">
+          <button class="demo-btn" id="demoBtn" onclick="toggleDemoState()" title="点击循环切换入驻状态，或从右侧下拉直接选择"></button>
+          <select class="demo-sel" id="demoSel" onchange="setDemoState(this.value)" title="选择演示状态"></select>
+        </span>
         <button class="help-btn" onclick="showGlossary()" title="查看平台全部名词与状态解释">？ 名词解释</button>
         <span class="who" id="whoami"></span>
         <div class="seg">
@@ -229,7 +248,125 @@ const ORG = {
   status: '审核通过', account: '已绑定',
   contact: '张经理', phone: '138****8888',
   license: '统一社会信用代码 91510100MA6XXXX88', joined: '2026-05-15',
+  legal: '张建国（法人）',
+  bankName: '中国银行成都天府支行', bankAcct: '1234 5678 9012 3456',
 };
+
+/* ---------- 入驻资料清单（与平台后台审核项一一对应） ---------- */
+const ORG_DOCS = [
+  { key: 'license', name: '营业执照', required: true, tip: '原件照片或加盖鲜章的复印件' },
+  { key: 'bank', name: '对公账户信息', required: true, tip: '开户许可证 / 银行印鉴页，须有银行章' },
+  { key: 'idCard', name: '法人身份证（正反面）', required: true, tip: '原件照片或加盖鲜章的复印件，正反面齐全' },
+  { key: 'schoolPermit', name: '办学许可证', required: false, tip: '如有需提供，原件照片或加盖鲜章的复印件' },
+  { key: 'legalPhone', name: '法人实名手机号', required: true, tip: '须为法人实名手机号；如使用财务或其他非法人手机号，须另附加盖鲜章的签字授权书' },
+  { key: 'storefront', name: '门店门头照', required: true, tip: '需清晰体现机构名称与门头' },
+  { key: 'interior', name: '门店内景照', required: true, tip: '内景需能体现实际经营内容（教室 / 教学场景）' },
+];
+
+/* 演示态：审核通过（资料齐全已核验） / 未通过（资料待补、被驳回） */
+const DOCS_PASS = {
+  license: { file: '启智未来-营业执照(鲜章).jpg', verified: true },
+  bank: { file: '启智未来-开户许可证(银行章).jpg', verified: true },
+  idCard: { file: '张建国-身份证正反面.jpg', verified: true },
+  schoolPermit: { file: '启智未来-办学许可证.jpg', verified: true },
+  legalPhone: { phone: '138****8888', isFinance: false, verified: true },
+  storefront: { file: '启智未来-门头照.jpg', verified: true },
+  interior: { file: '启智未来-内景照(编程教室).jpg', verified: true },
+};
+const DOCS_REJECT = {
+  license: { file: '启智未来-营业执照(复印件).jpg', verified: false, note: '复印件未加盖鲜章，请重新提交' },
+  bank: { file: '', verified: false },
+  idCard: { file: '张建国-身份证正面.jpg', verified: false, note: '缺反面照片' },
+  schoolPermit: { file: '', verified: false },
+  legalPhone: { phone: '139****6666', isFinance: true, auth: '', verified: false },
+  storefront: { file: '启智未来-门头照.jpg', verified: false },
+  interior: { file: '', verified: false },
+};
+/* 待填写：平台刚开通账号，资料全空 */
+const DOCS_EMPTY = {
+  license: { file: '', verified: false },
+  bank: { file: '', verified: false },
+  idCard: { file: '', verified: false },
+  schoolPermit: { file: '', verified: false },
+  legalPhone: { phone: '', isFinance: false, verified: false },
+  storefront: { file: '', verified: false },
+  interior: { file: '', verified: false },
+};
+/* 待审核：资料已交齐，等待平台核验 */
+const DOCS_PENDING = JSON.parse(JSON.stringify(DOCS_PASS));
+Object.keys(DOCS_PENDING).forEach((k) => { DOCS_PENDING[k].verified = false; });
+
+/* 四种演示状态（入驻闭环）：待填写 → 待审核 → 审核通过 / 审核驳回 */
+const ORG_STATES = {
+  draft: {
+    label: '待填写资料', status: '待完善', account: '未绑定', joined: '—',
+    bankName: '—', bankAcct: '—',
+    docs: JSON.parse(JSON.stringify(DOCS_EMPTY)),
+    audits: [{ t: '2026-07-14 09:00', who: '平台运营', act: '开通机构端账号', note: '请补充入驻资料后提交审核' }],
+  },
+  pending: {
+    label: '待平台审核', status: '待审核', account: '未绑定', joined: '—',
+    bankName: '中国银行成都天府支行', bankAcct: '1234 5678 9012 3456',
+    docs: JSON.parse(JSON.stringify(DOCS_PENDING)),
+    audits: [
+      { t: '2026-07-15 10:30', who: '张经理', act: '提交入驻审核', note: '资料已补充齐全，等待平台核验' },
+      { t: '2026-07-14 09:00', who: '平台运营', act: '开通机构端账号', note: '' },
+    ],
+  },
+  pass: {
+    label: '审核通过', status: '审核通过', account: '已绑定', joined: '2026-05-15',
+    bankName: '中国银行成都天府支行', bankAcct: '1234 5678 9012 3456',
+    docs: JSON.parse(JSON.stringify(DOCS_PASS)),
+    audits: [
+      { t: '2026-05-15 10:20', who: '平台审核员-李敏', act: '审核通过', note: '资料齐全，已开通课程发布与教师创建权限' },
+      { t: '2026-05-12 14:03', who: '张经理', act: '提交入驻申请', note: '' },
+    ],
+  },
+  reject: {
+    label: '审核驳回', status: '审核驳回', account: '未绑定', joined: '—',
+    bankName: '—', bankAcct: '—',
+    docs: JSON.parse(JSON.stringify(DOCS_REJECT)),
+    audits: [
+      { t: '2026-07-12 11:00', who: '平台审核员-李敏', act: '审核驳回', note: '营业执照复印件未盖鲜章；身份证缺反面；缺对公账户与内景照；手机号为非法人号且未附盖章授权书' },
+      { t: '2026-07-10 09:30', who: '张经理', act: '提交入驻申请', note: '' },
+    ],
+  },
+};
+const DEMO_ORDER = ['draft', 'pending', 'pass', 'reject'];
+let demoState = 'pass';
+/* 应用演示状态到 ORG */
+function applyDemoState() {
+  Object.assign(ORG, ORG_STATES[demoState]);
+}
+/* 顶部按钮：按 待填写 → 待审核 → 审核通过 → 审核驳回 循环切换 */
+function toggleDemoState() {
+  const i = DEMO_ORDER.indexOf(demoState);
+  demoState = DEMO_ORDER[(i + 1) % DEMO_ORDER.length];
+  setDemoState(demoState);
+}
+function setDemoState(key) {
+  demoState = key;
+  orgEditing = false;
+  applyDemoState();
+  render();
+  const tips = {
+    draft: '已切换：待填写资料（平台刚开通账号，资料全空）',
+    pending: '已切换：待平台审核（资料已提交，等待核验）',
+    pass: '已切换：审核通过（资料齐全，功能全开）',
+    reject: '已切换：审核驳回（按意见补充后可重新提交）',
+  };
+  toast(tips[key]);
+}
+/* 资料完整度统计 */
+function orgDocStat() {
+  const docs = ORG.docs || {};
+  const req = ORG_DOCS.filter((d) => d.required);
+  const filled = (d) => d.key === 'legalPhone' ? !!docs.legalPhone?.phone : !!docs[d.key]?.file;
+  const missing = req.filter((d) => !filled(d)).map((d) => d.name);
+  if (docs.legalPhone?.isFinance && !docs.legalPhone?.auth) missing.push('非法人手机号授权书');
+  return { done: req.filter(filled).length, total: req.length, missing };
+}
+applyDemoState();
 
 const TEACHERS = [
   { id: 't1', name: '王老师', phone: '138****3001', dir: '人工智能启蒙', status: '审核通过', classes: 3, monthLessons: 12,
@@ -576,12 +713,12 @@ const ME_TEACHER = TEACHERS[0];
 const MENUS = {
   org: [
     ['dash', '首页看板'], ['orginfo', '机构信息'], ['teachers', '教师管理'], ['courses', '课程管理'],
-    ['classes', '课程实施'], ['students', '学生名单'], ['checkin', '考勤管理'], ['records', '课堂记录'],
+    ['classes', '课程实施'], ['students', '学生名单'], ['checkin', '考勤/课堂记录'],
     ['lessons', '销课管理'], ['aftersale', '售后管理'], ['settle', '结算管理'], ['notices', '消息通知'],
   ],
   teacher: [
     ['dash', '首页看板'], ['classes', '我的班级'], ['students', '学生名单'],
-    ['checkin', '考勤管理'], ['records', '课堂记录'], ['lessons', '我的销课'], ['notices', '消息通知'],
+    ['checkin', '考勤/课堂记录'], ['lessons', '我的销课'], ['notices', '消息通知'],
   ],
 };
 
@@ -594,9 +731,66 @@ function setRole(r) {
 function go(p) { page = p; render(); }
 
 /* ---------- 渲染 ---------- */
+/* 是否处于可编辑态：待审核 / 审核通过后修改需重新提交，故仅「待完善 / 审核驳回」可直接编辑 */
+function canEditOrg() { return ['待完善', '审核驳回'].includes(ORG.status); }
+
+/* 编辑机构基础信息（机构名称、联系电话由平台注册时确定，不可修改） */
+let orgEditing = false;
+function toggleOrgEdit() {
+  if (!orgEditing && !canEditOrg()) {
+    return toast(ORG.status === '待审核' ? '资料审核中，暂不能修改，请等待平台核验结果' : '如需修改资料，请联系平台运营发起变更');
+  }
+  orgEditing = !orgEditing;
+  render();
+}
+function saveOrgInfo() {
+  const get = (id) => (document.getElementById(id)?.value || '').trim();
+  const dir = get('oiDir'), legal = get('oiLegal'), contact = get('oiContact');
+  const license = get('oiLicense'), bankName = get('oiBankName'), bankAcct = get('oiBankAcct');
+  if (!dir) return toast('请填写服务方向');
+  if (!legal) return toast('请填写法人信息');
+  if (!contact) return toast('请填写联系人');
+  Object.assign(ORG, { dir, legal, contact, license, bankName, bankAcct });
+  orgEditing = false;
+  render();
+  toast('机构信息已保存，将随入驻资料一并提交平台审核');
+}
+
+/* 入驻资料上传（Demo：记录文件名） */
+function uploadDoc(key, field) {
+  if (!canEditOrg()) {
+    return toast(ORG.status === '待审核' ? '资料审核中，暂不能修改资料' : '资料已审核通过，如需变更请联系平台运营');
+  }
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*,.pdf';
+  input.onchange = () => {
+    const name = input.files?.[0]?.name || ((ORG_DOCS.find((d) => d.key === key) || {}).name || '资料') + '.jpg';
+    ORG.docs[key] = { ...(ORG.docs[key] || {}), [field]: name, verified: false, note: '' };
+    render();
+    toast((field === 'auth' ? '盖章授权书' : (ORG_DOCS.find((d) => d.key === key) || {}).name) + ' 已上传，等待平台核验');
+  };
+  input.click();
+}
+/* 补充完成后重新提交审核 */
+function resubmitOrg() {
+  const st = orgDocStat();
+  if (st.missing.length) return toast('资料仍不完整，缺：' + st.missing.join('、'));
+  ORG.status = '待审核';
+  ORG.audits = [{ t: '2026-07-15 10:30', who: ORG.contact, act: '重新提交入驻审核', note: '已按平台意见补充资料' }, ...(ORG.audits || [])];
+  render();
+  toast('已重新提交审核，平台将在 1-3 个工作日内处理');
+}
+
 function render() {
   document.getElementById('roleOrg').classList.toggle('on', role === 'org');
   document.getElementById('roleTeacher').classList.toggle('on', role === 'teacher');
+  const demoBtn = document.getElementById('demoBtn');
+  if (demoBtn) demoBtn.textContent = '演示：' + ORG_STATES[demoState].label;
+  const demoSel = document.getElementById('demoSel');
+  if (demoSel) {
+    demoSel.innerHTML = DEMO_ORDER.map((k) => `<option value="${k}" ${k === demoState ? 'selected' : ''}>${ORG_STATES[k].label}</option>`).join('');
+  }
   document.getElementById('whoami').innerHTML = role === 'org'
     ? `当前角色：<b>机构管理员</b>（${ORG.contact}）` : `当前角色：<b>教师账号</b>（${ME_TEACHER.name}）`;
 
@@ -605,7 +799,13 @@ function render() {
 
   const labels = Object.fromEntries(MENUS[role]);
   document.getElementById('pageTitle').textContent = labels[page] || '';
-  document.getElementById('content').innerHTML = PAGES[page]();
+  // 审核未通过时：除机构信息/消息通知外，其余功能受限
+  const locked = ORG.status !== '审核通过' && role === 'org' && !['orginfo', 'notices', 'dash'].includes(page);
+  document.getElementById('content').innerHTML = locked
+    ? (ORG.status === '待审核'
+      ? `<div class="notice-wait">入驻资料已提交，<b>平台审核中</b>，暂不能使用「${labels[page]}」。审核通过后即可发布课程、创建教师。可到<span class="lnk" style="color:#ad4e00;text-decoration:underline" onclick="go('orginfo')">机构信息</span>查看审核进度。</div>`
+      : `<div class="notice-bad">机构入驻状态为<b>${ORG.status}</b>，暂不能使用「${labels[page]}」。请先到<span class="lnk" style="color:#a8071a;text-decoration:underline" onclick="go('orginfo')">机构信息</span>补充资料并提交审核；平台审核通过后即可发布课程、创建教师。</div>`)
+    : PAGES[page]();
   decorateTh(document.getElementById('content'));
 }
 
@@ -632,10 +832,21 @@ const lessonAction = (l) => {
   if (l.sign === '未签到') return `<button class="btn btn-primary" onclick="openLessonCheckin('${l.tid}', ${l.no}, '${l.date}')">去签到</button>`;
   const record = recordOfLesson(l);
   if (lessonRecordStatus(l) === '未提交') {
-    return record ? `<button class="btn btn-primary" onclick="openRecordForm('${record.id}')">填记录</button>` : `<button class="btn btn-primary" onclick="go('records')">填记录</button>`;
+    return record ? `<button class="btn btn-primary" onclick="openRecordForm('${record.id}')">填记录</button>` : `<button class="btn btn-primary" onclick="go('checkin')">填记录</button>`;
   }
   return `<button class="btn btn-ghost" onclick="viewLessonDetail('${l.tid}', ${l.no}, '${l.date}')">查看</button>`;
 };
+const recordsTable = (list) => `<div class="tbl-wrap"><table>
+  <tr><th>班级名称</th><th>第几节</th><th>上课日期</th><th>上课内容</th><th>到课</th><th>缺勤</th><th>课堂情况</th><th>课后评语</th><th>状态</th><th>操作</th></tr>
+  ${list.map((r) => `<tr>
+    <td class="ell">${r.cls}</td><td>第 ${r.no} 节</td><td>${r.date}</td>
+    <td class="ell">${r.content || '<span style="color:#c3c9d4">—</span>'}</td>
+    <td>${r.attend || '—'}</td><td>${r.status === '已提交' ? r.absent : '—'}</td>
+    <td class="ell" title="${r.mood}">${r.mood || '—'}</td><td class="ell" title="${r.comment}">${r.comment || '—'}</td>
+    <td>${tag(r.status)}</td>
+    <td>${r.status === '待填写' ? `<span class="lnk" onclick="openRecordForm('${r.id}')">填记录</span>` : `<span class="lnk" onclick="viewRecord('${r.id}')">查看</span>`}</td>
+  </tr>`).join('')}
+</table></div>`;
 const lessonPlanTable = (list, showAmount = false) => `<div class="tbl-wrap"><table>
   <tr><th>上课状态</th><th>课程</th><th>班级</th><th>学校</th><th>场地</th><th>节次</th><th>日期</th><th>时间</th><th>教师</th><th>考勤状态</th><th>课堂记录</th><th>销课状态</th>${showAmount ? '<th>可结算金额</th>' : ''}<th>操作</th></tr>
   ${list.map((l) => `<tr>
@@ -712,18 +923,126 @@ const PAGES = {
 
   /* 机构信息 */
   orginfo() {
-    return `<div class="card" style="max-width:640px">
-      <h4 style="margin-bottom:14px">机构信息</h4>
-      <div class="desc">
-        <div class="k">机构名称</div><div class="v">${ORG.name}</div>
-        <div class="k">服务方向</div><div class="v">${ORG.dir}</div>
-        <div class="k">入驻状态</div><div class="v">${tag(ORG.status)}</div>
-        <div class="k">结算账户</div><div class="v">${tag('已绑定')} <span style="color:var(--muted)">按月结算至对公账户</span></div>
-        <div class="k">联系人</div><div class="v">${ORG.contact}</div>
-        <div class="k">联系电话</div><div class="v">${ORG.phone}</div>
-        <div class="k">营业执照</div><div class="v">${ORG.license}</div>
-        <div class="k">入驻时间</div><div class="v">${ORG.joined}</div>
+    const st = orgDocStat();
+    const docs = ORG.docs || {};
+    const lastAudit = (ORG.audits || [])[0];
+    const banner = ORG.status === '审核通过'
+      ? `<div class="notice-ok">✓ 入驻审核已通过，资料齐全（${st.done}/${st.total} 项必备资料已核验），可正常发布课程、创建教师。</div>`
+      : ORG.status === '待完善'
+        ? `<div class="notice-info"><b>① 请补充入驻资料</b>　平台已开通机构端账号，请在下方「审核资料」逐项完善基础信息并上传营业执照、对公账户（银行章）、法人身份证正反面、门头照与内景照等。<br>
+            <span style="color:#0958d9">当前必备资料 ${st.done}/${st.total} 项，还需：${st.missing.join('、') || '无'}</span></div>`
+        : ORG.status === '待审核'
+          ? `<div class="notice-wait"><b>② 资料已提交，等待平台审核</b>　必备资料 ${st.done}/${st.total} 项已上传，平台将在 1-3 个工作日内完成核验；审核通过后即可发布课程、创建教师。</div>`
+          : `<div class="notice-bad"><b>✕ 入驻审核未通过</b>，请按平台意见补充资料后重新提交。<br>
+              <span style="color:#7a2020">驳回意见：${lastAudit ? lastAudit.note : '—'}</span><br>
+              <span style="color:#7a2020">当前必备资料 ${st.done}/${st.total} 项，缺：${st.missing.join('、') || '无'}</span></div>`;
+
+    const editable = canEditOrg();
+    const lockHint = ORG.status === '待审核'
+      ? '资料审核中，暂不能修改'
+      : ORG.status === '审核通过' ? '如需变更请联系平台运营' : '';
+    const inputOrText = (id, value, placeholder = '') => orgEditing
+      ? `<input class="inp" id="${id}" value="${value === '—' ? '' : value}" placeholder="${placeholder}">`
+      : (value && value !== '—' ? value : '<span style="color:#c3c9d4">待补充</span>');
+    const baseRows = [
+      { key: 'base-contact', name: '联系人', required: true, tip: '机构日常对接人', content: inputOrText('oiContact', ORG.contact), complete: !!ORG.contact },
+      { key: 'base-dir', name: '服务方向 / 课程方向', required: true, tip: '按平台统一模板选择，便于审核与课程匹配', content: inputOrText('oiDir', ORG.dir, '如：人工智能、少儿编程、科学实验'), complete: !!ORG.dir },
+      { key: 'base-legal', name: '法人信息', required: true, tip: '与营业执照、法人身份证保持一致', content: inputOrText('oiLegal', ORG.legal), complete: !!ORG.legal },
+      { key: 'base-license-no', name: '营业执照编号', required: true, tip: '统一社会信用代码', content: inputOrText('oiLicense', ORG.license, '统一社会信用代码...'), complete: !!ORG.license },
+      {
+        key: 'base-bank',
+        name: '对公账户',
+        required: true,
+        tip: '需与带银行章的开户资料一致',
+        content: orgEditing
+          ? `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+              <input class="inp" id="oiBankName" value="${ORG.bankName === '—' ? '' : ORG.bankName}" placeholder="开户银行">
+              <input class="inp" id="oiBankAcct" value="${ORG.bankAcct === '—' ? '' : ORG.bankAcct}" placeholder="对公账号">
+            </div>`
+          : (ORG.bankAcct && ORG.bankAcct !== '—' ? `${ORG.bankName} · ${ORG.bankAcct}` : '<span style="color:#c3c9d4">待补充</span>'),
+        complete: !!ORG.bankAcct && ORG.bankAcct !== '—',
+      },
+      { key: 'base-settle', name: '结算账户', required: false, tip: '审核通过后绑定，用于课程结算', content: `${tag(ORG.account === '已绑定' ? '已绑定' : '未绑定')} <span class="small muted">${ORG.account === '已绑定' ? '按月结算至对公账户' : '审核通过后绑定'}</span>`, complete: ORG.account === '已绑定' },
+    ];
+    const baseRow = (r) => `<tr>
+      <td><b>${r.name}</b>${r.required ? '<span class="tag tg-red" style="margin-left:6px">必备</span>' : '<span class="tag tg-gray" style="margin-left:6px">选填</span>'}
+        <div class="small muted" style="margin-top:2px">${r.tip}</div></td>
+      <td>${r.content}</td>
+      <td>${r.complete ? tag('已填写') : tag('待补充')}</td>
+      <td><span class="small muted">${orgEditing ? '编辑中' : '—'}</span></td>
+    </tr>`;
+    const docRow = (d) => {
+      const x = docs[d.key] || {};
+      if (d.key === 'legalPhone') {
+        return `<tr>
+          <td><b>${d.name}</b>${d.required ? '<span class="tag tg-red" style="margin-left:6px">必备</span>' : '<span class="tag tg-gray" style="margin-left:6px">选填</span>'}
+            <div class="small muted" style="margin-top:2px">${d.tip}</div></td>
+          <td>手机号：${x.phone || '未填写'} ${x.isFinance ? '<span class="tag tg-orange">财务 / 非法人手机号</span>' : '<span class="tag tg-green">法人实名</span>'}
+            ${x.isFinance ? `<div class="small" style="margin-top:3px;color:${x.auth ? 'var(--green)' : 'var(--red)'}">盖章授权书：${x.auth || '未上传（须加盖鲜章的签字授权书）'}</div>` : ''}</td>
+          <td>${x.verified ? tag('已核验') : tag('待核验')}</td>
+          <td>${editable
+            ? `<span class="lnk" onclick="toast('Demo：修改法人实名手机号')">修改</span>
+               ${x.isFinance ? `<span class="lnk" onclick="uploadDoc('legalPhone','auth')">传盖章授权书</span>` : ''}`
+            : `<span class="small muted">${lockHint}</span>`}</td>
+        </tr>`;
+      }
+      return `<tr>
+        <td><b>${d.name}</b>${d.required ? '<span class="tag tg-red" style="margin-left:6px">必备</span>' : '<span class="tag tg-gray" style="margin-left:6px">选填</span>'}
+          <div class="small muted" style="margin-top:2px">${d.tip}</div></td>
+        <td>${x.file ? `<span class="lnk" onclick="toast('Demo：预览 ${x.file}')">${x.file}</span>` : '<span style="color:#c3c9d4">未上传</span>'}
+          ${x.note ? `<div class="small" style="color:var(--red);margin-top:3px">平台意见：${x.note}</div>` : ''}</td>
+        <td>${x.file ? (x.verified ? tag('已核验') : tag('待核验')) : tag('待上传')}</td>
+        <td>${editable
+          ? `<span class="lnk" onclick="uploadDoc('${d.key}','file')">${x.file ? '重新上传' : '上传'}</span>`
+          : `<span class="small muted">${lockHint}</span>`}</td>
+      </tr>`;
+    };
+
+    const infoCard = `<div class="desc">
+          <div class="k">机构名称</div><div class="v">${ORG.name}</div>
+          <div class="k">联系电话</div><div class="v">${ORG.phone}</div>
+          <div class="k">入驻状态</div><div class="v">${tag(ORG.status)}</div>
+          <div class="k">入驻时间</div><div class="v">${ORG.joined}</div>
+        </div>`;
+
+    return `${banner}
+    <div class="grid2 mt">
+      <div class="card">
+        <div class="row between" style="margin-bottom:12px">
+          <h4 style="margin:0">机构识别信息</h4>
+        </div>
+        ${infoCard}
       </div>
+      <div class="card">
+        <h4>审核记录</h4>
+        ${(ORG.audits || []).map((a) => `
+          <div class="notice-item">
+            <span class="dot" style="background:${a.act.includes('驳回') ? 'var(--red)' : a.act.includes('通过') ? 'var(--green)' : 'var(--primary)'}"></span>
+            <div style="flex:1"><div class="nt">${a.act}</div>
+              <div style="font-size:13px;color:#52565e">${a.note || '—'}</div>
+              <div class="nd">${a.who} · ${a.t}</div></div>
+          </div>`).join('')}
+        ${['待完善', '审核驳回'].includes(ORG.status)
+          ? `<div style="margin-top:14px"><button class="btn btn-primary" onclick="resubmitOrg()">${ORG.status === '待完善' ? '资料填写完成，提交审核' : '补充完成，重新提交审核'}</button></div>`
+          : ''}
+      </div>
+    </div>
+
+    <div class="card mt">
+      <div class="row between" style="margin-bottom:10px">
+        <h4 style="margin:0">审核资料 <span class="small muted">（基础信息 + 入驻资料清单，必备资料齐全后方可通过）</span></h4>
+        <div>
+          ${orgEditing
+            ? `<button class="btn btn-primary btn-sm" onclick="saveOrgInfo()">保存基础资料</button>
+               <button class="btn btn-ghost btn-sm" onclick="toggleOrgEdit()">取消</button>`
+            : `<button class="btn btn-ghost btn-sm" onclick="toggleOrgEdit()" ${editable ? '' : 'style="opacity:.55"'}>编辑基础资料${editable ? '' : '（' + lockHint + '）'}</button>`}
+        </div>
+      </div>
+      <div class="tbl-wrap"><table>
+        <tr><th>审核资料项</th><th>内容 / 文件</th><th>状态</th><th>操作</th></tr>
+        ${baseRows.map(baseRow).join('')}
+        ${ORG_DOCS.map(docRow).join('')}
+      </table></div>
     </div>`;
   },
 
@@ -767,7 +1086,7 @@ const PAGES = {
         <td>${c.time}</td><td>${c.teacher}</td><td>${c.done} / ${c.total} 节</td>
         <td>${c.enrolled} / ${c.max}</td><td>${tag(c.status)}</td>
         <td><span class="lnk" onclick="classStudents('${c.id}')">查看学生</span>
-            <span class="lnk" onclick="go('records')">上课记录</span>
+            <span class="lnk" onclick="go('checkin')">考勤/记录</span>
             <span class="lnk" onclick="go('lessons')">销课记录</span></td>
       </tr>`).join('')}
     </table></div>`;
@@ -790,8 +1109,9 @@ const PAGES = {
   /* 上课签到 */
   checkin() {
     const tasks = myCheckins();
+    const records = myRecords();
     const lessonPlan = myLessonPlan();
-    return `<div class="page-title"><span></span><span class="hint">${role === 'teacher' ? '先处理今天的签到/课堂记录，再查看后续排课' : '机构可查看今日待办，并跟踪全部成班课次'}</span></div>
+    return `<div class="page-title"><span></span><span class="hint">${role === 'teacher' ? '先完成考勤，再填写课堂记录；销课以课堂记录为依据' : '机构可统一查看考勤待办、课堂记录与全部课次'}</span></div>
     <div class="card"><h4>今日上课待办<span style="color:var(--muted);font-size:12px;font-weight:400;margin-left:8px">今天需要签到、补课堂记录或查看记录的课次</span></h4><div class="tbl-wrap"><table>
       <tr><th>课程</th><th>班级</th><th>学校</th><th>地点</th><th>时间</th><th>教师</th><th>考勤状态</th><th>课堂记录</th><th>操作</th></tr>
       ${tasks.map((task) => {
@@ -810,6 +1130,7 @@ const PAGES = {
         </tr>`;
       }).join('')}
     </table></div></div>
+    <div class="card mt"><h4>${role === 'teacher' ? '我的课堂记录' : '全部教师课堂记录'}<span style="color:var(--muted);font-size:12px;font-weight:400;margin-left:8px">考勤后在这里补充上课内容、到课人数和课堂情况</span></h4>${recordsTable(records)}</div>
     <div class="card mt"><h4>${role === 'teacher' ? '我的全部课次安排' : '全部成班课次安排'}</h4>${lessonPlanTable(lessonPlan)}</div>`;
   },
 
@@ -817,17 +1138,7 @@ const PAGES = {
   records() {
     const list = myRecords();
     return `<div class="page-title"><span></span><span class="hint">${role === 'teacher' ? '上完课请及时填写课堂记录，销课以记录为依据' : '查看全部教师课堂记录'}</span></div>
-    <div class="tbl-wrap"><table>
-      <tr><th>班级名称</th><th>第几节</th><th>上课日期</th><th>上课内容</th><th>到课</th><th>缺勤</th><th>课堂情况</th><th>课后评语</th><th>状态</th><th>操作</th></tr>
-      ${list.map((r) => `<tr>
-        <td class="ell">${r.cls}</td><td>第 ${r.no} 节</td><td>${r.date}</td>
-        <td class="ell">${r.content || '<span style="color:#c3c9d4">—</span>'}</td>
-        <td>${r.attend || '—'}</td><td>${r.status === '已提交' ? r.absent : '—'}</td>
-        <td class="ell" title="${r.mood}">${r.mood || '—'}</td><td class="ell" title="${r.comment}">${r.comment || '—'}</td>
-        <td>${tag(r.status)}</td>
-        <td>${r.status === '待填写' ? `<span class="lnk" onclick="openRecordForm('${r.id}')">填记录</span>` : `<span class="lnk" onclick="viewRecord('${r.id}')">查看</span>`}</td>
-      </tr>`).join('')}
-    </table></div>`;
+    ${recordsTable(list)}`;
   },
 
   /* 销课管理 / 我的销课 */

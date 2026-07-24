@@ -279,13 +279,13 @@ const initDB = {
     { id: 'v6', name: '操场（东侧）', school: '成都华阳实验小学', type: '操场', scene: '校内', cap: 100, time: '周一至周五 16:00-18:00', fit: '体育 / 户外', open: '否', status: '停用' },
   ],
   orgs: [
-    { id: 'og1', name: '成都智创未来教育科技有限公司', contact: '王总', phone: '138****2001', dir: 'AI / 编程 / 科创', submitAt: '2026-05-12', status: '审核通过', courses: 3, teachers: 3, account: '已配置', accountInfo: { url: 'https://future-edu.demo/org/', username: '138****2001', password: 'TfOG1@2026' }, license: '统一社会信用代码 91510100MA6XXXX01', licensePhoto: '智创未来营业执照.jpg', legal: '王建国（法人）', scope: '面向中小学的人工智能与编程素质教育', agreement: '2026-2027 学年课后服务合作协议（已签署）',
+    { id: 'og1', name: '成都智创未来教育科技有限公司', contact: '王总', phone: '138****2001', dir: 'AI / 编程 / 科创', submitAt: '2026-05-12', status: '审核通过', courses: 3, teachers: 3, account: '已配置', accountInfo: { url: 'https://future-edu.demo/org/', username: '138****2001', password: 'TfOG1@2026' }, license: '统一社会信用代码 91510100MA6XXXX01', licensePhoto: '智创未来营业执照.jpg', docs: { license: { file: '智创未来-营业执照(鲜章).jpg', verified: true }, bank: { file: '智创未来-开户许可证(银行章).jpg', verified: true, bankName: '中国银行成都天府支行', bankAcct: '1234 5678 9012 3456' }, idCard: { file: '王建国-身份证正反面.jpg', verified: true }, schoolPermit: { file: '智创未来-办学许可证.jpg', verified: true }, legalPhone: { file: '', verified: true, phone: '138****2001', isFinance: false }, storefront: { file: '智创未来-门头照.jpg', verified: true }, interior: { file: '智创未来-内景照(编程教室).jpg', verified: true } },  legal: '王建国（法人）', scope: '面向中小学的人工智能与编程素质教育', agreement: '2026-2027 学年课后服务合作协议（已签署）',
       audits: [{ t: '2026-05-15 10:20', who: '审核员-李敏', act: '审核通过', note: '资质齐全' }, { t: '2026-05-12 14:03', who: '机构', act: '提交入驻申请', note: '' }] },
-    { id: 'og2', name: '童心美育艺术中心', contact: '林老师', phone: '139****2002', dir: '美术 / 手工 / 书法', submitAt: '2026-06-28', status: '待审核', courses: 1, teachers: 2, account: '未配置', license: '统一社会信用代码 91510100MA6XXXX02', licensePhoto: '童心美育营业执照.png', legal: '林晓芸（法人）', scope: '少儿美术、创意手工、硬笔书法', agreement: '待审核通过后签署',
+    { id: 'og2', name: '童心美育艺术中心', contact: '林老师', phone: '139****2002', dir: '美术 / 手工 / 书法', submitAt: '2026-06-28', status: '待审核', courses: 1, teachers: 2, account: '未配置', license: '统一社会信用代码 91510100MA6XXXX02', licensePhoto: '童心美育营业执照.png', docs: { license: { file: '童心美育-营业执照.png', verified: false }, bank: { file: '童心美育-开户许可证.jpg', verified: false, bankName: '成都银行高新支行', bankAcct: '6222 0000 1111 2222' }, idCard: { file: '林晓芸-身份证正反面.jpg', verified: false }, schoolPermit: { file: '', verified: false }, legalPhone: { file: '', verified: false, phone: '139****2002', isFinance: true, auth: '' }, storefront: { file: '童心美育-门头照.jpg', verified: false }, interior: { file: '童心美育-内景照(美术教室).jpg', verified: false } },  legal: '林晓芸（法人）', scope: '少儿美术、创意手工、硬笔书法', agreement: '待审核通过后签署',
       audits: [{ t: '2026-06-28 09:41', who: '机构', act: '提交入驻申请', note: '' }] },
-    { id: 'og3', name: '星辰体育培训中心', contact: '赵教练', phone: '137****2003', dir: '篮球 / 田径 / 体适能', submitAt: '2026-06-30', status: '待审核', courses: 0, teachers: 1, account: '未配置', license: '统一社会信用代码 91510100MA6XXXX03', licensePhoto: '', legal: '赵刚（法人）', scope: '青少年体育培训与体适能训练', agreement: '待审核通过后签署',
+    { id: 'og3', name: '星辰体育培训中心', contact: '赵教练', phone: '137****2003', dir: '篮球 / 田径 / 体适能', submitAt: '2026-06-30', status: '待审核', courses: 0, teachers: 1, account: '未配置', license: '统一社会信用代码 91510100MA6XXXX03', licensePhoto: '', docs: { license: { file: '', verified: false }, bank: { file: '', verified: false }, idCard: { file: '赵刚-身份证正反面.jpg', verified: false }, schoolPermit: { file: '', verified: false }, legalPhone: { file: '', verified: false, phone: '137****2003', isFinance: false }, storefront: { file: '星辰体育-门头照.jpg', verified: false }, interior: { file: '', verified: false } }, legal: '赵刚（法人）', scope: '青少年体育培训与体适能训练', agreement: '待审核通过后签署',
       audits: [{ t: '2026-06-30 16:22', who: '机构', act: '提交入驻申请', note: '' }] },
-    { id: 'og4', name: '快乐星球机器人俱乐部', contact: '孙老师', phone: '136****2004', dir: '机器人 / 无人机', submitAt: '2026-06-10', status: '审核驳回', courses: 0, teachers: 0, account: '未配置', license: '统一社会信用代码 91510100MA6XXXX04', licensePhoto: '快乐星球营业执照.jpg', legal: '孙志强（法人）', scope: '机器人搭建与竞赛培训', agreement: '—',
+    { id: 'og4', name: '快乐星球机器人俱乐部', contact: '孙老师', phone: '136****2004', dir: '机器人 / 无人机', submitAt: '2026-06-10', status: '审核驳回', courses: 0, teachers: 0, account: '未配置', license: '统一社会信用代码 91510100MA6XXXX04', licensePhoto: '快乐星球营业执照.jpg', docs: { license: { file: '快乐星球-营业执照.jpg', verified: false, note: '经营范围不含教育培训' }, bank: { file: '', verified: false }, idCard: { file: '孙志强-身份证正反面.jpg', verified: false }, schoolPermit: { file: '', verified: false }, legalPhone: { file: '', verified: false, phone: '136****2004', isFinance: false }, storefront: { file: '', verified: false }, interior: { file: '', verified: false } },  legal: '孙志强（法人）', scope: '机器人搭建与竞赛培训', agreement: '—',
       audits: [{ t: '2026-06-12 11:00', who: '审核员-李敏', act: '审核驳回', note: '营业执照经营范围不含教育培训，请补充变更后重新提交' }, { t: '2026-06-10 10:15', who: '机构', act: '提交入驻申请', note: '' }] },
   ],
   teachers: [
@@ -409,6 +409,28 @@ const copyText = async (text: string) => {
     message.warning('浏览器未允许自动复制，请手动复制弹窗内容');
   }
 };
+/* ---------- 机构入驻资料清单（审核必备项，支持逐项上传 / 核验 / 导出） ---------- */
+const ORG_DOCS = [
+  { key: 'license', name: '营业执照', required: true, tip: '原件照片或加盖鲜章的复印件' },
+  { key: 'bank', name: '对公账户信息', required: true, tip: '开户许可证 / 银行印鉴页，须有银行章' },
+  { key: 'idCard', name: '法人身份证（正反面）', required: true, tip: '原件照片或加盖鲜章的复印件，正反面齐全' },
+  { key: 'schoolPermit', name: '办学许可证', required: false, tip: '如有需提供，原件照片或加盖鲜章的复印件' },
+  { key: 'legalPhone', name: '法人实名手机号', required: true, tip: '须为法人实名手机号；如使用财务或其他非法人手机号，须另附加盖鲜章的签字授权书' },
+  { key: 'storefront', name: '门店门头照', required: true, tip: '需清晰体现机构名称与门头' },
+  { key: 'interior', name: '门店内景照', required: true, tip: '内景需能体现实际经营内容（教室 / 教学场景）' },
+];
+/* 资料校验：返回 { done, total, missing[] }，只计必填项 */
+const docStat = (org: any) => {
+  const docs = org?.docs || {};
+  const req = ORG_DOCS.filter((d) => d.required);
+  // 法人手机号项以「填了手机号」为准，其余项以「上传了文件」为准
+  const filled = (d: any) => d.key === 'legalPhone' ? !!docs.legalPhone?.phone : !!docs[d.key]?.file || (d.key === 'license' && !!org?.licensePhoto);
+  const missing = req.filter((d) => !filled(d)).map((d) => d.name);
+  // 使用财务或其他非法人手机号时，必须附加盖鲜章的签字授权书
+  if (docs.legalPhone?.isFinance && !docs.legalPhone?.auth) missing.push('非法人手机号授权书');
+  return { done: req.filter(filled).length, total: req.length, missing };
+};
+
 /* 四方分账默认比例：机构 / 平台 / 地方平台 / 天府通通道（不同课程可在审核时单独配置） */
 const DEFAULT_SHARE = { org: 70, platform: 12, region: 13, tf: 5 };
 const ORG_SERVICE_OPTIONS = [
@@ -928,12 +950,6 @@ function OrgPage({ db, setDb }: any) {
   const [accountTarget, setAccountTarget] = useState<any>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [createForm] = Form.useForm();
-  const saveLicensePhoto = (org: any, info: any) => {
-    const name = info?.file?.name || '营业执照照片.jpg';
-    setDb((d: any) => ({ ...d, orgs: patch(d.orgs, org.id, { licensePhoto: name }) }));
-    setDetail((cur: any) => cur?.id === org.id ? { ...cur, licensePhoto: name } : cur);
-    message.success('营业执照照片已上传（Demo 记录文件名）');
-  };
   const orgAccount = (org: any) => org.accountInfo || {
     url: portalUrl('/org/'),
     username: org.phone,
@@ -945,18 +961,134 @@ function OrgPage({ db, setDb }: any) {
     setDetail((cur: any) => cur?.id === org.id ? { ...cur, account: '已配置', accountInfo: info } : cur);
     setAccountTarget({ ...org, account: '已配置', accountInfo: info });
   };
-  const licensePhotoField = (org: any) => (
-    <Space direction="vertical" size={6}>
-      <Space size={6}>
-        <S v={org.licensePhoto ? '已上传' : '未上传'} />
-        <span>{org.licensePhoto || '请上传营业执照照片'}</span>
-      </Space>
-      <Upload accept="image/*,.pdf" beforeUpload={() => false} showUploadList={false} onChange={(info: any) => saveLicensePhoto(org, info)}>
-        <Button size="small" icon={<PlusOutlined />}>{org.licensePhoto ? '重新上传' : '上传营业执照照片'}</Button>
-      </Upload>
-    </Space>
-  );
+
+  /* ---------- 入驻资料：逐项上传 / 核验 / 备注 ---------- */
+  const patchDoc = (org: any, key: string, ch: any) => {
+    const next = { ...(org.docs || {}), [key]: { ...((org.docs || {})[key] || {}), ...ch } };
+    setDb((d: any) => ({ ...d, orgs: patch(d.orgs, org.id, { docs: next }) }));
+    setDetail((cur: any) => cur?.id === org.id ? { ...cur, docs: next } : cur);
+  };
+  const auditMaterialRows = (org: any) => {
+    const bank = org.docs?.bank;
+    const base = [
+      { key: 'base-license-no', name: '营业执照编号', required: true, tip: '机构基础信息', type: 'base', value: org.license, complete: !!org.license && org.license !== '待补充' },
+      { key: 'base-legal', name: '法人信息', required: true, tip: '机构基础信息', type: 'base', value: org.legal, complete: !!org.legal && org.legal !== '待补充' },
+      { key: 'base-dir', name: '服务方向 / 课程方向', required: true, tip: '按平台统一模板多选', type: 'base', value: org.dir, complete: !!org.dir },
+      { key: 'base-scope', name: '服务范围', required: true, tip: '机构服务说明或经营范围', type: 'base', value: org.scope, complete: !!org.scope },
+      {
+        key: 'base-bank',
+        name: '对公账户',
+        required: true,
+        tip: '与对公账户信息附件一致',
+        type: 'base',
+        value: bank?.bankAcct ? `${bank.bankName || '—'} · ${bank.bankAcct}` : '',
+        complete: !!bank?.bankAcct,
+      },
+      { key: 'base-agreement', name: '合作协议', required: false, tip: '审核通过后可补签', type: 'base', value: org.agreement, complete: !!org.agreement && org.agreement !== '待签署' },
+    ];
+    return [...base, ...ORG_DOCS.map((d) => ({ ...d, type: 'doc' }))];
+  };
+  const docsTable = (org: any) => {
+    const docs = org.docs || {};
+    const st = docStat(org);
+    return (
+      <>
+        <Alert style={{ marginBottom: 10 }} type={st.missing.length ? 'warning' : 'success'} showIcon
+          message={st.missing.length
+            ? `审核必备附件 ${st.done}/${st.total} 项已上传，缺：${st.missing.join('、')}`
+            : `审核必备附件 ${st.done}/${st.total} 项齐全，可进入审核`} />
+        <Tbl {...tblProps} rowKey="key" dataSource={auditMaterialRows(org)} columns={[
+          {
+            title: '审核资料项', dataIndex: 'name', width: 190,
+            render: (v: string, r: any) => <Space direction="vertical" size={0}>
+              <span>{v}{r.required ? <Tag color="red" style={{ marginLeft: 6 }}>必备</Tag> : <Tag style={{ marginLeft: 6 }}>选填</Tag>}</span>
+              <span style={{ color: '#8a919f', fontSize: 12 }}>{r.tip}</span>
+            </Space>,
+          },
+          {
+            title: '内容 / 文件', render: (_: any, r: any) => {
+              if (r.type === 'base') return r.value || <span style={{ color: '#bbb' }}>待补充</span>;
+              const d = docs[r.key] || {};
+              if (r.key === 'legalPhone') {
+                return <Space direction="vertical" size={4}>
+                  <span>手机号：{d.phone || '—'} {d.isFinance ? <Tag color="orange">财务 / 非法人手机号</Tag> : <Tag color="green">法人实名</Tag>}</span>
+                  {d.isFinance && <span style={{ color: d.auth ? '#52c41a' : '#ff4d4f', fontSize: 12 }}>
+                    盖章授权书：{d.auth || '未上传（非法人手机号须提供加盖鲜章的签字授权书）'}
+                  </span>}
+                </Space>;
+              }
+              const file = d.file || (r.key === 'license' ? org.licensePhoto : '');
+              return file
+                ? <Space direction="vertical" size={2}>
+                  <a onClick={() => message.info('Demo：预览 ' + file)}>{file}</a>
+                  {d.note && <span style={{ color: '#ff4d4f', fontSize: 12 }}>{d.note}</span>}
+                </Space>
+                : <span style={{ color: '#bbb' }}>未上传</span>;
+            },
+          },
+          {
+            title: '核验', width: 100, render: (_: any, r: any) => {
+              if (r.type === 'base') return <Tag color={r.complete ? 'green' : 'orange'}>{r.complete ? '已填写' : '待补充'}</Tag>;
+              const d = docs[r.key] || {};
+              const has = r.key === 'legalPhone' ? !!d.phone : !!d.file || (r.key === 'license' && !!org.licensePhoto);
+              if (!has) return <Tag>待上传</Tag>;
+              return <Tag color={d.verified ? 'green' : 'orange'}>{d.verified ? '已核验' : '待核验'}</Tag>;
+            },
+          },
+          {
+            title: '操作', width: 190, render: (_: any, r: any) => {
+              if (r.type === 'base') return <span style={{ color: '#bbb' }}>—</span>;
+              const d = docs[r.key] || {};
+              const isPhone = r.key === 'legalPhone';
+              const has = isPhone ? !!d.phone : !!d.file || (r.key === 'license' && !!org.licensePhoto);
+              return <Space size={4}>
+                {isPhone
+                  ? <>
+                    <a onClick={() => patchDoc(org, r.key, { isFinance: !d.isFinance })}>{d.isFinance ? '改为法人实名号' : '标记为非法人号'}</a>
+                    {d.isFinance && <Upload accept="image/*,.pdf" beforeUpload={() => false} showUploadList={false}
+                      onChange={(info: any) => { patchDoc(org, r.key, { auth: info?.file?.name || '授权书.jpg' }); message.success('盖章授权书已上传'); }}>
+                      <a>传盖章授权书</a>
+                    </Upload>}
+                  </>
+                  : <Upload accept="image/*,.pdf" beforeUpload={() => false} showUploadList={false}
+                    onChange={(info: any) => { patchDoc(org, r.key, { file: info?.file?.name || (r.name + '.jpg'), verified: false }); message.success(r.name + ' 已上传'); }}>
+                    <a>{d.file ? '重新上传' : '上传'}</a>
+                  </Upload>}
+                {has && <a style={{ color: d.verified ? '#8a919f' : '#52c41a' }}
+                  onClick={() => patchDoc(org, r.key, { verified: !d.verified })}>{d.verified ? '撤销核验' : '核验通过'}</a>}
+              </Space>;
+            },
+          },
+        ]} />
+      </>
+    );
+  };
+  /* 导出机构资料清单（CSV，可交监管/存档） */
+  const exportDocs = (list: any[], label: string) => {
+    const head = ['机构名称', '联系人', '联系电话', '审核状态', '资料完整度', ...ORG_DOCS.map((d) => d.name), '缺失项'];
+    const rows = list.map((o) => {
+      const docs = o.docs || {}; const st = docStat(o);
+      return [o.name, o.contact, o.phone, o.status, `${st.done}/${st.total}`,
+        ...ORG_DOCS.map((d) => {
+          const x = docs[d.key] || {};
+          if (d.key === 'legalPhone') return (x.phone || '未填') + (x.isFinance ? `（财务/非法人号，盖章授权书：${x.auth || '缺'}）` : '（法人实名）');
+          return x.file ? `${x.file}${x.verified ? '｜已核验' : '｜待核验'}` : '未上传';
+        }),
+        st.missing.join('；') || '无'];
+    });
+    const csv = '﻿' + [head, ...rows].map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+    const a = document.createElement('a');
+    a.href = url; a.download = `机构入驻资料_${label}_${now().slice(0, 10)}.csv`;
+    a.click(); URL.revokeObjectURL(url);
+    message.success(`已导出 ${list.length} 家机构资料清单`);
+  };
   const doAudit = (result: string, reason: string) => {
+    // 通过前必须资料齐全（缺件只能驳回或退回补充）
+    if (result === '通过') {
+      const miss = docStat(audit).missing;
+      if (miss.length) return message.warning('资料不全，无法通过：缺 ' + miss.join('、'));
+    }
     const st = result === '通过' ? '审核通过' : '审核驳回';
     setDb((d: any) => ({ ...d, orgs: patch(d.orgs, audit.id, { status: st, audits: [{ t: now(), who: '审核员-李敏', act: st, note: reason }, ...audit.audits] }) }));
     message.success(result === '通过' ? '机构审核通过，已开通教师创建与课程发布权限' : '已驳回，原因将通知机构');
@@ -985,6 +1117,15 @@ function OrgPage({ db, setDb }: any) {
         account: '未配置',
         license: v.license || '待补充',
         licensePhoto: '',
+        docs: {
+          license: { file: '', verified: false },
+          bank: { file: '', verified: false, bankName: v.bankName || '', bankAcct: v.bankAcct || '' },
+          idCard: { file: '', verified: false },
+          schoolPermit: { file: '', verified: false },
+          legalPhone: { file: '', verified: false, phone: v.legalPhone || v.phone || '', isFinance: false },
+          storefront: { file: '', verified: false },
+          interior: { file: '', verified: false },
+        },
         legal: v.legal || '待补充',
         scope: v.scope || dir,
         agreement: '待审核通过后签署',
@@ -1002,13 +1143,24 @@ function OrgPage({ db, setDb }: any) {
     { key: 'account', label: '结算账户', options: optsOf(db.orgs, 'account', '账户状态') },
   ]);
   return (
-    <Card size="small" title="培训机构入驻" extra={<Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>新增机构</Button>}>
+    <Card size="small" title="培训机构入驻" extra={<Space>
+      <Button icon={<FileSearchOutlined />} onClick={() => exportDocs(flt.apply(db.orgs), '当前筛选')}>导出资料清单</Button>
+      <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>新增机构</Button>
+    </Space>}>
       <FilterRow>{flt.bar}</FilterRow>
       <Tbl {...tblProps} dataSource={flt.apply(db.orgs)} columns={[
         { title: '机构名称', dataIndex: 'name', ellipsis: true }, { title: '联系人', dataIndex: 'contact' }, { title: '电话', dataIndex: 'phone' },
         { title: '服务方向', dataIndex: 'dir' }, { title: '提交时间', dataIndex: 'submitAt' },
         { title: '审核状态', dataIndex: 'status', render: (v: string) => <S v={v} /> },
-        { title: '执照照片', render: (_: any, r: any) => <S v={r.licensePhoto ? '已上传' : '未上传'} /> },
+        {
+          title: '资料完整度', render: (_: any, r: any) => {
+            const st = docStat(r);
+            const ok = st.missing.length === 0;
+            return <Tooltip title={ok ? '必备资料齐全' : '缺：' + st.missing.join('、')}>
+              <Tag color={ok ? 'green' : st.done === 0 ? 'red' : 'orange'}>{st.done}/{st.total}{ok ? ' 齐全' : ' 待补'}</Tag>
+            </Tooltip>;
+          },
+        },
         { title: '登录账户', render: (_: any, r: any) => <S v={r.accountInfo ? '已开通' : '未开通'} /> },
         { title: '课程', dataIndex: 'courses' }, { title: '教师', dataIndex: 'teachers' }, { title: '结算账户', dataIndex: 'account' },
         { title: '操作', render: (_: any, r: any) => <Space><a onClick={() => setDetail(r)}>查看资料</a>
@@ -1017,26 +1169,25 @@ function OrgPage({ db, setDb }: any) {
           <a onClick={() => message.info('Demo：编辑机构')}>编辑</a>
           <a style={{ color: '#ff4d4f' }} onClick={() => setDb((d: any) => ({ ...d, orgs: patch(d.orgs, r.id, { status: '已禁用' }) }))}>禁用</a></Space> },
       ]} />
-      <Drawer open={!!detail} width={620} title="机构详情" onClose={() => setDetail(null)}
+      <Drawer open={!!detail} width={860} title="机构详情" onClose={() => setDetail(null)}
         extra={detail && <Space>
+          <Button onClick={() => exportDocs([detail], detail.name)}>导出本机构资料</Button>
           {detail.status === '待完善' && <Button type="primary" onClick={() => submitOrg(detail)}>提交审核</Button>}
           {detail.status === '待审核' && <Button type="primary" onClick={() => setAudit(detail)}>审核</Button>}
         </Space>}>
         {detail && <>
           <Descriptions column={2} size="small" bordered items={[
             { key: '1', label: '机构名称', span: 2, children: detail.name },
-            { key: '2', label: '审核状态', children: <S v={detail.status} /> }, { key: '3', label: '提交时间', children: detail.submitAt },
-            { key: '4', label: '营业执照', span: 2, children: detail.license },
-            { key: '5', label: '营业执照照片', span: 2, children: licensePhotoField(detail) },
-            { key: '6', label: '法人信息', children: detail.legal }, { key: '7', label: '联系人', children: detail.contact + ' / ' + detail.phone },
-            { key: '8', label: '服务范围', span: 2, children: detail.scope },
-            { key: '9', label: '课程方向', children: detail.dir }, { key: '10', label: '结算账户', children: detail.account },
-            { key: '11', label: '合作协议', span: 2, children: detail.agreement },
-            { key: '12', label: '机构端账户', span: 2, children: detail.accountInfo ? <Space direction="vertical" size={4}>
+            { key: '2', label: '联系人 / 电话', children: detail.contact + ' / ' + detail.phone },
+            { key: '3', label: '审核状态', children: <S v={detail.status} /> },
+            { key: '4', label: '提交时间', children: detail.submitAt },
+            { key: '5', label: '机构端账户', span: 2, children: detail.accountInfo ? <Space direction="vertical" size={4}>
               <span>链接：{detail.accountInfo.url}</span><span>手机号：{detail.accountInfo.username}</span><span>初始密码：{detail.accountInfo.password}</span>
               <Button size="small" onClick={() => copyText(accountText('机构端', detail, detail.accountInfo))}>复制链接和密码</Button>
             </Space> : <Button size="small" type="primary" onClick={() => openOrgAccount(detail)}>开通机构端账户</Button> },
           ]} />
+          <Divider>审核资料（基础信息 + 入驻资料清单）</Divider>
+          {docsTable(detail)}
           <Divider>审核记录</Divider>
           <AuditTimeline items={detail.audits} />
         </>}
@@ -1062,9 +1213,16 @@ function OrgPage({ db, setDb }: any) {
             <Col span={24}><Form.Item label="服务方向" name="dir" rules={[{ required: true, message: '请选择服务方向' }]}><Select mode="multiple" allowClear maxTagCount="responsive" placeholder="请选择机构可提供的服务方向" options={ORG_SERVICE_OPTIONS} /></Form.Item></Col>
           </Row>
           <Form.Item label="营业执照编号" name="license"><Input placeholder="统一社会信用代码..." /></Form.Item>
-          <Form.Item label="法人信息" name="legal"><Input placeholder="如：陈某某（法人）" /></Form.Item>
+          <Row gutter={12}>
+            <Col span={12}><Form.Item label="法人信息" name="legal"><Input placeholder="如：陈某某（法人）" /></Form.Item></Col>
+            <Col span={12}><Form.Item label="法人实名手机号" name="legalPhone"><Input placeholder="如：138****2008（财务或非法人号须附盖章授权书）" /></Form.Item></Col>
+          </Row>
+          <Row gutter={12}>
+            <Col span={12}><Form.Item label="开户银行" name="bankName"><Input placeholder="如：中国银行成都天府支行" /></Form.Item></Col>
+            <Col span={12}><Form.Item label="对公账号" name="bankAcct"><Input placeholder="须与带银行章的开户信息一致" /></Form.Item></Col>
+          </Row>
           <Form.Item label="服务范围" name="scope"><TextArea rows={3} placeholder="填写机构服务范围或经营说明" /></Form.Item>
-          <Alert type="info" showIcon message="服务方向采用固定模板多选，便于平台审核和后续课程/机构筛选。只保存基础信息：机构登录后自己补充资料再提交审核；后台代填并提交审核：运营人员已协助补齐资料，直接进入待审核。" />
+          <Alert type="info" showIcon message="创建后请在机构详情的「入驻资料清单」中上传营业执照、对公账户（银行章）、法人身份证正反面、办学许可证（如有）、门头照与内景照；手机号须为法人实名，如使用财务或其他非法人手机号须另附加盖鲜章的签字授权书。必备资料齐全后方可审核通过。" />
         </Form>
       </Modal>
       <AuditModal open={!!audit} title={'机构入驻审核：' + (audit?.name || '')} onClose={() => setAudit(null)} onSubmit={doAudit} />

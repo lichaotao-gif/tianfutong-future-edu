@@ -118,16 +118,37 @@ body {
 .tag.gray { background: #f1f2f4; color: var(--muted); }
 
 /* 首页业务快捷入口（胶囊区，未上线标开发中） */
-.quick-caps { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; -webkit-overflow-scrolling: touch; }
-.quick-caps::-webkit-scrollbar { display: none; }
-.qcap {
-  flex-shrink: 0; display: inline-flex; align-items: center; gap: 5px;
-  background: #fff; border: 1px solid var(--line); border-radius: 18px;
-  padding: 8px 14px; font-size: 13px; font-weight: 600; color: var(--sub);
-  cursor: pointer; box-shadow: var(--shadow-sm);
+/* 首页业务入口（彩色图标宫格，白卡上浮叠 hero 底部） */
+.quick-grid-wrap {
+  position: relative; z-index: 5; margin-top: -16px;
+  background: #fff; border-radius: 18px; box-shadow: var(--shadow);
+  padding: 16px 8px 12px;
 }
-.qcap.on { background: var(--orange-grad); color: #fff; border-color: transparent; box-shadow: 0 6px 14px rgba(12,134,160,.25); }
-.qcap .qcap-dev { font-size: 10px; font-weight: 500; color: var(--muted); background: #f1f2f4; border-radius: 8px; padding: 1px 6px; }
+.quick-grid { display: grid; grid-template-columns: repeat(5, 1fr); }
+.qg-item { display: flex; flex-direction: column; align-items: center; gap: 7px; cursor: pointer; }
+.qg-item:active .qg-ic { transform: scale(.94); }
+.qg-ic {
+  position: relative; width: 48px; height: 48px; border-radius: 16px;
+  display: flex; align-items: center; justify-content: center; color: #fff;
+  transition: transform .12s;
+}
+.qg-ic svg { width: 25px; height: 25px; filter: drop-shadow(0 1px 1px rgba(0,0,0,.12)); }
+.qg-label { font-size: 12px; font-weight: 600; color: var(--sub); }
+/* 渐变配色（含柔和同色投影） */
+.qg-blue   { background: linear-gradient(140deg, #43d4e8, #0c86a0); box-shadow: 0 5px 12px rgba(18,169,196,.35); }
+.qg-green  { background: linear-gradient(140deg, #4ade80, #16a34a); box-shadow: 0 5px 12px rgba(34,197,94,.32); }
+.qg-orange { background: linear-gradient(140deg, #ffc069, #fa8c16); box-shadow: 0 5px 12px rgba(250,140,22,.32); }
+.qg-pink   { background: linear-gradient(140deg, #ff9ec2, #f5588f); box-shadow: 0 5px 12px rgba(245,88,143,.32); }
+.qg-purple { background: linear-gradient(140deg, #b197fc, #7950f2); box-shadow: 0 5px 12px rgba(121,80,242,.32); }
+/* 开发中角标 */
+.qg-dev {
+  position: absolute; top: -6px; right: -8px;
+  background: linear-gradient(135deg, #ffd666, #ffa940); color: #7a4a00;
+  font-size: 9px; font-weight: 700; line-height: 1;
+  padding: 3px 6px; border-radius: 8px 8px 8px 2px;
+  box-shadow: 0 2px 5px rgba(255,169,64,.4); border: 1.5px solid #fff;
+  filter: none;
+}
 
 /* 校内/校外筛选 tab */
 .venue-tabs { display: flex; gap: 4px; background: #eef0f4; border-radius: 16px; padding: 3px; }
@@ -253,7 +274,7 @@ body {
 /* 学生信息头部（未来教育首页 banner） */
 .home-hero {
   position: relative; background: var(--orange-grad); color: #fff;
-  padding: 14px 16px 22px; border-radius: 0 0 24px 24px; overflow: hidden;
+  padding: 14px 16px 34px; border-radius: 0 0 24px 24px; overflow: hidden;
 }
 .home-hero .hh-deco { position: absolute; border-radius: 50%; background: rgba(255,255,255,.10); pointer-events: none; }
 .home-hero .hh-deco1 { width: 160px; height: 160px; right: -46px; top: -64px; }

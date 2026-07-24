@@ -165,6 +165,10 @@
     cap: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 4 1.5 9 12 14l8.5-4V15a1 1 0 1 0 1.5 0V9L12 4z"/><path d="M6 12.2v3C6 17.2 8.7 19 12 19s6-1.8 6-3.8v-3l-6 2.9-6-2.9z"/></svg>',
     star: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3.5l2.6 5.7 6.2.6-4.7 4.1 1.4 6.1L12 16.9 6.5 20l1.4-6.1L3.2 9.8l6.2-.6z"/></svg>',
     gear: '<svg viewBox="0 0 24 24" fill="currentColor" fill-rule="evenodd"><path d="M10.3 3.2a1 1 0 0 0-1 .8l-.3 1.7c-.5.2-1 .5-1.5.8l-1.6-.6a1 1 0 0 0-1.2.4L3.6 8.2a1 1 0 0 0 .2 1.3L5.1 10.6a6.9 6.9 0 0 0 0 1.7l-1.3 1.1a1 1 0 0 0-.2 1.3l1.1 1.9a1 1 0 0 0 1.2.4l1.6-.6c.5.3 1 .6 1.5.8l.3 1.7a1 1 0 0 0 1 .8h2.2a1 1 0 0 0 1-.8l.3-1.7c.5-.2 1-.5 1.5-.8l1.6.6a1 1 0 0 0 1.2-.4l1.1-1.9a1 1 0 0 0-.2-1.3l-1.3-1.1a6.9 6.9 0 0 0 0-1.7l1.3-1.1a1 1 0 0 0 .2-1.3l-1.1-1.9a1 1 0 0 0-1.2-.4l-1.6.6c-.5-.3-1-.6-1.5-.8l-.3-1.7a1 1 0 0 0-1-.8h-2.2zm1.1 5.6a2.7 2.7 0 1 1 0 5.4 2.7 2.7 0 0 1 0-5.4z"/></svg>',
+    compass: '<svg viewBox="0 0 24 24" fill="currentColor" fill-rule="evenodd"><path d="M12 2.6A9.4 9.4 0 1 0 12 21.4 9.4 9.4 0 0 0 12 2.6zm4.3 5.1-2.4 5.4a1.6 1.6 0 0 1-.8.8l-5.4 2.4c-.5.2-1-.3-.8-.8l2.4-5.4c.16-.36.44-.64.8-.8l5.4-2.4c.5-.2 1 .3.8.8zM12 13.2a1.2 1.2 0 1 0 0-2.4 1.2 1.2 0 0 0 0 2.4z"/></svg>',
+    trophy: '<svg viewBox="0 0 24 24" fill="currentColor" fill-rule="evenodd"><path d="M7 3.4h10v1.2h3.4v2.2a4.4 4.4 0 0 1-3.9 4.37A5.6 5.6 0 0 1 13 14.5v2.1h2.6a1.2 1.2 0 0 1 1.2 1.2v2.1H7.2v-2.1a1.2 1.2 0 0 1 1.2-1.2H11v-2.1a5.6 5.6 0 0 1-3.5-3.31A4.4 4.4 0 0 1 3.6 6.8V4.6H7v-1.2zM5.4 6.4v.4c0 1.16.77 2.15 1.83 2.48A9.6 9.6 0 0 1 7 6.4H5.4zm13.2 0H17c.1.94.05 1.9-.23 2.88a2.6 2.6 0 0 0 1.83-2.48v-.4z"/></svg>',
+    heart: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 20.6 4.7 13.4a5 5 0 0 1 0-7.1 5.1 5.1 0 0 1 7.2 0l.1.2.1-.2a5.1 5.1 0 0 1 7.2 0 5 5 0 0 1 0 7.1L12 20.6z"/></svg>',
+    chartStar: '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="12.5" width="3.6" height="7.5" rx="1.3"/><rect x="10.2" y="8.5" width="3.6" height="11.5" rx="1.3"/><rect x="16.4" y="10.8" width="3.6" height="9.2" rx="1.3"/><path d="m12 2.4.9 1.9 2.1.3-1.5 1.4.3 2-1.8-1-1.8 1 .3-2-1.5-1.4 2.1-.3z"/></svg>',
   };
 
   const navbar = (title, { orange, back = true, right } = {}) => `
@@ -300,10 +304,18 @@
           </div>
         </div>
 
-        <div class="mx" style="margin-top:14px">
-          <div class="quick-caps">
-            ${[['选课报名', true], ['研学', false], ['赛事活动', false], ['志愿活动', false], ['素质评价', false]].map(([t, on]) => `
-              <div class="qcap ${on ? 'on' : ''}" onclick="${on ? '' : `App.soonTip('${t}')`}">${esc(t)}${on ? '' : '<span class="qcap-dev">开发中</span>'}</div>`).join('')}
+        <div class="mx quick-grid-wrap">
+          <div class="quick-grid">
+            ${[
+              ['研学', I.compass, 'qg-green'],
+              ['赛事活动', I.trophy, 'qg-orange'],
+              ['志愿活动', I.heart, 'qg-pink'],
+              ['素质评价', I.chartStar, 'qg-purple'],
+            ].map(([t, icon, cls]) => `
+              <div class="qg-item" onclick="App.soonTip('${t}')">
+                <div class="qg-ic ${cls}">${icon}</div>
+                <div class="qg-label">${esc(t)}</div>
+              </div>`).join('')}
           </div>
         </div>
 
