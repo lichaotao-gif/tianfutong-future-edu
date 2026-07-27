@@ -201,7 +201,7 @@
 <script>
 /* ============================================================
  * 天府未来教育中心 · 学校端 单文件原型
- * 学校职责：看本校课程 / 管场地 / 看名单 / 确认排课 / 确认上课销课
+ * 学校职责：看本校课程 / 管场地 / 看名单 / 查看排课与上课情况（销课确认由家长完成，学校不参与）
  * 不涉及机构财务与结算金额
  * ============================================================ */
 
@@ -210,7 +210,7 @@ const DATA = {
   '成都天府新区实验小学': {
     info: { name: '成都天府新区实验小学', area: '天府新区', addr: '天府新区麓山大道 66 号', contact: '李主任', phone: '138****8888', status: '已合作', outside: '否', admin: '李主任' },
     stats: [['本校开放课程', 6, '门'], ['当前开课班级', 4, '个'], ['今日上课班级', 2, '个'], ['本月报名人数', 126, '人'],
-      ['待确认排课', 2, '个', 1], ['待确认销课', 3, '节', 1], ['场地数量', 8, '个'], ['待处理售后', 1, '单', 1]],
+      ['本学期排课班级', 4, '个'], ['本月已确认销课', 12, '节'], ['场地数量', 8, '个'], ['待处理售后', 1, '单', 1]],
     venues: [
       { id: 'v1', name: '科技教室', type: '科技类', cap: 30, time: '周三 17:00-18:00', fit: 'AI、编程', open: '不开放', status: '可用' },
       { id: 'v2', name: '计算机教室', type: '信息技术', cap: 40, time: '周五 17:00-18:00', fit: '编程、AI', open: '不开放', status: '可用' },
@@ -218,108 +218,108 @@ const DATA = {
       { id: 'v4', name: '操场', type: '体育类', cap: 60, time: '工作日 17:00-18:30', fit: '足球、体能', open: '可开放', status: '可用' },
     ],
     courses: [
-      { id: 'c1', name: '人工智能启蒙课', org: '成都启智未来教育', cat: 'AI科技', grade: '1-3年级', lessons: 10, price: 800, min: 10, max: 30, shelf: '已上架',
+      { id: 'c1', name: '人工智能启蒙课', org: '智创未来', cat: 'AI科技', grade: '1-3年级', lessons: 10, price: 800, min: 10, max: 30, shelf: '已上架',
         intro: 'AI 启蒙课程，游戏化认识人工智能，完成个人 AI 小作品。', venue: '科技教室 / 计算机教室', device: '平板、投影', teacher: '王老师（平台已审核资质）', audit: '平台审核通过 · 已入课程库',
         syllabus: ['认识人工智能', '和 AI 对话', 'AI 画图体验', '训练小模型', 'AI 故事创作', 'AI 音乐体验', 'AI 编程游戏', '综合创作（一）', '综合创作（二）', '成果展示'] },
-      { id: 'c2', name: '少儿编程思维课', org: '成都启智未来教育', cat: '编程', grade: '3-5年级', lessons: 12, price: 960, min: 12, max: 30, shelf: '已上架',
+      { id: 'c2', name: '少儿编程思维课', org: '智创未来', cat: '编程', grade: '3-5年级', lessons: 12, price: 960, min: 12, max: 30, shelf: '已上架',
         intro: '图形化编程入门，培养逻辑思维，独立完成小游戏。', venue: '计算机教室', device: '电脑机房', teacher: '李老师（平台已审核资质）', audit: '平台审核通过 · 已入课程库',
         syllabus: ['认识编程', '顺序结构', '循环结构', '条件判断', '变量计分', '角色交互', '关卡设计（一）', '关卡设计（二）', '调试优化', '音效界面', '作品完善', '项目展示'] },
-      { id: 'c3', name: '科学实验探索课', org: '星火科学教育', cat: '科学实验', grade: '1-4年级', lessons: 8, price: 640, min: 10, max: 25, shelf: '待确认',
+      { id: 'c3', name: '科学实验探索课', org: '智创未来', cat: '科学实验', grade: '1-4年级', lessons: 8, price: 640, min: 10, max: 25, shelf: '待确认',
         intro: '趣味科学实验，在动手中观察、提问、验证。', venue: '科学教室', device: '实验器材包', teacher: '张老师（平台已审核资质）', audit: '平台审核通过 · 已入课程库',
         syllabus: ['观察与猜想', '浮沉与密度', '磁力探索', '气压与流动', '植物观察', '声音传播', '自制小装置', '实验报告展示'] },
-      { id: 'c4', name: '创意美术课', org: '艺彩教育', cat: '艺术', grade: '1-6年级', lessons: 10, price: 700, min: 10, max: 30, shelf: '已上架',
+      { id: 'c4', name: '创意水彩画课', org: '童心美育', cat: '艺术', grade: '1-6年级', lessons: 10, price: 700, min: 10, max: 30, shelf: '已上架',
         intro: '从色彩感知到独立创作，激发孩子艺术表达。', venue: '美术教室', device: '画材包', teacher: '刘老师（平台已审核资质）', audit: '平台审核通过 · 已入课程库',
         syllabus: ['色彩认知', '线条练习', '创意涂鸦', '静物写生', '风景创作', '动物主题', '人物入门', '主题创作', '装裱知识', '作品展'] },
     ],
     classes: [
-      { id: 'k1', name: '人工智能启蒙课一班', course: '人工智能启蒙课', org: '成都启智未来教育', venue: '科技教室', time: '每周三 17:00-18:00', teacher: '王老师', total: 10, done: 4, enrolled: 28, max: 30, status: '上课中' },
-      { id: 'k2', name: '少儿编程思维课一班', course: '少儿编程思维课', org: '成都启智未来教育', venue: '计算机教室', time: '每周五 17:00-18:00', teacher: '李老师', total: 12, done: 0, enrolled: 24, max: 30, status: '已成班' },
-      { id: 'k3', name: '科学实验探索课一班', course: '科学实验探索课', org: '星火科学教育', venue: '科学教室', time: '每周二 17:00-18:00', teacher: '张老师', total: 8, done: 1, enrolled: 18, max: 25, status: '上课中' },
-      { id: 'k4', name: '创意美术课一班', course: '创意美术课', org: '艺彩教育', venue: '美术教室', time: '每周四 17:00-18:00', teacher: '刘老师', total: 10, done: 0, enrolled: 8, max: 30, status: '报名中' },
+      { id: 'k1', name: '人工智能启蒙课·周三班', course: '人工智能启蒙课', org: '智创未来', venue: '科技教室', time: '每周三 17:00-18:00', teacher: '王老师', total: 10, done: 4, enrolled: 28, max: 30, status: '上课中' },
+      { id: 'k2', name: '少儿编程思维课·周五班', course: '少儿编程思维课', org: '智创未来', venue: '计算机教室', time: '每周五 17:00-18:00', teacher: '李老师', total: 12, done: 0, enrolled: 24, max: 30, status: '已成班' },
+      { id: 'k3', name: '科学实验探索课·周二班', course: '科学实验探索课', org: '智创未来', venue: '科学教室', time: '每周二 17:00-18:00', teacher: '张老师', total: 8, done: 1, enrolled: 18, max: 25, status: '上课中' },
+      { id: 'k4', name: '创意水彩画课·周一班', course: '创意水彩画课', org: '童心美育', venue: '美术教室', time: '每周四 17:00-18:00', teacher: '刘老师', total: 10, done: 0, enrolled: 8, max: 30, status: '报名中' },
     ],
     students: [
       { name: '李小明', grade: '三年级2班', course: '人工智能启蒙课', cls: '一班', phone: '138****8888', payTime: '2026-06-20', pay: '已支付', status: '上课中' },
       { name: '王小雨', grade: '三年级1班', course: '人工智能启蒙课', cls: '一班', phone: '139****6666', payTime: '2026-06-21', pay: '已支付', status: '上课中' },
       { name: '张天天', grade: '四年级3班', course: '少儿编程思维课', cls: '一班', phone: '137****9999', payTime: '2026-06-22', pay: '已支付', status: '已成班' },
       { name: '陈梓涵', grade: '二年级4班', course: '科学实验探索课', cls: '一班', phone: '136****2233', payTime: '2026-06-23', pay: '已支付', status: '上课中' },
-      { name: '黄雨桐', grade: '三年级3班', course: '创意美术课', cls: '一班', phone: '188****9900', payTime: '2026-07-01', pay: '已支付', status: '已报名' },
-      { name: '周子墨', grade: '一年级2班', course: '创意美术课', cls: '一班', phone: '186****1122', payTime: '2026-07-02', pay: '待支付', status: '已报名' },
+      { name: '黄雨桐', grade: '三年级3班', course: '创意水彩画课', cls: '一班', phone: '188****9900', payTime: '2026-07-01', pay: '已支付', status: '已报名' },
+      { name: '周子墨', grade: '一年级2班', course: '创意水彩画课', cls: '一班', phone: '186****1122', payTime: '2026-07-02', pay: '待支付', status: '已报名' },
     ],
     schedule: [
-      { id: 's1', cls: '少儿编程思维课一班', course: '少儿编程思维课', org: '成都启智未来教育', time: '每周五 17:00-18:00', venue: '计算机教室', teacher: '李老师', enrolled: 24, max: 30, status: '待确认' },
-      { id: 's2', cls: '创意美术课二班（拟新增）', course: '创意美术课', org: '艺彩教育', time: '每周一 17:00-18:00', venue: '美术教室', teacher: '刘老师', enrolled: 12, max: 30, status: '待确认' },
-      { id: 's3', cls: '人工智能启蒙课一班', course: '人工智能启蒙课', org: '成都启智未来教育', time: '每周三 17:00-18:00', venue: '科技教室', teacher: '王老师', enrolled: 28, max: 30, status: '已确认' },
+      { id: 's1', cls: '少儿编程思维课·周五班', course: '少儿编程思维课', org: '智创未来', time: '每周五 17:00-18:00', venue: '计算机教室', teacher: '李老师', enrolled: 24, max: 30, status: '待确认' },
+      { id: 's2', cls: '创意水彩画课二班（拟新增）', course: '创意水彩画课', org: '童心美育', time: '每周一 17:00-18:00', venue: '美术教室', teacher: '刘老师', enrolled: 12, max: 30, status: '待确认' },
+      { id: 's3', cls: '人工智能启蒙课·周三班', course: '人工智能启蒙课', org: '智创未来', time: '每周三 17:00-18:00', venue: '科技教室', teacher: '王老师', enrolled: 28, max: 30, status: '已确认' },
     ],
     records: [
-      { id: 'r1', cls: '人工智能启蒙课一班', course: '人工智能启蒙课', no: 4, date: '2026-07-01', time: '17:00-18:00', venue: '科技教室', teacher: '王老师', due: 28, actual: 27, sign: '已签到', record: '已提交记录', signAt: '16:52', content: '训练自己的小模型', mood: '课堂气氛活跃，动手环节完成度高', comment: '整体掌握良好', note: '' },
-      { id: 'r2', cls: '人工智能启蒙课一班', course: '人工智能启蒙课', no: 5, date: '2026-07-08', time: '17:00-18:00', venue: '科技教室', teacher: '王老师', due: 28, actual: 0, sign: '待上课', record: '待上课', signAt: '—', content: '', mood: '', comment: '', note: '' },
-      { id: 'r3', cls: '科学实验探索课一班', course: '科学实验探索课', no: 1, date: '2026-06-30', time: '17:00-18:00', venue: '科学教室', teacher: '张老师', due: 18, actual: 17, sign: '已签到', record: '已提交记录', signAt: '16:55', content: '观察与猜想', mood: '实验安全规范讲解到位', comment: '学生兴趣浓厚', note: '' },
-      { id: 'r4', cls: '科学实验探索课一班', course: '科学实验探索课', no: 2, date: '2026-07-07', time: '17:00-18:00', venue: '科学教室', teacher: '张老师', due: 18, actual: 16, sign: '已签到', record: '异常', signAt: '17:20', content: '浮沉与密度', mood: '', comment: '', note: '教师迟到 20 分钟，实到人数与签到不符，已上报平台' },
+      { id: 'r1', cls: '人工智能启蒙课·周三班', course: '人工智能启蒙课', no: 4, date: '2026-07-01', time: '17:00-18:00', venue: '科技教室', teacher: '王老师', due: 28, actual: 27, sign: '已签到', record: '已提交记录', signAt: '16:52', content: '训练自己的小模型', mood: '课堂气氛活跃，动手环节完成度高', comment: '整体掌握良好', note: '' },
+      { id: 'r2', cls: '人工智能启蒙课·周三班', course: '人工智能启蒙课', no: 5, date: '2026-07-08', time: '17:00-18:00', venue: '科技教室', teacher: '王老师', due: 28, actual: 0, sign: '待上课', record: '待上课', signAt: '—', content: '', mood: '', comment: '', note: '' },
+      { id: 'r3', cls: '科学实验探索课·周二班', course: '科学实验探索课', no: 1, date: '2026-06-30', time: '17:00-18:00', venue: '科学教室', teacher: '张老师', due: 18, actual: 17, sign: '已签到', record: '已提交记录', signAt: '16:55', content: '观察与猜想', mood: '实验安全规范讲解到位', comment: '学生兴趣浓厚', note: '' },
+      { id: 'r4', cls: '科学实验探索课·周二班', course: '科学实验探索课', no: 2, date: '2026-07-07', time: '17:00-18:00', venue: '科学教室', teacher: '张老师', due: 18, actual: 16, sign: '已签到', record: '异常', signAt: '17:20', content: '浮沉与密度', mood: '', comment: '', note: '教师迟到 20 分钟，实到人数与签到不符，已上报平台' },
     ],
     confirms: [
-      { id: 'x1', cls: '人工智能启蒙课一班', course: '人工智能启蒙课', no: 4, date: '2026-07-01', teacher: '王老师', org: '成都启智未来教育', due: 28, actual: 27, tSubmit: '已提交', school: '待确认', status: '已上课待确认' },
-      { id: 'x2', cls: '科学实验探索课一班', course: '科学实验探索课', no: 1, date: '2026-06-30', teacher: '张老师', org: '星火科学教育', due: 18, actual: 17, tSubmit: '已提交', school: '待确认', status: '已上课待确认' },
-      { id: 'x3', cls: '人工智能启蒙课一班', course: '人工智能启蒙课', no: 3, date: '2026-06-24', teacher: '王老师', org: '成都启智未来教育', due: 28, actual: 28, tSubmit: '已提交', school: '已确认', status: '已确认销课' },
-      { id: 'x4', cls: '科学实验探索课一班', course: '科学实验探索课', no: 2, date: '2026-07-07', teacher: '张老师', org: '星火科学教育', due: 18, actual: 16, tSubmit: '已提交', school: '有异常', status: '异常' },
-      { id: 'x5', cls: '人工智能启蒙课一班', course: '人工智能启蒙课', no: 2, date: '2026-06-17', teacher: '王老师', org: '成都启智未来教育', due: 28, actual: 28, tSubmit: '已提交', school: '已确认', status: '已计入结算' },
+      { id: 'x1', cls: '人工智能启蒙课·周三班', course: '人工智能启蒙课', no: 4, date: '2026-07-01', teacher: '王老师', org: '智创未来', due: 28, actual: 27, tSubmit: '已提交', parentConfirm: '部分确认', status: '已上课待确认' },
+      { id: 'x2', cls: '科学实验探索课·周二班', course: '科学实验探索课', no: 1, date: '2026-06-30', teacher: '张老师', org: '智创未来', due: 18, actual: 17, tSubmit: '已提交', parentConfirm: '部分确认', status: '已上课待确认' },
+      { id: 'x3', cls: '人工智能启蒙课·周三班', course: '人工智能启蒙课', no: 3, date: '2026-06-24', teacher: '王老师', org: '智创未来', due: 28, actual: 28, tSubmit: '已提交', parentConfirm: '全部确认', status: '已确认销课' },
+      { id: 'x4', cls: '科学实验探索课·周二班', course: '科学实验探索课', no: 2, date: '2026-07-07', teacher: '张老师', org: '智创未来', due: 18, actual: 16, tSubmit: '已提交', parentConfirm: '异常', status: '异常' },
+      { id: 'x5', cls: '人工智能启蒙课·周三班', course: '人工智能启蒙课', no: 2, date: '2026-06-17', teacher: '王老师', org: '智创未来', due: 28, actual: 28, tSubmit: '已提交', parentConfirm: '全部确认', status: '已计入结算' },
     ],
     aftersales: [
-      { id: 'SH20260702001', student: '陈梓涵', cls: '科学实验探索课一班', type: '上课时间冲突', status: '需学校协助', opinion: '家长反馈周二与校内社团冲突，请学校确认能否调整场地时段', need: '是' },
-      { id: 'SH20260628002', student: '王小雨', cls: '人工智能启蒙课一班', type: '家长投诉', status: '已完成', opinion: '已与家长沟通说明，投诉撤销', need: '否' },
+      { id: 'SH20260702001', student: '陈梓涵', cls: '科学实验探索课·周二班', type: '上课时间冲突', status: '需学校协助', opinion: '家长反馈周二与校内社团冲突，请学校确认能否调整场地时段', need: '是' },
+      { id: 'SH20260628002', student: '王小雨', cls: '人工智能启蒙课·周三班', type: '课程质量问题', status: '已完成', opinion: '已与家长沟通说明，投诉撤销', need: '否' },
     ],
     notices: [
       { t: '新课程待确认开放', d: '平台已将「科学实验探索课」分发至本校，请在「本校课程」中确认开放。', time: '2026-07-05 09:12', read: false },
-      { t: '新班级待排课确认', d: '「少儿编程思维课一班」已成班（24 人），请确认教室与上课时间。', time: '2026-07-04 15:30', read: false },
-      { t: '今日上课提醒', d: '今日 17:00「人工智能启蒙课一班」在科技教室上课，任课王老师。', time: '2026-07-08 08:00', read: false },
+      { t: '新班级排课已配置', d: '「少儿编程思维课·周五班」已成班（24 人），平台已按线下核对结果配置教室与上课时间。', time: '2026-07-04 15:30', read: false },
+      { t: '今日上课提醒', d: '今日 17:00「人工智能启蒙课·周三班」在科技教室上课，任课王老师。', time: '2026-07-08 08:00', read: false },
       { t: '教师签到提醒', d: '张老师 7 月 7 日签到时间 17:20，迟到 20 分钟，请关注。', time: '2026-07-07 17:25', read: false },
-      { t: '销课待确认', d: '有 3 节课待学校确认，请在「销课确认」中处理。', time: '2026-07-07 18:00', read: false },
+      { t: '销课进度提醒', d: '本周 3 节课已由家长确认完成，可在「上课与销课情况」查看进度。', time: '2026-07-07 18:00', read: false },
       { t: '售后协同提醒', d: '售后单 SH20260702001 需学校协助，请及时反馈。', time: '2026-07-02 10:05', read: true },
-      { t: '班级满员提醒', d: '「人工智能启蒙课一班」报名 28/30，即将满员。', time: '2026-07-01 12:00', read: true },
-      { t: '未成班提醒', d: '「创意美术课一班」当前报名 8/10（最低成班 10 人），报名截止还有 5 天。', time: '2026-07-06 09:00', read: false },
+      { t: '班级满员提醒', d: '「人工智能启蒙课·周三班」报名 28/30，即将满员。', time: '2026-07-01 12:00', read: true },
+      { t: '未成班提醒', d: '「创意水彩画课·周一班」当前报名 8/10（最低成班 10 人），报名截止还有 5 天。', time: '2026-07-06 09:00', read: false },
     ],
     today: [
-      { cls: '人工智能启蒙课一班', course: '人工智能启蒙课', time: '17:00-18:00', venue: '科技教室', teacher: '王老师', org: '成都启智未来教育', status: '待上课' },
-      { cls: '科学实验探索课一班', course: '科学实验探索课', time: '17:00-18:00', venue: '科学教室', teacher: '张老师', org: '星火科学教育', status: '待上课' },
+      { cls: '人工智能启蒙课·周三班', course: '人工智能启蒙课', time: '17:00-18:00', venue: '科技教室', teacher: '王老师', org: '智创未来', status: '待上课' },
+      { cls: '科学实验探索课·周二班', course: '科学实验探索课', time: '17:00-18:00', venue: '科学教室', teacher: '张老师', org: '智创未来', status: '待上课' },
     ],
   },
 
   '成都天府新区第七小学': {
     info: { name: '成都天府新区第七小学', area: '天府新区', addr: '天府新区科学城中路 88 号', contact: '吴主任', phone: '139****1002', status: '已合作', outside: '否', admin: '吴主任' },
     stats: [['本校开放课程', 2, '门'], ['当前开课班级', 1, '个'], ['今日上课班级', 0, '个'], ['本月报名人数', 24, '人'],
-      ['待确认排课', 1, '个', 1], ['待确认销课', 1, '节', 1], ['场地数量', 3, '个'], ['待处理售后', 0, '单']],
+      ['本学期排课班级', 1, '个'], ['本月已确认销课', 4, '节'], ['场地数量', 3, '个'], ['待处理售后', 0, '单']],
     venues: [
       { id: 'v1', name: '科学实验室', type: '科技类', cap: 30, time: '周五 17:00-18:00', fit: 'AI、科学', open: '不开放', status: '可用' },
       { id: 'v2', name: '多功能室', type: '综合类', cap: 60, time: '工作日 17:00-18:00', fit: '通用', open: '可开放', status: '可用' },
       { id: 'v3', name: '音乐教室', type: '艺术类', cap: 30, time: '周四 17:00-18:00', fit: '音乐', open: '不开放', status: '可用' },
     ],
     courses: [
-      { id: 'c1', name: '人工智能启蒙课', org: '成都启智未来教育', cat: 'AI科技', grade: '1-3年级', lessons: 10, price: 780, min: 10, max: 30, shelf: '已上架',
+      { id: 'c1', name: '人工智能启蒙课', org: '智创未来', cat: 'AI科技', grade: '1-3年级', lessons: 10, price: 780, min: 10, max: 30, shelf: '已上架',
         intro: 'AI 启蒙课程（本校配置价 780 元）。', venue: '科学实验室', device: '平板、投影', teacher: '王老师（平台已审核资质）', audit: '平台审核通过 · 已入课程库',
         syllabus: ['认识人工智能', '和 AI 对话', 'AI 画图体验', '训练小模型', 'AI 故事创作', 'AI 音乐体验', 'AI 编程游戏', '综合创作（一）', '综合创作（二）', '成果展示'] },
-      { id: 'c2', name: '趣味围棋课', org: '弈智教育', cat: '棋类', grade: '1-6年级', lessons: 10, price: 600, min: 8, max: 20, shelf: '待确认',
+      { id: 'c2', name: '趣味围棋课', org: '星辰体育培训中心', cat: '棋类', grade: '1-6年级', lessons: 10, price: 600, min: 8, max: 20, shelf: '待确认',
         intro: '围棋入门，礼仪与思维训练并重。', venue: '多功能室', device: '棋具', teacher: '赵老师（平台已审核资质）', audit: '平台审核通过 · 已入课程库',
         syllabus: ['认识棋盘', '气与提子', '基本吃子', '连接与分断', '布局常识', '死活入门', '对局礼仪', '实战（一）', '实战（二）', '结业对局'] },
     ],
     classes: [
-      { id: 'k1', name: '人工智能启蒙课一班', course: '人工智能启蒙课', org: '成都启智未来教育', venue: '科学实验室', time: '每周五 17:00-18:00', teacher: '王老师', total: 10, done: 2, enrolled: 24, max: 30, status: '上课中' },
+      { id: 'k1', name: '人工智能启蒙课·周三班', course: '人工智能启蒙课', org: '智创未来', venue: '科学实验室', time: '每周五 17:00-18:00', teacher: '王老师', total: 10, done: 2, enrolled: 24, max: 30, status: '上课中' },
     ],
     students: [
       { name: '刘思彤', grade: '二年级2班', course: '人工智能启蒙课', cls: '一班', phone: '135****3344', payTime: '2026-06-23', pay: '已支付', status: '上课中' },
       { name: '陈梓航', grade: '三年级4班', course: '人工智能启蒙课', cls: '一班', phone: '136****7788', payTime: '2026-06-22', pay: '已支付', status: '上课中' },
     ],
     schedule: [
-      { id: 's1', cls: '趣味围棋课一班', course: '趣味围棋课', org: '弈智教育', time: '每周一 17:00-18:00', venue: '多功能室', teacher: '赵老师', enrolled: 10, max: 20, status: '待确认' },
+      { id: 's1', cls: '趣味围棋课·周一班', course: '趣味围棋课', org: '星辰体育培训中心', time: '每周一 17:00-18:00', venue: '多功能室', teacher: '赵老师', enrolled: 10, max: 20, status: '待确认' },
     ],
     records: [
-      { id: 'r1', cls: '人工智能启蒙课一班', course: '人工智能启蒙课', no: 2, date: '2026-07-03', time: '17:00-18:00', venue: '科学实验室', teacher: '王老师', due: 24, actual: 24, sign: '已签到', record: '已提交记录', signAt: '16:50', content: '和 AI 对话', mood: '学生提问踊跃', comment: '课堂参与度高', note: '' },
+      { id: 'r1', cls: '人工智能启蒙课·周三班', course: '人工智能启蒙课', no: 2, date: '2026-07-03', time: '17:00-18:00', venue: '科学实验室', teacher: '王老师', due: 24, actual: 24, sign: '已签到', record: '已提交记录', signAt: '16:50', content: '和 AI 对话', mood: '学生提问踊跃', comment: '课堂参与度高', note: '' },
     ],
     confirms: [
-      { id: 'x1', cls: '人工智能启蒙课一班', course: '人工智能启蒙课', no: 2, date: '2026-07-03', teacher: '王老师', org: '成都启智未来教育', due: 24, actual: 24, tSubmit: '已提交', school: '待确认', status: '已上课待确认' },
+      { id: 'x1', cls: '人工智能启蒙课·周三班', course: '人工智能启蒙课', no: 2, date: '2026-07-03', teacher: '王老师', org: '智创未来', due: 24, actual: 24, tSubmit: '已提交', parentConfirm: '部分确认', status: '已上课待确认' },
     ],
     aftersales: [],
     notices: [
       { t: '新课程待确认开放', d: '平台已将「趣味围棋课」分发至本校，请确认开放。', time: '2026-07-05 10:00', read: false },
-      { t: '销课待确认', d: '7 月 3 日「人工智能启蒙课一班」第 2 节待学校确认。', time: '2026-07-04 09:00', read: false },
+      { t: '销课进度提醒', d: '7 月 3 日「人工智能启蒙课·周三班」第 2 节已完成家长确认。', time: '2026-07-04 09:00', read: false },
     ],
     today: [],
   },
@@ -327,18 +327,18 @@ const DATA = {
   '成都麓湖小学': {
     info: { name: '成都麓湖小学', area: '天府新区', addr: '天府新区兴隆湖畔 12 号', contact: '郑校长', phone: '137****1003', status: '已合作', outside: '是', admin: '郑校长' },
     stats: [['本校开放课程', 1, '门'], ['当前开课班级', 1, '个'], ['今日上课班级', 1, '个'], ['本月报名人数', 18, '人'],
-      ['待确认排课', 0, '个'], ['待确认销课', 0, '节'], ['场地数量', 2, '个'], ['待处理售后', 1, '单', 1]],
+      ['本学期排课班级', 1, '个'], ['本月已确认销课', 6, '节'], ['场地数量', 2, '个'], ['待处理售后', 1, '单', 1]],
     venues: [
       { id: 'v1', name: '科学教室', type: '科技类', cap: 30, time: '周二/周四 17:00-18:00', fit: '科学实验', open: '不开放', status: '可用' },
       { id: 'v2', name: '风雨操场', type: '体育类', cap: 80, time: '工作日 17:00-18:30', fit: '球类、体能', open: '可开放', status: '可用' },
     ],
     courses: [
-      { id: 'c1', name: '科学实验探索课', org: '星火科学教育', cat: '科学实验', grade: '1-4年级', lessons: 8, price: 640, min: 10, max: 25, shelf: '已上架',
+      { id: 'c1', name: '科学实验探索课', org: '智创未来', cat: '科学实验', grade: '1-4年级', lessons: 8, price: 640, min: 10, max: 25, shelf: '已上架',
         intro: '趣味科学实验课程。', venue: '科学教室', device: '实验器材包', teacher: '张老师（平台已审核资质）', audit: '平台审核通过 · 已入课程库',
         syllabus: ['观察与猜想', '浮沉与密度', '磁力探索', '气压与流动', '植物观察', '声音传播', '自制小装置', '实验报告展示'] },
     ],
     classes: [
-      { id: 'k1', name: '科学实验探索课一班', course: '科学实验探索课', org: '星火科学教育', venue: '科学教室', time: '每周二 17:00-18:00', teacher: '张老师', total: 8, done: 3, enrolled: 18, max: 25, status: '上课中' },
+      { id: 'k1', name: '科学实验探索课·周二班', course: '科学实验探索课', org: '智创未来', venue: '科学教室', time: '每周二 17:00-18:00', teacher: '张老师', total: 8, done: 3, enrolled: 18, max: 25, status: '上课中' },
     ],
     students: [
       { name: '杨浩然', grade: '三年级2班', course: '科学实验探索课', cls: '一班', phone: '158****6677', payTime: '2026-06-25', pay: '已支付', status: '上课中' },
@@ -346,20 +346,20 @@ const DATA = {
     ],
     schedule: [],
     records: [
-      { id: 'r1', cls: '科学实验探索课一班', course: '科学实验探索课', no: 3, date: '2026-07-07', time: '17:00-18:00', venue: '科学教室', teacher: '张老师', due: 18, actual: 18, sign: '已签到', record: '已提交记录', signAt: '16:48', content: '磁力探索', mood: '分组实验有序', comment: '动手能力提升明显', note: '' },
+      { id: 'r1', cls: '科学实验探索课·周二班', course: '科学实验探索课', no: 3, date: '2026-07-07', time: '17:00-18:00', venue: '科学教室', teacher: '张老师', due: 18, actual: 18, sign: '已签到', record: '已提交记录', signAt: '16:48', content: '磁力探索', mood: '分组实验有序', comment: '动手能力提升明显', note: '' },
     ],
     confirms: [
-      { id: 'x1', cls: '科学实验探索课一班', course: '科学实验探索课', no: 3, date: '2026-07-07', teacher: '张老师', org: '星火科学教育', due: 18, actual: 18, tSubmit: '已提交', school: '已确认', status: '已确认销课' },
+      { id: 'x1', cls: '科学实验探索课·周二班', course: '科学实验探索课', no: 3, date: '2026-07-07', teacher: '张老师', org: '智创未来', due: 18, actual: 18, tSubmit: '已提交', parentConfirm: '全部确认', status: '已确认销课' },
     ],
     aftersales: [
-      { id: 'SH20260706003', student: '杨浩然', cls: '科学实验探索课一班', type: '学生无法继续上课', status: '需学校协助', opinion: '家长申请转班，请学校确认本校是否有可转入班级', need: '是' },
+      { id: 'SH20260706003', student: '杨浩然', cls: '科学实验探索课·周二班', type: '学生无法继续上课', status: '需学校协助', opinion: '家长申请转班，请学校确认本校是否有可转入班级', need: '是' },
     ],
     notices: [
-      { t: '今日上课提醒', d: '今日 17:00「科学实验探索课一班」在科学教室上课。', time: '2026-07-08 08:00', read: false },
+      { t: '今日上课提醒', d: '今日 17:00「科学实验探索课·周二班」在科学教室上课。', time: '2026-07-08 08:00', read: false },
       { t: '售后协同提醒', d: '售后单 SH20260706003 需学校协助，请及时反馈。', time: '2026-07-06 11:00', read: false },
     ],
     today: [
-      { cls: '科学实验探索课一班', course: '科学实验探索课', time: '17:00-18:00', venue: '科学教室', teacher: '张老师', org: '星火科学教育', status: '待上课' },
+      { cls: '科学实验探索课·周二班', course: '科学实验探索课', time: '17:00-18:00', venue: '科学教室', teacher: '张老师', org: '智创未来', status: '待上课' },
     ],
   },
 };
@@ -376,24 +376,24 @@ const TAG = {
 /* ---------- 名词解释词典 ---------- */
 const GLOSSARY = [
   { title: '学校端职责（先看这里）', items: [
-    ['学校端定位', '学校不审核机构与课程资质（由平台审核），不涉及机构结算金额。学校负责：确认本校课程开放、维护场地、查看报名名单、确认排课、确认上课事实、协同售后。'],
+    ['学校端定位', '学校不审核机构与课程资质（由平台审核），不参与销课确认（由家长逐节确认、平台兜底），不涉及机构结算金额。学校负责：确认本校课程开放、维护场地、查看报名名单、查看排课与上课情况、发现异常上报、协同售后。'],
   ] },
   { title: '课程上架状态', items: [
     ['已上架', '课程已在本校家长端开放报名。'],
-    ['待确认', '平台已把课程分发到本校，等待学校确认开放；确认前家长端不可见。'],
+    ['待确认', '平台已把课程分发到本校，待平台与学校线下核对后确认开放；开放前家长端不可见。'],
     ['已暂停', '学校暂停开放，家长端不可报名，存量班级正常上完。'],
   ] },
   { title: '班级状态', items: [
     ['报名中', '班级已开放，家长可报名。'],
     ['待成班', '报名未达最低成班人数，暂不能开课。'],
-    ['已成班', '达到最低成班人数，等待学校确认教室与时间（见「排课确认」）。'],
+    ['已成班', '达到最低成班人数，平台按线下核对结果配置教室与时间（见「排课安排」）。'],
     ['已排课', '学校已确认时间、场地与教师。'],
     ['上课中', '班级正常上课中。'],
     ['已结课', '全部课时完成。'],
     ['已取消', '未成班或其他原因取消，家长已缴费用由平台自动退款。'],
   ] },
-  { title: '排课确认状态', items: [
-    ['待确认', '班级已成班，等待学校确认建议的教室与上课时间。'],
+  { title: '排课状态', items: [
+    ['平台配置中', '班级已成班，平台正与学校线下核对并配置教室与上课时间。'],
     ['已确认', '学校已确认排课，班级可按计划开课。'],
     ['需调整', '学校认为场地或时间有冲突，已退回调整。'],
   ] },
@@ -404,7 +404,7 @@ const GLOSSARY = [
     ['异常', '本节课存在问题：教师迟到 / 未签到、实到人数与签到不符、课程未正常开展等。处理：学校标记异常并备注 → 平台核实 → 机构 2 个工作日内说明，异常期间本节不计入机构销课。'],
   ] },
   { title: '销课确认（学校确认上课事实）', items: [
-    ['已上课待确认', '教师已提交上课记录，等待学校确认本节课真实完成。'],
+    ['已上课待确认', '教师已提交上课记录，等待家长逐节确认（3 天未确认自动确认）；学校不参与该确认。'],
     ['已确认销课', '学校已确认本节课真实完成；确认后平台才会将本节计入机构结算（学校端不涉及金额）。'],
     ['异常', '学校对本节课提出异议（人数不符 / 教师迟到等），暂停计入，由平台跟进处理。'],
     ['已计入结算', '本节已随平台月度结算锁定（学校端仅作状态展示）。'],
@@ -515,8 +515,8 @@ const displayStats = () => D().stats.map((item) => item[0] === '场地数量' ? 
 
 const MENUS = [
   ['dash', '首页看板'], ['info', '学校信息'], ['venues', '场地管理'], ['courses', '本校课程'],
-  ['classes', '班级管理'], ['students', '报名名单'], ['schedule', '排课确认'], ['records', '上课记录'],
-  ['confirm', '销课确认'], ['aftersale', '售后协同'], ['notices', '消息通知'],
+  ['classes', '班级管理'], ['students', '报名名单'], ['schedule', '排课安排'], ['records', '上课记录'],
+  ['confirm', '上课与销课情况'], ['aftersale', '售后协同'], ['notices', '消息通知'],
 ];
 
 function setSchool(s) { school = s; render(); }
@@ -549,9 +549,9 @@ const PAGES = {
       ${d.today.length ? d.today.map((t) => `<tr><td><b>${t.cls}</b></td><td>${t.course}</td><td>${t.time}</td><td>${t.venue}</td><td>${t.teacher}</td><td>${t.org}</td><td>${tag(t.status)}</td></tr>`).join('') : '<tr><td colspan="7" class="empty">今日无上课安排</td></tr>'}
     </table></div></div>
     <div class="grid2 mt">
-      <div class="card"><h4>待确认排课</h4><div class="tbl-wrap"><table>
-        <tr><th>班级名称</th><th>建议上课时间</th><th>确认状态</th><th>操作</th></tr>
-        ${d.schedule.filter((s) => s.status === '待确认').map((s) => `<tr><td>${s.cls}</td><td>${s.time}</td><td>${tag(s.status)}</td><td><span class="lnk" onclick="go('schedule')">去确认</span></td></tr>`).join('') || '<tr><td colspan="4" class="empty">暂无待确认排课</td></tr>'}
+      <div class="card"><h4>本校排课安排</h4><div class="tbl-wrap"><table>
+        <tr><th>班级名称</th><th>上课时间</th><th>上课场地</th><th>排课状态</th></tr>
+        ${d.schedule.length ? d.schedule.map((s) => `<tr><td>${s.cls}</td><td>${s.time}</td><td>${s.venue}</td><td>${tag(s.status === '待确认' ? '平台配置中' : s.status)}</td></tr>`).join('') : '<tr><td colspan="4" class="empty">暂无排课安排</td></tr>'}
       </table></div></div>
       <div class="card"><h4>本校课程报名概览</h4><div class="tbl-wrap"><table>
         <tr><th>班级名称</th><th>报名人数</th><th>班级状态</th></tr>
@@ -644,17 +644,15 @@ const PAGES = {
   },
 
   schedule() {
-    return `<div class="page-title"><span></span><span class="hint">班级成班后，学校确认教室与上课时间；有冲突可调整或退回平台</span></div>
+    return `<div class="notice-info" style="margin-bottom:14px">本页为<b>只读查看</b>：场地与上课时间由<b>平台运营与学校线下核对</b>后在平台后台配置，学校端不做线上确认。如需调整教室或时段，请<b>线下联系平台运营对接人</b>，平台调整后此处同步更新。</div>
+    <div class="page-title"><span></span><span class="hint">本校已配置的排课安排（平台配置 · 线下已与学校核对）</span></div>
     <div class="tbl-wrap"><table>
-      <tr><th>班级名称</th><th>课程名称</th><th>所属机构</th><th>建议上课时间</th><th>建议场地</th><th>任课教师</th><th>当前报名人数</th><th>最大人数</th><th>确认状态</th><th>操作</th></tr>
+      <tr><th>班级名称</th><th>课程名称</th><th>所属机构</th><th>上课时间</th><th>上课场地</th><th>任课教师</th><th>当前报名人数</th><th>最大人数</th><th>排课状态</th><th>操作</th></tr>
       ${D().schedule.length ? D().schedule.map((s) => `<tr>
         <td><b>${s.cls}</b></td><td>${s.course}</td><td>${s.org}</td><td>${s.time}</td><td>${s.venue}</td><td>${s.teacher}</td>
-        <td>${s.enrolled}</td><td>${s.max}</td><td>${tag(s.status)}</td>
-        <td>${s.status === '待确认' ? `<span class="lnk" onclick="confirmSchedule('${s.id}')">确认排课</span>
-            <span class="lnk warn" onclick="adjust('${s.id}','场地')">调整场地</span>
-            <span class="lnk warn" onclick="adjust('${s.id}','时间')">调整时间</span>
-            <span class="lnk danger" onclick="backToPlatform('${s.id}')">退回平台</span>` : '<span style="color:#c3c9d4">—</span>'}</td>
-      </tr>`).join('') : '<tr><td colspan="10" class="empty">暂无排课确认事项</td></tr>'}
+        <td>${s.enrolled}</td><td>${s.max}</td><td>${tag(s.status === '待确认' ? '平台配置中' : s.status)}</td>
+        <td><span class="lnk" onclick="toast('如需调整教室或时段，请线下联系平台运营对接人')">申请调整（线下）</span></td>
+      </tr>`).join('') : '<tr><td colspan="10" class="empty">暂无排课安排</td></tr>'}
     </table></div>`;
   },
 
@@ -672,15 +670,14 @@ const PAGES = {
   },
 
   confirm() {
-    return `<div class="page-title"><span></span><span class="hint">学校只确认上课事实，不涉及机构结算金额；确认后平台方可将该节计入机构销课</span></div>
+    return `<div class="notice-info" style="margin-bottom:14px">本页为<b>只读查看</b>：销课确认由<b>家长逐节确认</b>（3 天未确认自动确认）、平台兜底核实，学校<b>不参与销课确认</b>、不涉及结算金额。若发现上课异常（教师未到、课程未正常开展等），请到「上课记录」标记异常，平台将跟进处理。</div>
+    <div class="page-title"><span></span><span class="hint">本校课次的上课与确认进度（数据来源：教师提交 + 家长确认）</span></div>
     <div class="tbl-wrap"><table>
-      <tr><th>班级名称</th><th>课程名称</th><th>第几节课</th><th>上课日期</th><th>任课教师</th><th>所属机构</th><th>应到人数</th><th>实到人数</th><th>教师提交状态</th><th>学校确认状态</th><th>销课状态</th><th>操作</th></tr>
+      <tr><th>班级名称</th><th>课程名称</th><th>第几节课</th><th>上课日期</th><th>任课教师</th><th>所属机构</th><th>应到人数</th><th>实到人数</th><th>教师提交状态</th><th>家长确认状态</th><th>销课状态</th><th>操作</th></tr>
       ${D().confirms.map((x) => `<tr>
         <td><b>${x.cls}</b></td><td>${x.course}</td><td>第 ${x.no} 节</td><td>${x.date}</td><td>${x.teacher}</td><td>${x.org}</td>
-        <td>${x.due}</td><td>${x.actual}</td><td>${tag(x.tSubmit)}</td><td>${tag(x.school)}</td><td>${tag(x.status)}</td>
-        <td>${x.school === '待确认' ? `<span class="lnk" onclick="confirmLesson('${x.id}')">确认完成</span>
-            <span class="lnk danger" onclick="lessonAbnormal('${x.id}')">标记异常</span>` : ''}
-            <span class="lnk" onclick="go('records')">查看详情</span></td>
+        <td>${x.due}</td><td>${x.actual}</td><td>${tag(x.tSubmit)}</td><td>${tag(x.parentConfirm || x.school)}</td><td>${tag(x.status)}</td>
+        <td><span class="lnk" onclick="go('records')">查看上课记录</span></td>
       </tr>`).join('')}
     </table></div>`;
   },
@@ -859,62 +856,6 @@ function studentDetail(i) {
     </div>`);
 }
 
-function confirmSchedule(id) {
-  const s = D().schedule.find((x) => x.id === id);
-  openModal('确认排课 · ' + s.cls, `
-    <div class="desc">
-      <div class="k">班级名称</div><div class="v">${s.cls}</div>
-      <div class="k">上课时间</div><div class="v">${s.time}</div>
-      <div class="k">上课场地</div><div class="v">${s.venue}</div>
-      <div class="k">任课教师</div><div class="v">${s.teacher}（机构派驻，资质平台已审核）</div>
-      <div class="k">当前报名</div><div class="v">${s.enrolled} / ${s.max} 人</div>
-    </div>
-    <div class="m-tip"><b>注意事项：</b>确认前请核对该时段场地无校内活动冲突；确认后平台将通知机构与家长，按此安排开课。</div>`,
-    `<button class="btn btn-ghost" onclick="closeModal()">取消</button>
-     <button class="btn btn-primary" onclick="doConfirmSchedule('${id}')">确认排课</button>`);
-}
-function doConfirmSchedule(id) {
-  const s = D().schedule.find((x) => x.id === id);
-  s.status = '已确认';
-  closeModal();
-  render();
-  toast('排课已确认，平台将通知机构与家长按此安排开课');
-}
-function adjust(id, what) {
-  const s = D().schedule.find((x) => x.id === id);
-  const usable = D().venues.filter((v) => v.status === '可用');
-  openModal('调整' + what + ' · ' + s.cls, `
-    <div class="form-row"><label>建议上课时间</label><input id="adjTime" value="${esc(s.time)}" placeholder="如：每周四 17:00-18:00"></div>
-    <div class="form-row"><label>建议场地（从本校已创建且可用的场地中选择）</label>
-      <select id="adjVenue">
-        ${usable.map((v) => `<option value="${esc(v.name)}" ${v.name === s.venue ? 'selected' : ''}>${esc(v.name)}（${esc(v.type)} · 容纳 ${v.cap} 人）</option>`).join('')}
-      </select>
-    </div>
-    ${usable.length ? '' : '<div class="m-tip">当前学校暂无可用场地，请先到「场地管理」新增或启用场地。</div>'}
-    <div class="form-row"><label>调整原因</label><textarea id="adjReason" rows="3" placeholder="如：原场地有校内活动 / 原时段与社团冲突"></textarea></div>
-    <div class="m-tip">提交后状态变为「需调整」，平台将带着学校建议与机构重新协调。</div>`,
-    `<button class="btn btn-ghost" onclick="closeModal()">取消</button>
-     <button class="btn btn-primary" ${usable.length ? '' : 'disabled'} onclick="doAdjust('${id}')">提交调整建议</button>`);
-}
-function doAdjust(id) {
-  const s = D().schedule.find((x) => x.id === id);
-  const time = document.getElementById('adjTime').value.trim();
-  const venue = document.getElementById('adjVenue').value;
-  if (!time || !venue) return toast('请选择场地并填写上课时间');
-  s.time = time;
-  s.venue = venue;
-  s.status = '需调整';
-  closeModal();
-  render();
-  toast('已提交调整建议，平台将与机构重新协调');
-}
-function backToPlatform(id) {
-  const s = D().schedule.find((x) => x.id === id);
-  s.status = '需调整';
-  render();
-  toast('已退回平台重新安排');
-}
-
 function recordDetail(id) {
   const r = D().records.find((x) => x.id === id);
   openModal(`上课详情 · ${r.cls} 第 ${r.no} 节`, `
@@ -949,20 +890,6 @@ function doMarkAbnormal(id) {
   toast('已标记异常并上报平台，该节课暂停计入销课');
 }
 
-function confirmLesson(id) {
-  const x = D().confirms.find((c) => c.id === id);
-  x.school = '已确认';
-  x.status = '已确认销课';
-  render();
-  toast('已确认本节课真实完成，平台将计入机构销课');
-}
-function lessonAbnormal(id) {
-  const x = D().confirms.find((c) => c.id === id);
-  x.school = '有异常';
-  x.status = '异常';
-  render();
-  toast('已标记异常，该节课暂停计入销课，平台将跟进核实');
-}
 
 function feedback(id) {
   openModal('提交学校反馈 · ' + id, `

@@ -156,26 +156,25 @@ const SCHOOLS = [
 
 /* 仅已成班：已成班 / 已排课 / 上课中 / 已结课 */
 const CLASSES = [
-  { id: 'k1', name: '人工智能启蒙课·周三班', course: '人工智能启蒙课', school: '成都天府新区实验小学', scene: '校内', org: '成都启智未来教育', teacher: '王老师', venue: '科技教室 A', time: '每周三 16:30-17:30', enrolled: 28, total: 8, done: 4, status: '上课中' },
-  { id: 'k2', name: '少儿编程思维课·周二班', course: '少儿编程思维课', school: '成都天府新区实验小学', scene: '校内', org: '成都启智未来教育', teacher: '陈老师', venue: '计算机教室 1', time: '每周二 16:30-17:30', enrolled: 25, total: 8, done: 6, status: '上课中' },
-  { id: 'k3', name: '科学实验探索课·周二班', course: '科学实验探索课', school: '成都天府新区实验小学', scene: '校内', org: '星火科学教育', teacher: '刘老师', venue: '科学教室', time: '每周二 16:30-17:30', enrolled: 30, total: 8, done: 8, status: '已结课' },
-  { id: 'k4', name: '科学实验探索课·一班', course: '科学实验探索课', school: '成都天府新区第七小学', scene: '校内', org: '星火科学教育', teacher: '张老师', venue: '科学实验室', time: '每周四 16:30-17:30', enrolled: 28, total: 8, done: 3, status: '上课中' },
-  { id: 'k5', name: '科学实验探索课·周四班', course: '科学实验探索课', school: '成都麓湖小学', scene: '校内', org: '星火科学教育', teacher: '张老师', venue: '科学教室', time: '每周四 16:30-17:30', enrolled: 30, total: 8, done: 0, status: '已排课' },
-  { id: 'k6', name: '社区创意美术体验课·周六班', course: '社区创意美术体验课', school: '麓山社区党群服务中心', scene: '校外', org: '艺彩教育', teacher: '许老师', venue: '美育教室', time: '每周六 10:00-11:30', enrolled: 11, total: 6, done: 0, status: '已成班' },
+  { id: 'k1', name: '人工智能启蒙课·周三班', course: '人工智能启蒙课', school: '成都天府新区实验小学', scene: '校内', org: '智创未来', teacher: '王老师', venue: '科技教室 A', time: '每周三 16:30-17:30', enrolled: 28, total: 8, done: 4, status: '上课中' },
+  { id: 'k2', name: '少儿编程思维课·周二班', course: '少儿编程思维课', school: '成都天府新区实验小学', scene: '校内', org: '智创未来', teacher: '陈老师', venue: '计算机教室 1', time: '每周二 16:30-17:30', enrolled: 25, total: 8, done: 6, status: '上课中' },
+  { id: 'k3', name: '科学实验探索课·周二班', course: '科学实验探索课', school: '成都天府新区实验小学', scene: '校内', org: '智创未来', teacher: '刘老师', venue: '科学教室', time: '每周二 16:30-17:30', enrolled: 30, total: 8, done: 8, status: '已结课' },
+  { id: 'k4', name: '科学实验探索课·周四班', course: '科学实验探索课', school: '成都天府新区第七小学', scene: '校内', org: '智创未来', teacher: '张老师', venue: '科学实验室', time: '每周四 16:30-17:30', enrolled: 28, total: 8, done: 3, status: '上课中' },
+  { id: 'k5', name: '科学实验探索课·周四班', course: '科学实验探索课', school: '成都麓湖小学', scene: '校内', org: '智创未来', teacher: '张老师', venue: '科学教室', time: '每周四 16:30-17:30', enrolled: 30, total: 8, done: 0, status: '已排课' },
+  { id: 'k6', name: '社区创意美术体验课·周六班', course: '社区创意美术体验课', school: '麓山社区党群服务中心', scene: '校外', org: '童心美育艺术中心', teacher: '许老师', venue: '美育教室', time: '每周六 10:00-11:30', enrolled: 11, total: 6, done: 0, status: '已成班' },
 ];
 
 const ORGS = [
-  { name: '成都启智未来教育科技有限公司', dir: 'AI / 编程', status: '审核通过', teachers: 3, classes: 3, joined: '2026-05-15' },
-  { name: '星火科学教育', dir: '科学实验', status: '审核通过', teachers: 2, classes: 3, joined: '2026-05-20' },
-  { name: '艺彩教育', dir: '美术 / 艺术', status: '审核通过', teachers: 1, classes: 1, joined: '2026-06-02' },
+  { name: '成都智创未来教育科技有限公司', dir: 'AI / 编程 / 科学实验', status: '审核通过', teachers: 5, classes: 5, joined: '2026-05-15' },
+  { name: '童心美育艺术中心', dir: '美术 / 艺术', status: '审核通过', teachers: 1, classes: 1, joined: '2026-06-02' },
 ];
 
 const TEACHERS = [
-  { name: '王老师', org: '成都启智未来教育', dir: 'AI 启蒙', cert: '教师资格证（小学信息技术）', status: '审核通过' },
-  { name: '陈老师', org: '成都启智未来教育', dir: '少儿编程', cert: '教师资格证（小学信息技术）', status: '审核通过' },
-  { name: '刘老师', org: '星火科学教育', dir: '科学实验', cert: '教师资格证（小学科学）', status: '审核通过' },
-  { name: '张老师', org: '星火科学教育', dir: '科学实验', cert: '教师资格证（小学科学）', status: '审核通过' },
-  { name: '许老师', org: '艺彩教育', dir: '少儿美术', cert: '美术教师资格证', status: '审核通过' },
+  { name: '王老师', org: '智创未来', dir: 'AI 启蒙', cert: '教师资格证（小学信息技术）', status: '审核通过' },
+  { name: '陈老师', org: '智创未来', dir: '少儿编程', cert: '教师资格证（小学信息技术）', status: '审核通过' },
+  { name: '刘老师', org: '智创未来', dir: '科学实验', cert: '教师资格证（小学科学）', status: '审核通过' },
+  { name: '张老师', org: '智创未来', dir: '科学实验', cert: '教师资格证（小学科学）', status: '审核通过' },
+  { name: '许老师', org: '童心美育艺术中心', dir: '少儿美术', cert: '美术教师资格证', status: '审核通过' },
 ];
 
 const NOTICES = [
@@ -259,7 +258,7 @@ const PAGES = {
       <div class="card"><h4>今日上课安排（全区）</h4><div class="tbl-wrap"><table>
         <tr><th>班级</th><th>学校 / 点位</th><th>时间</th><th>状态</th></tr>
         <tr><td>少儿编程思维课·周二班</td><td>成都天府新区实验小学</td><td>16:30-17:30</td><td>${tag('上课中')}</td></tr>
-        <tr><td>科学实验探索课·一班</td><td>成都天府新区第七小学</td><td>16:30-17:30</td><td>${tag('上课中')}</td></tr>
+        <tr><td>科学实验探索课·周四班</td><td>成都天府新区第七小学</td><td>16:30-17:30</td><td>${tag('上课中')}</td></tr>
       </table></div></div>
     </div>
     <div class="card mt"><h4>已成班班级概览（按状态）</h4><div class="tbl-wrap"><table>

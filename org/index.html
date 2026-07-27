@@ -243,7 +243,7 @@
 
 /* ---------- Mock 数据 ---------- */
 const ORG = {
-  name: '成都启智未来教育科技有限公司',
+  name: '成都智创未来教育科技有限公司',
   dir: '人工智能、少儿编程、科学实验',
   status: '审核通过', account: '已绑定',
   contact: '张经理', phone: '138****8888',
@@ -265,21 +265,21 @@ const ORG_DOCS = [
 
 /* 演示态：审核通过（资料齐全已核验） / 未通过（资料待补、被驳回） */
 const DOCS_PASS = {
-  license: { file: '启智未来-营业执照(鲜章).jpg', verified: true },
-  bank: { file: '启智未来-开户许可证(银行章).jpg', verified: true },
+  license: { file: '智创未来-营业执照(鲜章).jpg', verified: true },
+  bank: { file: '智创未来-开户许可证(银行章).jpg', verified: true },
   idCard: { file: '张建国-身份证正反面.jpg', verified: true },
-  schoolPermit: { file: '启智未来-办学许可证.jpg', verified: true },
+  schoolPermit: { file: '智创未来-办学许可证.jpg', verified: true },
   legalPhone: { phone: '138****8888', isFinance: false, verified: true },
-  storefront: { file: '启智未来-门头照.jpg', verified: true },
-  interior: { file: '启智未来-内景照(编程教室).jpg', verified: true },
+  storefront: { file: '智创未来-门头照.jpg', verified: true },
+  interior: { file: '智创未来-内景照(编程教室).jpg', verified: true },
 };
 const DOCS_REJECT = {
-  license: { file: '启智未来-营业执照(复印件).jpg', verified: false, note: '复印件未加盖鲜章，请重新提交' },
+  license: { file: '智创未来-营业执照(复印件).jpg', verified: false, note: '复印件未加盖鲜章，请重新提交' },
   bank: { file: '', verified: false },
   idCard: { file: '张建国-身份证正面.jpg', verified: false, note: '缺反面照片' },
   schoolPermit: { file: '', verified: false },
   legalPhone: { phone: '139****6666', isFinance: true, auth: '', verified: false },
-  storefront: { file: '启智未来-门头照.jpg', verified: false },
+  storefront: { file: '智创未来-门头照.jpg', verified: false },
   interior: { file: '', verified: false },
 };
 /* 待填写：平台刚开通账号，资料全空 */
@@ -400,11 +400,11 @@ const COURSES = [
 ];
 
 const CLASSES = [
-  { id: 'cl1', name: '成都天府新区实验小学 - 人工智能启蒙课一班', course: '人工智能启蒙课', school: '成都天府新区实验小学', venue: '科技教室 A',
+  { id: 'cl1', name: '人工智能启蒙课·周三班', course: '人工智能启蒙课', school: '成都天府新区实验小学', venue: '科技教室 A',
     time: '每周三 17:00-18:00', teacher: '王老师', tid: 't1', total: 10, done: 4, enrolled: 28, max: 30, status: '上课中' },
-  { id: 'cl2', name: '成都天府新区第七小学 - 人工智能启蒙课一班', course: '人工智能启蒙课', school: '成都天府新区第七小学', venue: '科学实验室',
+  { id: 'cl2', name: '人工智能启蒙课·周五班', course: '人工智能启蒙课', school: '成都天府新区第七小学', venue: '科学实验室',
     time: '每周五 17:00-18:00', teacher: '王老师', tid: 't1', total: 10, done: 2, enrolled: 24, max: 30, status: '上课中' },
-  { id: 'cl3', name: '成都麓湖小学 - 科学实验探索课一班', course: '科学实验探索课', school: '成都麓湖小学', venue: '科学教室',
+  { id: 'cl3', name: '科学实验探索课·周四班', course: '科学实验探索课', school: '成都麓湖小学', venue: '科学教室',
     time: '每周二 17:00-18:00', teacher: '张老师', tid: 't3', total: 8, done: 1, enrolled: 18, max: 25, status: '上课中' },
 ];
 
@@ -422,7 +422,7 @@ const STUDENTS = [
 /* 今日签到任务：先列出课次任务，再进入每节课完成签到 / 课堂记录 */
 const CHECKINS = [
   {
-    id: 'ck1', recordId: 'r2', cls: 'cl1', className: '成都天府新区实验小学 - 人工智能启蒙课一班', course: '人工智能启蒙课',
+    id: 'ck1', recordId: 'r2', cls: 'cl1', className: '人工智能启蒙课·周三班', course: '人工智能启蒙课',
     school: '成都天府新区实验小学', venue: '科技教室 A', time: '今天 17:00-18:00（第 5 节）', teacher: '王老师', tid: 't1', submitted: false,
     students: [
       { name: '李小明', st: '已到' }, { name: '张一诺', st: '已到' }, { name: '王梓萱', st: '已到' },
@@ -430,7 +430,7 @@ const CHECKINS = [
     ],
   },
   {
-    id: 'ck2', recordId: 'r3', cls: 'cl2', className: '成都天府新区第七小学 - 人工智能启蒙课一班', course: '人工智能启蒙课',
+    id: 'ck2', recordId: 'r3', cls: 'cl2', className: '人工智能启蒙课·周五班', course: '人工智能启蒙课',
     school: '成都天府新区第七小学', venue: '科学实验室', time: '今天 17:00-18:00（第 2 节）', teacher: '王老师', tid: 't1', submitted: true,
     students: [
       { name: '陈梓航', st: '已到' }, { name: '刘思彤', st: '已到' }, { name: '何嘉树', st: '已到' },
@@ -438,7 +438,7 @@ const CHECKINS = [
     ],
   },
   {
-    id: 'ck3', recordId: 'r4', cls: 'cl3', className: '成都麓湖小学 - 科学实验探索课一班', course: '科学实验探索课',
+    id: 'ck3', recordId: 'r4', cls: 'cl3', className: '科学实验探索课·周四班', course: '科学实验探索课',
     school: '成都麓湖小学', venue: '科学教室', time: '今天 17:00-18:00（第 2 节）', teacher: '张老师', tid: 't3', submitted: true,
     students: [
       { name: '黄雨桐', st: '已到' }, { name: '周子墨', st: '已到' }, { name: '杨浩然', st: '缺勤' },
@@ -448,27 +448,35 @@ const CHECKINS = [
 ];
 
 const COURSE_CATEGORY_OPTIONS = ['课后素质', 'AI 素质', '编程', '科学实验', '艺术美育', '书法', '体育体适能', '研学实践', '赛事活动', '升学规划', '心理健康'];
-const COURSE_GRADE_OPTIONS = ['幼小衔接', '1-2 年级', '1-3 年级', '2-4 年级', '3-5 年级', '4-6 年级', '1-6 年级', '初中', '高中'];
+/* 年级区间选择：起止各选一个年级，选同一个即单年级（如「三年级」） */
+const GRADE_LEVELS = ['幼小衔接', '一年级', '二年级', '三年级', '四年级', '五年级', '六年级', '初一', '初二', '初三'];
+/* 起止年级 → 展示文案：同级显示单年级，跨级显示区间 */
+const gradeRangeText = (from, to) => {
+  if (!from || !to) return '';
+  const i = GRADE_LEVELS.indexOf(from), j = GRADE_LEVELS.indexOf(to);
+  const [a, b] = i <= j ? [from, to] : [to, from];
+  return a === b ? a : `${a}-${b}`;
+};
 const COURSE_VENUE_OPTIONS = ['普通教室', '科技教室', '计算机教室', '科学实验室', '美术教室', '音乐教室', '多功能室', '操场 / 体育馆', '校外分中心', '研学基地'];
 const COURSE_DEVICE_OPTIONS = ['无需特殊设备', '平板 / 投影', '电脑机房', '实验器材包', '画材 / 手工材料', '体育器材', '音乐器材', '机器人套件', '研学物料包'];
 
 const RECORDS = [
-  { id: 'r1', cls: '成都天府新区实验小学 - AI启蒙一班', clsId: 'cl1', tid: 't1', no: 4, date: '2026-07-01', content: '训练自己的小模型', attend: 27, absent: 1, mood: '课堂气氛活跃，动手环节完成度高', comment: '整体掌握良好，个别学生需课后巩固', status: '已提交' },
-  { id: 'r2', cls: '成都天府新区实验小学 - AI启蒙一班', clsId: 'cl1', tid: 't1', no: 5, date: '2026-07-08', content: '', attend: 0, absent: 0, mood: '', comment: '', status: '待填写' },
-  { id: 'r3', cls: '成都天府新区第七小学 - AI启蒙一班', clsId: 'cl2', tid: 't1', no: 2, date: '2026-07-03', content: '和 AI 对话', attend: 24, absent: 0, mood: '学生提问踊跃', comment: '课堂参与度高', status: '已提交' },
-  { id: 'r4', cls: '成都麓湖小学 - 科学探索一班', clsId: 'cl3', tid: 't3', no: 1, date: '2026-06-30', content: '观察与猜想', attend: 17, absent: 1, mood: '实验安全规范讲解到位', comment: '学生兴趣浓厚', status: '已提交' },
+  { id: 'r1', cls: '人工智能启蒙课·周三班', clsId: 'cl1', tid: 't1', no: 4, date: '2026-07-01', content: '训练自己的小模型', attend: 27, absent: 1, mood: '课堂气氛活跃，动手环节完成度高', comment: '整体掌握良好，个别学生需课后巩固', status: '已提交' },
+  { id: 'r2', cls: '人工智能启蒙课·周三班', clsId: 'cl1', tid: 't1', no: 5, date: '2026-07-08', content: '', attend: 0, absent: 0, mood: '', comment: '', status: '待填写' },
+  { id: 'r3', cls: '人工智能启蒙课·周五班', clsId: 'cl2', tid: 't1', no: 2, date: '2026-07-03', content: '和 AI 对话', attend: 24, absent: 0, mood: '学生提问踊跃', comment: '课堂参与度高', status: '已提交' },
+  { id: 'r4', cls: '科学实验探索课·周四班', clsId: 'cl3', tid: 't3', no: 1, date: '2026-06-30', content: '观察与猜想', attend: 17, absent: 1, mood: '实验安全规范讲解到位', comment: '学生兴趣浓厚', status: '已提交' },
 ];
 
 const LESSONS = [
-  { course: '人工智能启蒙课', cls: '成都天府新区实验小学 - AI启蒙一班', school: '成都天府新区实验小学', venue: '科技教室 A', no: 4, date: '2026-07-01', time: '17:00-18:00', teacher: '王老师', tid: 't1', due: 28, actual: 27, sign: '已签到', tSubmit: '已提交', confirm: '已确认', status: '已确认销课', amount: 2160 },
-  { course: '人工智能启蒙课', cls: '成都天府新区实验小学 - AI启蒙一班', school: '成都天府新区实验小学', venue: '科技教室 A', no: 3, date: '2026-06-24', time: '17:00-18:00', teacher: '王老师', tid: 't1', due: 28, actual: 28, sign: '已签到', tSubmit: '已提交', confirm: '已确认', status: '已计入结算', amount: 2240 },
-  { course: '人工智能启蒙课', cls: '成都天府新区实验小学 - AI启蒙一班', school: '成都天府新区实验小学', venue: '科技教室 A', no: 5, date: '2026-07-08', time: '17:00-18:00', teacher: '王老师', tid: 't1', due: 28, actual: 0, sign: '未签到', tSubmit: '未提交', confirm: '—', status: '待上课', amount: 0 },
-  { course: '人工智能启蒙课', cls: '成都天府新区实验小学 - AI启蒙一班', school: '成都天府新区实验小学', venue: '科技教室 A', no: 6, date: '2026-07-15', time: '17:00-18:00', teacher: '王老师', tid: 't1', due: 28, actual: 0, sign: '未签到', tSubmit: '未提交', confirm: '—', status: '待上课', amount: 0 },
-  { course: '人工智能启蒙课', cls: '成都天府新区第七小学 - AI启蒙一班', school: '成都天府新区第七小学', venue: '科学实验室', no: 2, date: '2026-07-03', time: '17:00-18:00', teacher: '王老师', tid: 't1', due: 24, actual: 24, sign: '已签到', tSubmit: '已提交', confirm: '待确认', status: '部分确认', amount: 1920 },
-  { course: '人工智能启蒙课', cls: '成都天府新区第七小学 - AI启蒙一班', school: '成都天府新区第七小学', venue: '科学实验室', no: 3, date: '2026-07-10', time: '17:00-18:00', teacher: '王老师', tid: 't1', due: 24, actual: 0, sign: '未签到', tSubmit: '未提交', confirm: '—', status: '待上课', amount: 0 },
-  { course: '科学实验探索课', cls: '成都麓湖小学 - 科学探索一班', school: '成都麓湖小学', venue: '科学教室', no: 1, date: '2026-06-30', time: '17:00-18:00', teacher: '张老师', tid: 't3', due: 18, actual: 17, sign: '已签到', tSubmit: '已提交', confirm: '已确认', status: '已确认销课', amount: 1360 },
-  { course: '科学实验探索课', cls: '成都麓湖小学 - 科学探索一班', school: '成都麓湖小学', venue: '科学教室', no: 2, date: '2026-07-07', time: '17:00-18:00', teacher: '张老师', tid: 't3', due: 18, actual: 16, sign: '已签到', tSubmit: '已提交', confirm: '待确认', status: '异常', amount: 0, note: '实到人数与签到不符，待补充说明' },
-  { course: '科学实验探索课', cls: '成都麓湖小学 - 科学探索一班', school: '成都麓湖小学', venue: '科学教室', no: 3, date: '2026-07-14', time: '17:00-18:00', teacher: '张老师', tid: 't3', due: 18, actual: 0, sign: '未签到', tSubmit: '未提交', confirm: '—', status: '待上课', amount: 0 },
+  { course: '人工智能启蒙课', cls: '人工智能启蒙课·周三班', school: '成都天府新区实验小学', venue: '科技教室 A', no: 4, date: '2026-07-01', time: '17:00-18:00', teacher: '王老师', tid: 't1', due: 28, actual: 27, sign: '已签到', tSubmit: '已提交', confirm: '已确认', status: '已确认销课', amount: 2160 },
+  { course: '人工智能启蒙课', cls: '人工智能启蒙课·周三班', school: '成都天府新区实验小学', venue: '科技教室 A', no: 3, date: '2026-06-24', time: '17:00-18:00', teacher: '王老师', tid: 't1', due: 28, actual: 28, sign: '已签到', tSubmit: '已提交', confirm: '已确认', status: '已计入结算', amount: 2240 },
+  { course: '人工智能启蒙课', cls: '人工智能启蒙课·周三班', school: '成都天府新区实验小学', venue: '科技教室 A', no: 5, date: '2026-07-08', time: '17:00-18:00', teacher: '王老师', tid: 't1', due: 28, actual: 0, sign: '未签到', tSubmit: '未提交', confirm: '—', status: '待上课', amount: 0 },
+  { course: '人工智能启蒙课', cls: '人工智能启蒙课·周三班', school: '成都天府新区实验小学', venue: '科技教室 A', no: 6, date: '2026-07-15', time: '17:00-18:00', teacher: '王老师', tid: 't1', due: 28, actual: 0, sign: '未签到', tSubmit: '未提交', confirm: '—', status: '待上课', amount: 0 },
+  { course: '人工智能启蒙课', cls: '人工智能启蒙课·周五班', school: '成都天府新区第七小学', venue: '科学实验室', no: 2, date: '2026-07-03', time: '17:00-18:00', teacher: '王老师', tid: 't1', due: 24, actual: 24, sign: '已签到', tSubmit: '已提交', confirm: '待确认', status: '部分确认', amount: 1920 },
+  { course: '人工智能启蒙课', cls: '人工智能启蒙课·周五班', school: '成都天府新区第七小学', venue: '科学实验室', no: 3, date: '2026-07-10', time: '17:00-18:00', teacher: '王老师', tid: 't1', due: 24, actual: 0, sign: '未签到', tSubmit: '未提交', confirm: '—', status: '待上课', amount: 0 },
+  { course: '科学实验探索课', cls: '科学实验探索课·周四班', school: '成都麓湖小学', venue: '科学教室', no: 1, date: '2026-06-30', time: '17:00-18:00', teacher: '张老师', tid: 't3', due: 18, actual: 17, sign: '已签到', tSubmit: '已提交', confirm: '已确认', status: '已确认销课', amount: 1360 },
+  { course: '科学实验探索课', cls: '科学实验探索课·周四班', school: '成都麓湖小学', venue: '科学教室', no: 2, date: '2026-07-07', time: '17:00-18:00', teacher: '张老师', tid: 't3', due: 18, actual: 16, sign: '已签到', tSubmit: '已提交', confirm: '待确认', status: '异常', amount: 0, note: '实到人数与签到不符，待补充说明' },
+  { course: '科学实验探索课', cls: '科学实验探索课·周四班', school: '成都麓湖小学', venue: '科学教室', no: 3, date: '2026-07-14', time: '17:00-18:00', teacher: '张老师', tid: 't3', due: 18, actual: 0, sign: '未签到', tSubmit: '未提交', confirm: '—', status: '待上课', amount: 0 },
 ];
 
 const AFTERSALES = [
@@ -480,17 +488,17 @@ const SETTLES = [
   { id: 'JS202607-01', month: '2026年7月', schools: '成都天府新区实验小学、成都天府新区第七小学、成都麓湖小学', clsCount: 3, lessons: 42,
     gross: 33600, refund: 800, ratio: '90%', net: 29520, status: '待审核', // 机构实收 =（应结算 − 退款扣减）× 机构分成比例；平台侧扣项不对机构展示
     detail: [
-      { cls: '成都天府新区实验小学 - AI启蒙一班', lessons: 18, amount: 14400 },
-      { cls: '成都天府新区第七小学 - AI启蒙一班', lessons: 14, amount: 11200 },
-      { cls: '成都麓湖小学 - 科学探索一班', lessons: 10, amount: 8000 },
+      { cls: '人工智能启蒙课·周三班', lessons: 18, amount: 14400 },
+      { cls: '人工智能启蒙课·周五班', lessons: 14, amount: 11200 },
+      { cls: '科学实验探索课·周四班', lessons: 10, amount: 8000 },
     ] },
 ];
 
 const NOTICES = [
   { t: '教师审核通过通知', d: '王老师资质审核已通过，可绑定课程与班级。', time: '2026-07-01 10:20', read: true },
   { t: '课程审核驳回通知', d: '「硬笔书法课」审核驳回：课程大纲与课时数不匹配，请修改后重新提交。', time: '2026-07-01 09:12', read: false },
-  { t: '班级成班通知', d: '「成都天府新区实验小学 - 人工智能启蒙课一班」已达最低成班人数，正式成班。', time: '2026-06-30 15:04', read: true },
-  { t: '上课提醒', d: '今日 17:00「成都天府新区实验小学 - 人工智能启蒙课一班」第 5 节课，请王老师按时到校签到。', time: '2026-07-08 08:00', read: false },
+  { t: '班级成班通知', d: '「人工智能启蒙课·周三班」已达最低成班人数，正式成班。', time: '2026-06-30 15:04', read: true },
+  { t: '上课提醒', d: '今日 17:00「人工智能启蒙课·周三班」第 5 节课，请王老师按时到校签到。', time: '2026-07-08 08:00', read: false },
   { t: '销课确认通知', d: '7 月 1 日「成都天府新区实验小学 AI 启蒙一班」第 4 节销课已确认，计入本月结算。', time: '2026-07-02 10:30', read: true },
   { t: '售后处理通知', d: '售后单 SH20260701001 需机构反馈，请在 2 个工作日内处理。', time: '2026-07-01 16:40', read: false },
   { t: '结算单生成通知', d: '2026 年 7 月结算单 JS202607-01 已生成，请核对销课明细。', time: '2026-07-31 09:00', read: false },
@@ -905,8 +913,8 @@ const PAGES = {
     <div class="grid2">
       <div class="card"><h4>今日上课安排</h4><div class="tbl-wrap"><table>
         <tr><th>班级</th><th>时间</th><th>教师</th></tr>
-        <tr><td>成都天府新区实验小学 - AI启蒙一班（第 5 节）</td><td>17:00-18:00</td><td>王老师</td></tr>
-        <tr><td>成都麓湖小学 - 科学探索一班（第 2 节）</td><td>17:00-18:00</td><td>张老师</td></tr>
+        <tr><td>人工智能启蒙课·周三班（第 5 节）</td><td>17:00-18:00</td><td>王老师</td></tr>
+        <tr><td>科学实验探索课·周四班（第 2 节）</td><td>17:00-18:00</td><td>张老师</td></tr>
       </table></div></div>
       <div class="card"><h4>课程审核状态</h4><div class="tbl-wrap"><table>
         <tr><th>课程</th><th>状态</th><th>分发学校</th></tr>
@@ -1307,7 +1315,14 @@ function openCourseForm() {
   openModal('添加课程', `
     <div class="form-row"><label>课程名称</label><input id="ccName" placeholder="如：人工智能启蒙课"></div>
     <div class="form-row"><label>课程分类</label><select id="ccCat">${selectOptions(COURSE_CATEGORY_OPTIONS, '请选择平台课程分类')}</select></div>
-    <div class="form-row"><label>适合年级</label><select id="ccGrade">${selectOptions(COURSE_GRADE_OPTIONS, '请选择适合年级')}</select></div>
+    <div class="form-row"><label>适合年级 <span class="muted" style="font-weight:400">（选择起止年级，起止相同即单个年级）</span></label>
+      <div style="display:flex;align-items:center;gap:8px">
+        <select id="ccGradeFrom" style="flex:1" onchange="syncGradePreview(true)">${selectOptions(GRADE_LEVELS, '起始年级')}</select>
+        <span class="muted">至</span>
+        <select id="ccGradeTo" style="flex:1" onchange="syncGradePreview()">${selectOptions(GRADE_LEVELS, '截止年级')}</select>
+      </div>
+      <div class="small muted" id="ccGradePreview" style="margin-top:6px">适合年级：未选择</div>
+    </div>
     <div class="form-row"><label>总课时</label><input id="ccLessons" type="number" min="1" placeholder="如：8"></div>
     <div class="form-row"><label>建议价格（元/期）</label><input id="ccPrice" type="number" min="0" placeholder="如：399"></div>
     <div class="form-row"><label>关联教师</label>
@@ -1324,10 +1339,21 @@ function openCourseForm() {
     `<button class="btn btn-ghost" onclick="closeModal()">取消</button>
      <button class="btn btn-primary" onclick="submitCourseForm()">提交平台审核</button>`);
 }
+/* 起止年级选择后实时预览；选起始年级时若截止未选，自动同步为同一年级（即单个年级） */
+function syncGradePreview(fromChanged) {
+  const fromEl = document.getElementById('ccGradeFrom');
+  const toEl = document.getElementById('ccGradeTo');
+  const el = document.getElementById('ccGradePreview');
+  if (!el || !fromEl || !toEl) return;
+  if (fromChanged && fromEl.value && !toEl.value) toEl.value = fromEl.value; // 只教一个年级时无需再选
+  const text = gradeRangeText(fromEl.value, toEl.value);
+  el.textContent = '适合年级：' + (text || '未选择')
+    + (text && fromEl.value === toEl.value ? '（单个年级）' : text ? '（区间）' : '');
+}
 function submitCourseForm() {
   const name = document.getElementById('ccName').value.trim();
   const cat = document.getElementById('ccCat').value.trim();
-  const grade = document.getElementById('ccGrade').value.trim();
+  const grade = gradeRangeText(document.getElementById('ccGradeFrom').value, document.getElementById('ccGradeTo').value);
   const lessons = parseInt(document.getElementById('ccLessons').value, 10) || 0;
   const price = parseInt(document.getElementById('ccPrice').value, 10) || 0;
   const teacher = document.getElementById('ccTeacher').value;
