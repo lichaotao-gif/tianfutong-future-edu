@@ -189,6 +189,13 @@
   .notice-item .nd { color: var(--muted); font-size: 12px; }
   .empty { text-align: center; color: var(--muted); padding: 40px 0; }
 
+  /* 汉堡按钮 / 底部 Tab / 抽屉遮罩：桌面端默认隐藏 */
+  .title-row { display: flex; align-items: center; gap: 10px; }
+  .hamburger { display: none; border: 0; background: transparent; font-size: 20px; line-height: 1; cursor: pointer; color: var(--text); padding: 4px 6px; border-radius: 6px; }
+  .hamburger:hover { background: #f0f1f4; }
+  .tabbar { display: none; }
+  .drawer-mask { display: none; }
+
   /* ============================================================
    * 移动端适配（≤ 768px）：教师上课时用手机签到、填课堂记录
    * 侧栏 → 底部 Tab；表格 → 卡片；按钮加大易点
@@ -197,25 +204,42 @@
     body { font-size: 15px; -webkit-text-size-adjust: 100%; }
     .layout { flex-direction: column; }
 
-    /* 侧栏收起：品牌与友链隐藏，菜单变底部 Tab 栏（侧栏自身不占高度） */
-    .sider { width: 100%; height: 0; min-height: 0; padding: 0; overflow: visible; background: transparent; flex: 0 0 auto; }
-    .sider .brand, .side-links { display: none; }
-    .main { min-height: 100vh; }
-    .menu {
+    /* 侧栏 → ☰ 抽屉（默认藏在屏幕外，点汉堡滑出） */
+    .sider {
+      position: fixed; top: 0; bottom: 0; left: 0; z-index: 80;
+      width: 240px; height: 100%; padding: 0;
+      transform: translateX(-100%); transition: transform .25s ease;
+      overflow-y: auto; background: #06122e; flex: 0 0 auto;
+    }
+    body.drawer-open .sider { transform: translateX(0); box-shadow: 4px 0 20px rgba(0,0,0,.25); }
+    .sider .brand { display: flex; }
+    .side-links { display: block; }
+    .main { min-height: 100vh; width: 100%; }
+
+    /* 抽屉遮罩 */
+    .drawer-mask { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 70; opacity: 0; pointer-events: none; transition: opacity .25s; }
+    body.drawer-open .drawer-mask { display: block; opacity: 1; pointer-events: auto; }
+
+    /* 抽屉内菜单恢复竖排 */
+    .menu { display: block; padding: 6px 0; }
+    .menu-item { padding: 13px 20px; font-size: 15px; }
+
+    /* 顶栏汉堡按钮显示 */
+    .hamburger { display: block; }
+
+    /* 底部 Tab 栏：高频入口 + 更多 */
+    .tabbar {
       position: fixed; left: 0; right: 0; bottom: 0; z-index: 60;
-      display: flex; overflow-x: auto; padding: 0;
-      background: #fff; border-top: 1px solid var(--line);
+      display: flex; background: #fff; border-top: 1px solid var(--line);
       box-shadow: 0 -2px 12px rgba(0,21,41,.08);
       padding-bottom: env(safe-area-inset-bottom);
-      -webkit-overflow-scrolling: touch;
     }
-    .menu::-webkit-scrollbar { display: none; }
-    .menu-item {
-      flex: 0 0 auto; min-width: 72px; text-align: center;
-      padding: 10px 12px; font-size: 12px; color: var(--muted);
-      border-top: 2px solid transparent;
+    .tab-item {
+      flex: 1; text-align: center; padding: 11px 4px; font-size: 12px;
+      color: var(--muted); cursor: pointer; border-top: 2px solid transparent;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
-    .menu-item.active { background: transparent; color: var(--primary); font-weight: 600; border-top-color: var(--primary); }
+    .tab-item.active { color: var(--primary); font-weight: 600; border-top-color: var(--primary); }
 
     /* 顶栏：两行，操作区可横滑 */
     .topbar { height: auto; flex-direction: column; align-items: stretch; gap: 8px; padding: 10px 14px; }
@@ -286,6 +310,8 @@
       <b>天府未来教育中心<div class="sub">机构端 · Demo</div></b>
     </div>
     <nav class="menu" id="menu"></nav>
+    <nav class="tabbar" id="tabbar"></nav>
+    <div class="drawer-mask" onclick="toggleDrawer(false)"></div>
     <div class="side-links">
       <div class="side-title">友情链接</div>
       <a href="../">家长端</a>
@@ -296,7 +322,10 @@
   </aside>
   <div class="main">
     <header class="topbar">
-      <div class="title" id="pageTitle">首页看板</div>
+      <div class="title-row">
+        <button class="hamburger" onclick="toggleDrawer()" aria-label="打开菜单">☰</button>
+        <div class="title" id="pageTitle">首页看板</div>
+      </div>
       <div class="role-switch">
         <span class="demo-wrap">
           <button class="demo-btn" id="demoBtn" onclick="toggleDemoState()" title="点击循环切换入驻状态，或从右侧下拉直接选择"></button>
@@ -836,13 +865,30 @@ const MENUS = {
   ],
 };
 
+/* 手机端底部 Tab 只放高频入口，其余收进 ☰ 抽屉 */
+const MOBILE_TABS = {
+  org: ['dash', 'checkin', 'classes', 'lessons'],
+  teacher: ['dash', 'checkin', 'classes', 'lessons'],
+};
+/* 底部 Tab 简称（横向空间有限） */
+const TAB_SHORT = {
+  dash: '首页', checkin: '考勤记录', classes: '班级', lessons: '销课',
+  students: '学生', notices: '通知', orginfo: '机构', teachers: '教师',
+  courses: '课程', aftersale: '售后', settle: '结算',
+};
+let drawerOpen = false;
+function toggleDrawer(force) {
+  drawerOpen = typeof force === 'boolean' ? force : !drawerOpen;
+  document.body.classList.toggle('drawer-open', drawerOpen);
+}
+
 function setRole(r) {
   role = r;
   const allowed = MENUS[role].map((m) => m[0]);
   if (!allowed.includes(page)) page = 'dash';
   render();
 }
-function go(p) { page = p; render(); }
+function go(p) { page = p; toggleDrawer(false); window.scrollTo(0, 0); render(); }
 
 /* ---------- 渲染 ---------- */
 /* 是否处于可编辑态：待审核 / 审核通过后修改需重新提交，故仅「待完善 / 审核驳回」可直接编辑 */
@@ -908,8 +954,21 @@ function render() {
   document.getElementById('whoami').innerHTML = role === 'org'
     ? `当前角色：<b>机构管理员</b>（${ORG.contact}）` : `当前角色：<b>教师账号</b>（${ME_TEACHER.name}）`;
 
+  // 侧栏 / 抽屉：全量菜单
   document.getElementById('menu').innerHTML = MENUS[role]
     .map(([k, label]) => `<div class="menu-item ${page === k ? 'active' : ''}" onclick="go('${k}')">${label}</div>`).join('');
+  // 手机底部 Tab：仅高频入口，其余在 ☰ 抽屉内
+  const tabKeys = MOBILE_TABS[role] || [];
+  const tabbar = document.getElementById('tabbar');
+  if (tabbar) {
+    const inTab = tabKeys.includes(page);
+    tabbar.innerHTML = tabKeys.map((k) => {
+      const item = MENUS[role].find(([mk]) => mk === k);
+      if (!item) return '';
+      return `<div class="tab-item ${page === k ? 'active' : ''}" onclick="go('${k}')">${TAB_SHORT[k] || item[1]}</div>`;
+    }).join('')
+      + `<div class="tab-item more ${inTab ? '' : 'active'}" onclick="toggleDrawer(true)">☰ 更多</div>`;
+  }
 
   const labels = Object.fromEntries(MENUS[role]);
   document.getElementById('pageTitle').textContent = labels[page] || '';
