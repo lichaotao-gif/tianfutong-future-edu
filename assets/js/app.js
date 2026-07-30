@@ -632,7 +632,7 @@
     const price = cls?.price || c.price;
     const min = cls?.minClass || c.minClass;
     enrollConfirmed = false;
-    const ruleText = `我已阅读并同意《课程报名须知》，同意支付 ¥${price} 课程费用（由平台监管账户托管，按课时结算给机构）；我已知晓未达开班人数将自动全额退款。`;
+    const ruleText = `我已阅读并同意《用户服务协议》与《隐私政策》，同意支付 ¥${price} 课程费用（由通联支付监管账户存管，按课时逐节结算给机构）；我已知晓未达开班人数将自动全额退款。`;
 
     render(`
     <div class="screen">
@@ -1239,6 +1239,7 @@
         <div class="card mx mt" style="overflow:hidden">
           ${cell('#f59b1c', I.help, '帮助中心', '先付后学怎么用？', "App.soonTip()")}
           ${cell('#8a8f99', I.service, '客服与售后', '在线咨询', "App.soonTip()")}
+          ${cell('#6b78f7', I.clip, '协议与规则', '用户服务协议 · 隐私政策', "location.hash='#/legal'")}
         </div>
         <div class="mx mt small muted center" style="padding:14px 0;user-select:none" onclick="App.adminTap()">天府未来教育中心</div>
       </div>
@@ -1540,7 +1541,7 @@
         <div class="mx">
           <button class="btn wx-login-btn" onclick="App.wxLogin(this)">${wxLogo.replace('fill="#07c160"', 'fill="#fff"')} 微信一键登录</button>
         </div>
-        <div class="mx mt small muted center" style="padding:12px 0">登录即代表同意《用户协议》与《隐私政策》</div>
+        <div class="mx mt small muted center" style="padding:12px 0;line-height:1.8">登录即代表同意<a class="doc-link" onclick="location.hash='#/legal/terms'">《用户服务协议》</a>与<a class="doc-link" onclick="location.hash='#/legal/privacy'">《隐私政策》</a></div>
       </div>
     </div>`);
   }
@@ -1617,6 +1618,104 @@
     toast('售后申请已提交，平台将在 1-3 个工作日内处理');
   }
 
+  /* ============================================================
+   * 屏幕 14：协议与规则（用户服务协议 / 隐私政策，后者含儿童个人信息专章）
+   * 正文从 docs/ 下的 Markdown 原文读取，保证与法务定稿版本同源
+   * ============================================================ */
+  const LEGAL_DOCS = [
+    { key: 'terms', title: '用户服务协议', sub: '注册、报名、付费与退费规则', file: 'docs/家长端用户协议（草稿）.md' },
+    { key: 'privacy', title: '隐私政策', sub: '信息收集与使用，含儿童信息专章', file: 'docs/家长端隐私政策（草稿）.md' },
+  ];
+  const legalDoc = (key) => LEGAL_DOCS.find((d) => d.key === key);
+  const legalCache = {};
+
+  /* 极简 Markdown 渲染：标题 / 表格 / 列表 / 引用 / 加粗 / 分隔线 */
+  function md2html(src) {
+    const inline = (t) => esc(t)
+      .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
+      .replace(/《(.+?)》/g, '<span class="doc-ref">《$1》</span>');
+    const lines = src.replace(/\r/g, '').split('\n');
+    const out = [];
+    let i = 0;
+    while (i < lines.length) {
+      const line = lines[i];
+      if (/^\s*$/.test(line)) { i += 1; continue; }
+      if (/^---+$/.test(line.trim())) { out.push('<hr class="doc-hr">'); i += 1; continue; }
+      const h = line.match(/^(#{1,4})\s+(.*)$/);
+      if (h) { const lv = Math.min(h[1].length + 1, 5); out.push(`<h${lv} class="doc-h${h[1].length}">${inline(h[2])}</h${lv}>`); i += 1; continue; }
+      /* 表格 */
+      if (/^\|/.test(line) && /^\|[\s:|-]+\|$/.test(lines[i + 1] || '')) {
+        const cells = (l) => l.trim().replace(/^\||\|$/g, '').split('|').map((c) => c.trim());
+        const head = cells(line);
+        i += 2;
+        const rows = [];
+        while (i < lines.length && /^\|/.test(lines[i])) { rows.push(cells(lines[i])); i += 1; }
+        out.push(`<div class="doc-table-wrap"><table class="doc-table"><thead><tr>${head.map((c) => `<th>${inline(c)}</th>`).join('')}</tr></thead><tbody>${
+          rows.map((r) => `<tr>${r.map((c) => `<td>${inline(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`);
+        continue;
+      }
+      /* 引用（草稿状态、法务提示） */
+      if (/^>\s?/.test(line)) {
+        const buf = [];
+        while (i < lines.length && /^>\s?/.test(lines[i])) { buf.push(lines[i].replace(/^>\s?/, '')); i += 1; }
+        out.push(`<div class="doc-quote">${buf.map(inline).join('<br>')}</div>`);
+        continue;
+      }
+      /* 列表 */
+      if (/^[-*]\s+/.test(line)) {
+        const buf = [];
+        while (i < lines.length && /^[-*]\s+/.test(lines[i])) { buf.push(lines[i].replace(/^[-*]\s+/, '')); i += 1; }
+        out.push(`<ul class="doc-ul">${buf.map((t) => `<li>${inline(t)}</li>`).join('')}</ul>`);
+        continue;
+      }
+      /* 普通段落（含 (a) / 1.1 等编号行，原样成段） */
+      out.push(`<p class="doc-p">${inline(line.trim())}</p>`);
+      i += 1;
+    }
+    return out.join('');
+  }
+
+  function screenLegalList() {
+    const cell = (d) =>
+      `<div class="list-cell" onclick="location.hash='#/legal/${d.key}'"><div class="lc-ic" style="background:#6b78f7">${I.clip}</div><div class="lc-t"><div>《${d.title}》</div><div class="small muted">${d.sub}</div></div><span class="arr">${I.arrow}</span></div>`;
+    render(`
+    <div class="screen">
+      ${navbar('协议与规则')}
+      <div class="scroll">
+        <div class="notice-draft mx mt">以下文本为业务草稿版本，尚未经法律审核，正式上线前将由法务定稿并公示生效日期。</div>
+        <div class="card mx mt" style="overflow:hidden">${LEGAL_DOCS.map(cell).join('')}</div>
+        <div class="mx mt small muted" style="padding:4px 2px 20px;line-height:1.7">
+          运营主体：四川萃雅教育科技有限公司<br>
+          平台品牌：天府未来教育中心<br>
+          资金存管：通联支付网络服务股份有限公司
+        </div>
+      </div>
+    </div>`);
+  }
+
+  function screenLegal(key) {
+    const doc = legalDoc(key);
+    if (!doc) return screenLegalList();
+    const shell = (body) => `
+    <div class="screen">
+      ${navbar(doc.title)}
+      <div class="scroll"><div class="doc-body">${body}</div></div>
+    </div>`;
+    if (legalCache[key]) return render(shell(legalCache[key]));
+    render(shell('<p class="doc-p muted center">正在加载…</p>'));
+    fetch(doc.file)
+      .then((r) => { if (!r.ok) throw new Error(r.status); return r.text(); })
+      .then((text) => {
+        legalCache[key] = md2html(text);
+        if (location.hash === `#/legal/${key}`) render(shell(legalCache[key]));
+      })
+      .catch(() => {
+        if (location.hash === `#/legal/${key}`) {
+          render(shell(`<p class="doc-p muted center">协议正文加载失败。<br>请通过本地服务访问（如 <code>npx serve</code>），直接以 file:// 打开时浏览器会拦截读取。</p>`));
+        }
+      });
+  }
+
   /* 隐藏调试入口：连点页脚「天府未来教育中心」2 次打开后台管理 */
   let adminTaps = 0, adminTapTimer = null;
   function adminTap() {
@@ -1660,6 +1759,8 @@
     [/^#\/students$/, screenStudents],
     [/^#\/profile$/, screenProfile],
     [/^#\/login$/, screenLogin],
+    [/^#\/legal$/, screenLegalList],
+    [/^#\/legal\/([^/]+)$/, (m) => screenLegal(m[1])],
   ];
   function route() {
     const h = location.hash || '#/';
