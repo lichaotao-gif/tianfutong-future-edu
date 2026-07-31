@@ -59,6 +59,7 @@ window.DB = {
     {
       id: 'ai-qimeng',
       name: '人工智能启蒙课',
+      org: '成都智创未来教育科技有限公司',
       schools: ['成都天府新区实验小学', '成都天府新区第七小学'],
       venueType: '校内',
       cover: 'ai',
@@ -111,6 +112,7 @@ window.DB = {
       // 演示用「随时可买」课程：购买窗口开到 8 月底，默认学生无在报订单
       id: 'drone-tiyan',
       name: '无人机编程体验课',
+      org: '成都智创未来教育科技有限公司',
       schools: ['成都天府新区实验小学', '成都天府新区第七小学'],
       venueType: '校内',
       cover: 'science',
@@ -159,6 +161,7 @@ window.DB = {
     {
       id: 'community-art',
       name: '社区创意美术体验课',
+      org: '成都艺启美术教育咨询有限公司',
       venueType: '校外',
       cover: 'art',
       type: '艺术',
@@ -200,6 +203,7 @@ window.DB = {
     {
       id: 'coding-思维',
       name: '少儿编程思维课',
+      org: '成都智创未来教育科技有限公司',
       schools: ['成都天府新区实验小学'],
       venueType: '校内',
       cover: 'code',
@@ -245,6 +249,7 @@ window.DB = {
     {
       id: 'science-shiyan',
       name: '科学实验探索课',
+      org: '成都智创未来教育科技有限公司',
       schools: ['成都天府新区实验小学', '成都麓湖小学'],
       venueType: '校内',
       cover: 'science',
@@ -289,6 +294,7 @@ window.DB = {
     {
       id: 'mind-growth',
       name: '心理韧性成长课',
+      org: '成都同行心理咨询服务有限公司',
       schools: ['成都天府新区实验小学'],
       venueType: '校内',
       cover: 'art',
@@ -329,6 +335,7 @@ window.DB = {
     {
       id: 'art-watercolor',
       name: '创意水彩画课',
+      org: '成都艺启美术教育咨询有限公司',
       schools: ['成都天府新区实验小学'],
       venueType: '校内',
       cover: 'art',
@@ -371,6 +378,7 @@ window.DB = {
     {
       id: 'robot-maker',
       name: '机器人创客课',
+      org: '成都智创未来教育科技有限公司',
       schools: ['成都天府新区实验小学'],
       venueType: '校内',
       cover: 'science',

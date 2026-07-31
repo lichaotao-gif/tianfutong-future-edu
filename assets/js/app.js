@@ -632,7 +632,8 @@
     const price = cls?.price || c.price;
     const min = cls?.minClass || c.minClass;
     enrollConfirmed = false;
-    const ruleText = `我已阅读并同意《用户服务协议》与《隐私政策》，同意支付 ¥${price} 课程费用（由通联支付监管账户存管，按课时逐节结算给机构）；我已知晓未达开班人数将自动全额退款。`;
+    const orgName = c.org || '成都智创未来教育科技有限公司';
+    const ruleHtml = `我已阅读并同意<a class="doc-link" onclick="event.stopPropagation();location.hash='#/legal/terms'">《课程服务协议》</a>与<a class="doc-link" onclick="event.stopPropagation();location.hash='#/legal/privacy'">《隐私政策》</a>，同意支付 ¥${price} 课程费用（由通联支付监管账户存管，按课次逐节结算）；我已知晓未达开班人数将自动全额退款。`;
 
     render(`
     <div class="screen">
@@ -648,6 +649,7 @@
         <div class="card mx mt pad">
           <div class="section-title">课程信息</div>
           <div class="kv"><span class="k">课程名称</span><span class="v bold">${esc(c.name)}</span></div>
+          <div class="kv"><span class="k">服务机构</span><span class="v">${esc(orgName)}<div class="small muted" style="margin-top:2px">《课程服务协议》的签约方</div></span></div>
           ${cls ? `<div class="kv"><span class="k">报名班级</span><span class="v"><b>${esc(cls.name)}</b> <span class="small muted">（余 ${cls.maxSeats - cls.enrolled} 名额）</span></span></div>` : ''}
           <div class="kv"><span class="k">上课时间</span><span class="v">${esc(cls ? cls.time : c.time)}</span></div>
           <div class="kv"><span class="k">上课地点</span><span class="v">${esc(cls ? cls.place : c.place)}</span></div>
@@ -660,11 +662,11 @@
         <div class="card mx mt pad">
           <div class="section-title">规则确认</div>
           <div class="check" id="enrollConfirm" onclick="App.toggleEnrollConfirm()">
-            <span class="box">${I.check}</span><span>${esc(ruleText)}</span>
+            <span class="box">${I.check}</span><span>${ruleHtml}</span>
           </div>
         </div>
 
-        <div class="mx mt"><div class="notice"><b>资金托管说明：</b>支付的 ¥${price} 将进入平台监管账户托管，不直接付给机构；机构每完成一节课按课时结算。未达开班人数将自动全额退款并通知你。</div></div>
+        <div class="mx mt"><div class="notice"><b>资金存管说明：</b>支付的 ¥${price} 将进入通联支付监管账户存管，不即时付给机构；每完成一节课并经你确认后按课次结算。未达开班人数将自动全额退款并通知你。</div></div>
         <div style="height:14px"></div>
       </div>
       <div class="actionbar">
@@ -1239,7 +1241,7 @@
         <div class="card mx mt" style="overflow:hidden">
           ${cell('#f59b1c', I.help, '帮助中心', '先付后学怎么用？', "App.soonTip()")}
           ${cell('#8a8f99', I.service, '客服与售后', '在线咨询', "App.soonTip()")}
-          ${cell('#6b78f7', I.clip, '协议与规则', '用户服务协议 · 隐私政策', "location.hash='#/legal'")}
+          ${cell('#6b78f7', I.clip, '协议与规则', '平台服务协议 · 课程服务协议 · 隐私政策', "location.hash='#/legal'")}
         </div>
         <div class="mx mt small muted center" style="padding:14px 0;user-select:none" onclick="App.adminTap()">天府未来教育中心</div>
       </div>
@@ -1541,7 +1543,7 @@
         <div class="mx">
           <button class="btn wx-login-btn" onclick="App.wxLogin(this)">${wxLogo.replace('fill="#07c160"', 'fill="#fff"')} 微信一键登录</button>
         </div>
-        <div class="mx mt small muted center" style="padding:12px 0;line-height:1.8">登录即代表同意<a class="doc-link" onclick="location.hash='#/legal/terms'">《用户服务协议》</a>与<a class="doc-link" onclick="location.hash='#/legal/privacy'">《隐私政策》</a></div>
+        <div class="mx mt small muted center" style="padding:12px 0;line-height:1.8">登录即代表同意<a class="doc-link" onclick="location.hash='#/legal/platform'">《平台服务协议》</a>与<a class="doc-link" onclick="location.hash='#/legal/privacy'">《隐私政策》</a></div>
       </div>
     </div>`);
   }
@@ -1619,15 +1621,29 @@
   }
 
   /* ============================================================
-   * 屏幕 14：协议与规则（用户服务协议 / 隐私政策，后者含儿童个人信息专章）
+   * 屏幕 14：协议与规则（平台服务协议 / 课程服务协议 / 隐私政策）
    * 正文从 docs/ 下的 Markdown 原文读取，保证与法务定稿版本同源
    * ============================================================ */
   const LEGAL_DOCS = [
-    { key: 'terms', title: '用户服务协议', sub: '注册、报名、付费与退费规则', file: 'docs/家长端用户协议（草稿）.md' },
-    { key: 'privacy', title: '隐私政策', sub: '信息收集与使用，含儿童信息专章', file: 'docs/家长端隐私政策（草稿）.md' },
+    { key: 'platform', title: '平台服务协议', sub: '与天府通签订：账号、平台规则与责任', file: 'docs/家长端平台服务协议.md' },
+    { key: 'terms', title: '课程服务协议', sub: '与服务机构签订：报名、付费、销课与退费', file: 'docs/家长端课程服务协议.md' },
+    { key: 'privacy', title: '隐私政策', sub: '信息收集与使用，含儿童信息专章', file: 'docs/家长端隐私政策.md' },
   ];
   const legalDoc = (key) => LEGAL_DOCS.find((d) => d.key === key);
   const legalCache = {};
+
+  /* 正式展示版：剥离草稿说明与内部待确认章节（源文件保留，供法务审阅） */
+  function stripDraftNotes(src) {
+    let t = src.replace(/\r/g, '');
+    // 标题后紧跟的说明性引用块（含版本、待确认提示）
+    t = t.replace(/^(#\s[^\n]*\n+)(?:>[^\n]*\n)+/, '$1');
+    // 文末「定稿前须确认 / 法务定稿前须重点确认」整段及其后的版本行
+    t = t.replace(/\n#{1,3}\s*(?:⚠️\s*)?(?:定稿前须确认|法务定稿前须重点确认)[\s\S]*$/, '\n');
+    // 正文内零散的待确认提示块
+    t = t.replace(/^>\s*⚠️[^\n]*(?:\n>[^\n]*)*\n?/gm, '');
+    t = t.replace(/\n---\s*\n\s*$/, '\n');
+    return t.trim();
+  }
 
   /* 极简 Markdown 渲染：标题 / 表格 / 列表 / 引用 / 加粗 / 分隔线 */
   function md2html(src) {
@@ -1682,11 +1698,10 @@
     <div class="screen">
       ${navbar('协议与规则')}
       <div class="scroll">
-        <div class="notice-draft mx mt">以下文本为业务草稿版本，尚未经法律审核，正式上线前将由法务定稿并公示生效日期。</div>
         <div class="card mx mt" style="overflow:hidden">${LEGAL_DOCS.map(cell).join('')}</div>
         <div class="mx mt small muted" style="padding:4px 2px 20px;line-height:1.7">
-          运营主体：四川萃雅教育科技有限公司<br>
-          平台品牌：天府未来教育中心<br>
+          平台经营者：天府通<br>
+          受托运营方：四川萃雅教育科技有限公司<br>
           资金存管：通联支付网络服务股份有限公司
         </div>
       </div>
@@ -1706,7 +1721,7 @@
     fetch(doc.file)
       .then((r) => { if (!r.ok) throw new Error(r.status); return r.text(); })
       .then((text) => {
-        legalCache[key] = md2html(text);
+        legalCache[key] = md2html(stripDraftNotes(text));
         if (location.hash === `#/legal/${key}`) render(shell(legalCache[key]));
       })
       .catch(() => {
