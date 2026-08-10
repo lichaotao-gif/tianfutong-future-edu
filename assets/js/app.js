@@ -204,6 +204,14 @@
     const sc = $('.scroll'); if (sc) sc.scrollTop = 0;
   }
 
+  /* 首页胶囊区入口（列数按条目数自动均分，增删无需改 CSS） */
+  const QUICK_ENTRIES = [
+    ['研学', I.compass, 'qg-green'],
+    ['赛事活动', I.trophy, 'qg-orange'],
+    ['志愿活动', I.heart, 'qg-pink'],
+    ['素质评价', I.chartStar, 'qg-purple'],
+  ];
+
   /* ============================================================
    * 屏幕 1：天府通入口页（模拟首页）
    * ============================================================ */
@@ -305,13 +313,8 @@
         </div>
 
         <div class="mx quick-grid-wrap">
-          <div class="quick-grid">
-            ${[
-              ['研学', I.compass, 'qg-green'],
-              ['赛事活动', I.trophy, 'qg-orange'],
-              ['志愿活动', I.heart, 'qg-pink'],
-              ['素质评价', I.chartStar, 'qg-purple'],
-            ].map(([t, icon, cls]) => `
+          <div class="quick-grid" style="grid-template-columns:repeat(${QUICK_ENTRIES.length},1fr)">
+            ${QUICK_ENTRIES.map(([t, icon, cls]) => `
               <div class="qg-item" onclick="App.soonTip('${t}')">
                 <div class="qg-ic ${cls}">${icon}</div>
                 <div class="qg-label">${esc(t)}</div>
@@ -1239,7 +1242,7 @@
           </div>
         </div>
         <div class="card mx mt" style="overflow:hidden">
-          ${cell('#f59b1c', I.help, '帮助中心', '先付后学怎么用？', "App.soonTip()")}
+          ${cell('#f59b1c', I.help, '帮助中心', '报名、销课与退费常见问题', "location.hash='#/help'")}
           ${cell('#8a8f99', I.service, '客服与售后', '在线咨询', "App.soonTip()")}
           ${cell('#6b78f7', I.clip, '协议与规则', '平台服务协议 · 课程服务协议 · 隐私政策', "location.hash='#/legal'")}
         </div>
@@ -1621,6 +1624,78 @@
   }
 
   /* ============================================================
+   * 屏幕 15：帮助中心（内容与三份协议口径一致）
+   * ============================================================ */
+  const HELP_GROUPS = [
+    ['报名', [
+      ['孩子能报哪些课？',
+       '首页展示的是<b>孩子就读学校</b>对应的课程：校内课程只对本校学生开放；校外课程（如社区服务中心、少年宫）可面向周边学校的学生。不同孩子看到的课程列表可能不一样，切换孩子后列表也会跟着变。'],
+      ['报名成功就一定能开课吗？',
+       '不一定，班级需要<b>凑够最低开班人数</b>才会开课。报名截止后人数不够，班次会取消，已付费用将在 <b>5 个工作日内原路全额退款</b>并通知你。也可能会联系你协商延长报名或更换课程，但都需要你同意；不同意的话直接全额退。'],
+      ['可以同时报几门课吗？',
+       '可以，一个账号也能添加多个孩子分别报名。但<b>同一个孩子不能报上课时间冲突的班次</b>，遇到冲突系统会提示，坚持报名的话，因时间冲突导致上不了课需要自己承担。'],
+    ]],
+    ['上课与销课', [
+      ['「课时确认」是确认什么？',
+       '确认的是<b>这节课是否按约定上了</b>，不是单纯确认孩子当天到没到。每节课结束后系统会生成一条确认任务，你可以在「学习成果」里逐节查看并确认。'],
+      ['忘记确认会怎么样？',
+       '任务生成后 <b>3 个自然日</b>内没有确认也没有提异议的，系统会视为已确认。<b>建议每周打开看一次</b>，超过这个时间一般就不能再就这节课提出异议了。'],
+      ['孩子请假没去上课，算不算这节课？',
+       '如果是孩子自己的原因（请假、生病等）没去，这节课通常仍会正常计入；如果是<b>上课安排出了问题</b>（比如没有实际开课），这节课不计入，会安排补课或退费。'],
+      ['对某节课有疑问怎么办？',
+       '在确认期限内点<b>「有异议」</b>并选择原因提交，这节课会先<b>暂停计入</b>，等核实清楚再处理。如果对核实结果还是不认可，可以联系客服进一步申诉。'],
+    ]],
+    ['退费', [
+      ['哪些情况可以退费？',
+       '<b>全额退：</b>没有凑够开班人数、课程取消；在开课前的规定时间内主动取消报名。<br><br><b>按剩余部分退：</b>课程因故无法继续开展；课程实际内容与介绍明显不符且核实属实。'],
+      ['孩子中途不学了，能退多少？',
+       '已经上过、且已确认完成的部分不再退还；剩余部分会<b>扣除已实际发生的成本</b>后退还给你（比如教材、场地等已产生的费用）；如果课程已经上了大半（超过总课次一半），剩余部分通常不再退费；退费需要在<b>课程结束前</b>提出，结课后不再受理。'],
+      ['退款多久到账？',
+       '未成班取消的，5 个工作日内办理；其他退费情形核实后 15 个工作日内办理，都是<b>原路退回</b>到你的付款账户，具体到账时间还要看支付渠道和银行处理时效。'],
+    ]],
+    ['账号', [
+      ['一个账号能加几个孩子？',
+       '不限。多子女家庭可以都添加进来，在首页或「我的—学生管理」里切换，报名记录和学习成果都按当前选中的孩子展示。'],
+      ['找不到孩子的学校怎么办？',
+       '学校需要从<b>平台已收录的名单</b>中选择，暂不支持手动填写。如果名单里没有你孩子的学校，可以联系客服反馈，我们会尽快核实补充。'],
+    ]],
+  ];
+
+  let helpOpen = {};
+  function screenHelp() {
+    helpOpen = {};
+    const item = (gi, qi, q, a) => {
+      const k = gi + '-' + qi;
+      return `
+      <div class="faq-item" id="faq-${k}">
+        <div class="faq-q" onclick="App.toggleFaq('${k}')">
+          <span>${q}</span><span class="faq-arr">${I.arrow}</span>
+        </div>
+        <div class="faq-a"><div class="faq-a-in">${a}</div></div>
+      </div>`;
+    };
+    render(`
+    <div class="screen">
+      ${navbar('帮助中心')}
+      <div class="scroll">
+        <div class="mx mt small muted" style="line-height:1.7">整理了一些家长比较常问的问题，希望能帮到你。</div>
+        ${HELP_GROUPS.map(([g, qs], gi) => `
+          <div class="mx mt"><div class="section-title" style="margin-bottom:8px">${g}</div></div>
+          <div class="card mx" style="overflow:hidden">
+            ${qs.map(([q, a], qi) => item(gi, qi, q, a)).join('')}
+          </div>`).join('')}
+        <div style="height:20px"></div>
+      </div>
+    </div>`);
+  }
+  function toggleFaq(k) {
+    const el = document.getElementById('faq-' + k);
+    if (!el) return;
+    helpOpen[k] = !helpOpen[k];
+    el.classList.toggle('open', helpOpen[k]);
+  }
+
+  /* ============================================================
    * 屏幕 14：协议与规则（平台服务协议 / 课程服务协议 / 隐私政策）
    * 正文从 docs/ 下的 Markdown 原文读取，保证与法务定稿版本同源
    * ============================================================ */
@@ -1699,11 +1774,6 @@
       ${navbar('协议与规则')}
       <div class="scroll">
         <div class="card mx mt" style="overflow:hidden">${LEGAL_DOCS.map(cell).join('')}</div>
-        <div class="mx mt small muted" style="padding:4px 2px 20px;line-height:1.7">
-          平台经营者：天府通<br>
-          受托运营方：四川萃雅教育科技有限公司<br>
-          资金存管：通联支付网络服务股份有限公司
-        </div>
       </div>
     </div>`);
   }
@@ -1774,6 +1844,7 @@
     [/^#\/students$/, screenStudents],
     [/^#\/profile$/, screenProfile],
     [/^#\/login$/, screenLogin],
+    [/^#\/help$/, screenHelp],
     [/^#\/legal$/, screenLegalList],
     [/^#\/legal\/([^/]+)$/, (m) => screenLegal(m[1])],
   ];
@@ -1798,6 +1869,7 @@
     openReview, closeReview, setStars, submitReview,
     confirmLesson, openDispute, closeDispute, selectDispute, submitDispute,
     openAftersale, closeAftersale, selectAS, submitAftersale,
+    toggleFaq,
     openStudentForm, closeStudentForm, editStudent, saveStudentForm, deleteStudent,
     openProfileForm, closeProfileForm, pickAvatar, saveProfile, toggleWxBind, logout, sendCode, doLogin, wxLogin,
   };
