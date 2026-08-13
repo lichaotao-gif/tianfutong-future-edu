@@ -182,6 +182,40 @@
   .toast { position: fixed; top: 70px; left: 50%; transform: translateX(-50%) translateY(-8px); background: rgba(20,22,30,.88); color: #fff; padding: 10px 20px; border-radius: 8px; font-size: 13px; z-index: 200; opacity: 0; pointer-events: none; transition: all .25s; }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+  /* ---------- 商户登录 / 入驻协议 ---------- */
+  .login-gate { position: fixed; inset: 0; z-index: 300; display: grid; place-items: center; padding: 24px; background: radial-gradient(circle at 18% 18%, rgba(139,92,246,.24), transparent 34%), radial-gradient(circle at 82% 78%, rgba(236,72,153,.16), transparent 32%), linear-gradient(145deg, #180c31 0%, #2a1750 52%, #150a2a 100%); }
+  .login-gate.hidden { display: none; }
+  .login-card { width: min(420px, 100%); background: rgba(255,255,255,.98); border: 1px solid rgba(255,255,255,.55); border-radius: 18px; box-shadow: 0 24px 70px rgba(7,3,20,.38); padding: 30px; }
+  .login-brand { display: flex; align-items: center; gap: 12px; margin-bottom: 26px; }
+  .login-logo { width: 46px; height: 46px; border-radius: 12px; display: grid; place-items: center; color: #fff; font-size: 18px; font-weight: 700; background: linear-gradient(135deg, #8b5cf6, #ec4899); box-shadow: 0 8px 22px rgba(124,58,237,.26); }
+  .login-brand h1 { font-size: 19px; line-height: 1.35; }
+  .login-brand p { margin-top: 3px; color: var(--muted); font-size: 12px; }
+  .login-field { margin-bottom: 16px; }
+  .login-field label { display: block; margin-bottom: 7px; color: #4b515c; font-size: 13px; font-weight: 600; }
+  .login-field input { width: 100%; min-height: 46px; padding: 11px 13px; border: 1px solid #d9dce3; border-radius: 9px; background: #fff; color: var(--text); font: inherit; outline: none; transition: border-color .18s, box-shadow .18s; }
+  .login-field input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(124,58,237,.12); }
+  .login-agree { display: flex; align-items: flex-start; gap: 9px; margin: 4px 0 18px; color: #5f6673; font-size: 13px; line-height: 1.7; cursor: pointer; }
+  .login-agree input { width: 18px; height: 18px; margin-top: 2px; accent-color: var(--primary); flex: 0 0 auto; }
+  .login-agree a { color: var(--primary); font-weight: 600; text-decoration: none; }
+  .login-agree a:hover { text-decoration: underline; }
+  .login-submit { width: 100%; min-height: 46px; border: 0; border-radius: 9px; background: var(--primary); color: #fff; font: inherit; font-weight: 700; cursor: pointer; transition: opacity .18s, transform .18s; }
+  .login-submit:not(:disabled):active { transform: scale(.99); }
+  .login-submit:disabled { opacity: .42; cursor: not-allowed; }
+  .login-tip { margin-top: 14px; color: var(--muted); font-size: 12px; text-align: center; }
+  .agreement-gate { position: fixed; inset: 0; z-index: 400; display: none; align-items: center; justify-content: center; padding: 28px; background: rgba(15,8,30,.66); }
+  .agreement-gate.show { display: flex; }
+  .agreement-panel { width: min(860px, 100%); max-height: min(86vh, 900px); display: flex; flex-direction: column; overflow: hidden; background: #fff; border-radius: 14px; box-shadow: 0 24px 80px rgba(0,0,0,.34); }
+  .agreement-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 16px 20px; border-bottom: 1px solid var(--line); }
+  .agreement-head h2 { font-size: 17px; }
+  .agreement-close { width: 40px; height: 40px; border: 0; border-radius: 8px; background: #f3f4f6; color: #5f6673; font-size: 18px; cursor: pointer; }
+  .agreement-body { padding: 22px 26px 30px; overflow-y: auto; color: #343943; line-height: 1.85; }
+  .agreement-body h1 { font-size: 23px; margin-bottom: 14px; }
+  .agreement-body h2 { font-size: 17px; margin: 24px 0 9px; color: #272c35; }
+  .agreement-body p { margin: 9px 0; }
+  .agreement-body blockquote { margin: 12px 0; padding: 12px 14px; border-left: 3px solid var(--primary); background: #f8f5ff; color: #646b76; }
+  .agreement-body hr { border: 0; border-top: 1px solid var(--line); margin: 20px 0; }
+  .agreement-loading { color: var(--muted); text-align: center; padding: 48px 0; }
+
   .notice-item { display: flex; gap: 12px; padding: 13px 4px; border-bottom: 1px solid var(--line); align-items: flex-start; }
   .notice-item .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--primary); margin-top: 6px; flex-shrink: 0; }
   .notice-item.read .dot { background: #d9dce3; }
@@ -299,10 +333,45 @@
     /* 表单元素放大，避免 iOS 聚焦时自动缩放 */
     .form-row input, .form-row textarea, .form-row select, .inp { font-size: 16px; padding: 10px 12px; }
     .photo-up { padding: 20px 0; font-size: 14px; }
+    .login-gate { padding: 16px; align-items: center; }
+    .login-card { padding: 24px 20px; border-radius: 14px; }
+    .agreement-gate { padding: 0; align-items: flex-end; }
+    .agreement-panel { width: 100%; max-height: 92vh; border-radius: 16px 16px 0 0; }
+    .agreement-body { padding: 18px 18px calc(28px + env(safe-area-inset-bottom)); font-size: 14px; }
   }
 </style>
 </head>
 <body>
+<section class="login-gate" id="loginGate" aria-label="商户登录">
+  <div class="login-card">
+    <div class="login-brand">
+      <div class="login-logo">商</div>
+      <div><h1>天府未来教育中心</h1><p>商户管理平台</p></div>
+    </div>
+    <div class="login-field">
+      <label for="merchantPhone">登录手机号</label>
+      <input id="merchantPhone" type="tel" inputmode="numeric" autocomplete="username" value="13800008888" placeholder="请输入商户管理员手机号" oninput="syncMerchantLogin()" />
+    </div>
+    <div class="login-field">
+      <label for="merchantPassword">登录密码</label>
+      <input id="merchantPassword" type="password" autocomplete="current-password" value="TfDemo@2026" placeholder="请输入登录密码" oninput="syncMerchantLogin()" onkeydown="if(event.key==='Enter')merchantLogin()" />
+    </div>
+    <label class="login-agree">
+      <input id="merchantAgreement" type="checkbox" onchange="syncMerchantLogin()" />
+      <span>我已阅读并同意<a href="javascript:void(0)" onclick="event.preventDefault();event.stopPropagation();openMerchantAgreement()">《商户入驻平台协议》</a></span>
+    </label>
+    <button class="login-submit" id="merchantLoginBtn" type="button" disabled onclick="merchantLogin()">登录商户后台</button>
+    <div class="login-tip">演示账号已预填 · 首次入驻请使用平台发送的账号登录</div>
+  </div>
+</section>
+
+<section class="agreement-gate" id="agreementGate" aria-label="商户入驻平台协议" onclick="if(event.target===this)closeMerchantAgreement()">
+  <div class="agreement-panel">
+    <div class="agreement-head"><h2>商户入驻平台协议</h2><button class="agreement-close" type="button" aria-label="关闭协议" onclick="closeMerchantAgreement()">×</button></div>
+    <article class="agreement-body" id="agreementBody"><div class="agreement-loading">正在加载协议…</div></article>
+  </div>
+</section>
+
 <div class="layout">
   <aside class="sider">
     <div class="brand">
@@ -318,6 +387,7 @@
       <a href="../admin/">平台管理后台</a>
       <a href="../school/">学校端</a>
       <a href="../edu/">教育局端</a>
+      <a href="javascript:void(0)" onclick="openMerchantAgreement()">商户入驻平台协议</a>
     </div>
   </aside>
   <div class="main">
@@ -357,6 +427,85 @@
  * 天府未来教育中心 · 机构端 / 教师端 单文件原型
  * 角色权限：机构管理员看全部；教师只看自己班级，隐藏财务
  * ============================================================ */
+
+/* ---------- 商户登录与入驻协议 ---------- */
+let merchantAgreementHtml = '';
+
+function syncMerchantLogin() {
+  const phone = document.getElementById('merchantPhone')?.value.trim();
+  const password = document.getElementById('merchantPassword')?.value.trim();
+  const agreed = document.getElementById('merchantAgreement')?.checked;
+  document.getElementById('merchantLoginBtn').disabled = !(phone && password && agreed);
+}
+
+function merchantLogin() {
+  const button = document.getElementById('merchantLoginBtn');
+  if (button.disabled) return toast('请填写登录信息并阅读同意《商户入驻平台协议》');
+  document.getElementById('loginGate').classList.add('hidden');
+  toast('已进入商户后台');
+}
+
+function agreementMdToHtml(markdown) {
+  const inline = (value) => esc(value)
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/《(.+?)》/g, '《$1》');
+  const lines = markdown.replace(/\r/g, '').split('\n');
+  const html = [];
+  let quote = [];
+
+  const flushQuote = () => {
+    if (!quote.length) return;
+    html.push(`<blockquote>${quote.map(inline).join('<br>')}</blockquote>`);
+    quote = [];
+  };
+
+  lines.forEach((line) => {
+    if (/^>\s?/.test(line)) {
+      quote.push(line.replace(/^>\s?/, '').replace(/\s{2}$/, ''));
+      return;
+    }
+    flushQuote();
+    if (!line.trim()) return;
+    if (/^---+$/.test(line.trim())) return html.push('<hr>');
+    const heading = line.match(/^(#{1,3})\s+(.+)$/);
+    if (heading) {
+      const level = Math.min(heading[1].length + 1, 4);
+      return html.push(`<h${level}>${inline(heading[2])}</h${level}>`);
+    }
+    html.push(`<p>${inline(line)}</p>`);
+  });
+  flushQuote();
+  return html.join('');
+}
+
+async function openMerchantAgreement() {
+  const gate = document.getElementById('agreementGate');
+  const body = document.getElementById('agreementBody');
+  gate.classList.add('show');
+  document.body.style.overflow = 'hidden';
+  if (merchantAgreementHtml) {
+    body.innerHTML = merchantAgreementHtml;
+    return;
+  }
+  body.innerHTML = '<div class="agreement-loading">正在加载协议…</div>';
+  try {
+    const response = await fetch('../docs/商户入驻平台协议.md', { cache: 'no-store' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    merchantAgreementHtml = agreementMdToHtml(await response.text());
+    body.innerHTML = merchantAgreementHtml;
+  } catch (error) {
+    body.innerHTML = '<div class="agreement-loading">协议加载失败，请刷新页面后重试。</div>';
+  }
+}
+
+function closeMerchantAgreement() {
+  document.getElementById('agreementGate').classList.remove('show');
+  document.body.style.overflow = '';
+}
+
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape') closeMerchantAgreement();
+});
 
 /* ---------- Mock 数据 ---------- */
 const ORG = {
