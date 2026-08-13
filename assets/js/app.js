@@ -636,7 +636,7 @@
     const min = cls?.minClass || c.minClass;
     enrollConfirmed = false;
     const orgName = c.org || '成都智创未来教育科技有限公司';
-    const ruleHtml = `我已阅读并同意<a class="doc-link" onclick="event.stopPropagation();location.hash='#/legal/terms'">《课程服务协议》</a>与<a class="doc-link" onclick="event.stopPropagation();location.hash='#/legal/privacy'">《隐私政策》</a>，同意支付 ¥${price} 课程费用（由通联支付监管账户存管，按课次逐节结算）；我已知晓未达开班人数将自动全额退款。`;
+    const ruleHtml = `我已阅读并同意<a class="doc-link" onclick="event.stopPropagation();location.hash='#/legal/terms'">《课程服务协议》</a>，同意支付 ¥${price} 课程费用（由通联支付监管账户存管，按课次逐节结算）；我已知晓未达开班人数将自动全额退款。`;
 
     render(`
     <div class="screen">
@@ -668,8 +668,6 @@
             <span class="box">${I.check}</span><span>${ruleHtml}</span>
           </div>
         </div>
-
-        <div class="mx mt"><div class="notice"><b>资金存管说明：</b>支付的 ¥${price} 将进入通联支付监管账户存管，不即时付给机构；每完成一节课并经你确认后按课次结算。未达开班人数将自动全额退款并通知你。</div></div>
         <div style="height:14px"></div>
       </div>
       <div class="actionbar">
@@ -1678,7 +1676,6 @@
     <div class="screen">
       ${navbar('帮助中心')}
       <div class="scroll">
-        <div class="mx mt small muted" style="line-height:1.7">整理了一些家长比较常问的问题，希望能帮到你。</div>
         ${HELP_GROUPS.map(([g, qs], gi) => `
           <div class="mx mt"><div class="section-title" style="margin-bottom:8px">${g}</div></div>
           <div class="card mx" style="overflow:hidden">
