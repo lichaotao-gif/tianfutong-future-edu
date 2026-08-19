@@ -170,8 +170,8 @@ body {
 .ls-row .ls-main { flex: 1; min-width: 0; }
 .ls-row .ls-t { font-size: 14px; font-weight: 600; }
 .ls-row .ls-right { flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
-.ls-row .ls-btns { display: flex; gap: 6px; }
-.ls-row .ls-btns .btn-sm { height: 30px; font-size: 12px; padding: 0 13px; }
+.ls-row .ls-btns { display: flex; flex-direction: column; align-items: stretch; gap: 6px; min-width: 116px; }
+.ls-row .ls-btns .btn-sm { min-height: 34px; height: auto; font-size: 12px; line-height: 1.35; padding: 7px 12px; white-space: normal; }
 
 /* ---------- 按钮 ---------- */
 .btn {

@@ -951,7 +951,7 @@
       ${navbar('学习成果')}
       <div class="scroll">
         ${list.length ? list.map(card).join('') : '<div class="empty">还没有学习成果</div>'}
-        <div class="mx mt small muted center" style="padding:8px 0">每节课上完后请逐节确认；3 天内未确认将自动确认</div>
+        <div class="mx mt small muted center" style="padding:8px 0">孩子已到或因个人原因缺勤，课程正常开展均正常结算消课；3 天内未提异议将自动确认</div>
       </div>
     </div>`);
   }
@@ -964,7 +964,7 @@
     pending: { label: '待确认', cls: 'st-warn' },
     confirmed: { label: '已确认', cls: 'st-done' },
     auto: { label: '已自动确认', cls: 'st-muted' },
-    disputed: { label: '有异议', cls: 'st-red' },
+    disputed: { label: '客服处理中', cls: 'st-red' },
   };
   const ATTEND_CLS = { 已到: 'st-done', 缺勤: 'st-red' };
   const attendTag = (a) => `<span class="badge ${ATTEND_CLS[a] || 'st-muted'}" style="font-size:11px;padding:2px 8px">${esc(a)}</span>`;
@@ -987,13 +987,13 @@
           <div class="ls-t">第 ${l.no} 节 · ${esc(l.title)}</div>
           <div class="small muted" style="margin-top:2px">${esc(l.date)} · 考勤 ${attendTag(l.attend)}</div>
           ${l.state === 'pending' && l.deadline ? `<div class="small" style="color:var(--warn);margin-top:2px">${esc(l.deadline)} 前未确认将自动确认</div>` : ''}
-          ${l.state === 'disputed' ? `<div class="small" style="color:var(--red);margin-top:2px">异议已提交，平台核实中（该节暂停计入结算）</div>` : ''}
+          ${l.state === 'disputed' ? `<div class="small" style="color:var(--red);margin-top:2px">已反馈没上课并提出异议，客服将人工判定是否结算消课</div>` : ''}
         </div>
         <div class="ls-right">
           ${l.state === 'pending' ? `
           <div class="ls-btns">
             <button class="btn btn-primary btn-sm" onclick="App.confirmLesson('${o.id}', ${i})">确认</button>
-            <button class="btn btn-ghost btn-sm" onclick="App.openDispute('${o.id}', ${i})">有异议</button>
+            <button class="btn btn-ghost btn-sm" onclick="App.openDispute('${o.id}', ${i})">没上课，有异议</button>
           </div>` : `<span class="badge ${ls.cls}">${ls.label}</span>`}
         </div>
       </div>`;
@@ -1019,7 +1019,6 @@
             <div class="section-title" style="margin-bottom:0">课时确认</div>
             <span class="small muted">已确认 ${confirmedCount} / ${lessons.length} 节</span>
           </div>
-          <div class="small muted" style="margin:6px 0 4px;line-height:1.6">请逐节核对孩子是否上了该节课（考勤为老师标注）。${done ? '本课程课时已全部确认。' : '确认一节即消课一节，按月计入机构结算；有异议的课时暂不计入。3 天内未处理将自动确认。'}</div>
           ${lessons.map(lessonRow).join('')}
         </div>
         <div style="height:14px"></div>
@@ -1033,7 +1032,7 @@
     const o = orderById(orderId);
     const l = o?.result?.lessons?.[idx];
     if (!l || l.state !== 'pending') return;
-    /* 确认一节 = 消课一节：该节即计入机构当月结算池（有异议的单节除外），不等整期学完 */
+    /* 已到或个人原因缺勤，只要课程正常开展，均正常消课并进入机构当月结算池。 */
     l.state = 'confirmed';
     const left = o.result.lessons.filter((x) => x.state === 'pending').length;
     if (left === 0 && !o.result.lessons.some((x) => x.state === 'disputed')) {
@@ -1042,17 +1041,17 @@
       toast('全部课时已确认，课程完成');
     } else {
       screenResult(orderId);
-      toast(`第 ${l.no} 节已确认消课，计入机构本月结算`);
+      toast(`第 ${l.no} 节已正常结算消课，计入机构本月结算`);
     }
   }
 
   let disputeTarget = null; // { orderId, idx }
   let disputeSel = -1;
   const DISPUTE_REASONS = [
-    '孩子当天缺勤，没有上这节课',
-    '这节课没有开课 / 被取消',
-    '考勤记录与实际不符',
-    '其他问题',
+    '这节课没有实际开课 / 被取消',
+    '教师未到或未完成约定课时',
+    '系统显示已上课，但实际没有上课',
+    '其他未正常开展的情况',
   ];
   function disputeSheet() {
     return `
@@ -1060,7 +1059,7 @@
       <div class="sheet">
         <div class="handle"></div>
         <h3>课时异议</h3>
-        <div class="small muted" style="margin-bottom:8px" id="dsSub">请选择异议原因（主要核对该节课是否实际上课）</div>
+        <div class="small muted" style="margin-bottom:8px" id="dsSub">仅在该节课实际没上且有异议时提交；孩子个人缺勤不属于未开课</div>
         ${DISPUTE_REASONS.map((t, i) => `
           <div class="opt" id="dsOpt${i}" onclick="App.selectDispute(${i})"><span>${esc(t)}</span><span class="radio"></span></div>`).join('')}
         <textarea class="field" rows="2" id="dsNote" placeholder="补充说明（选填）"></textarea>
@@ -1095,7 +1094,7 @@
     l.disputeReason = DISPUTE_REASONS[disputeSel];
     closeDispute();
     screenResult(disputeTarget.orderId);
-    toast('异议已提交，平台将核实该节课时，核实期间暂停计入机构结算');
+    toast('已转人工客服处理，客服核实后决定该节是否结算消课');
   }
 
   function confirmPay(id) {
@@ -1635,13 +1634,13 @@
     ]],
     ['上课与销课', [
       ['「课时确认」是确认什么？',
-       '确认的是<b>这节课是否按约定上了</b>，不是单纯确认孩子当天到没到。每节课结束后系统会生成一条确认任务，你可以在「学习成果」里逐节查看并确认。'],
+       '确认的是<b>课程是否按约正常开展</b>，不是确认孩子当天是否到课。孩子已到或因个人原因缺勤，只要课程正常开展，都按“正常结算消课”处理。'],
       ['忘记确认会怎么样？',
        '任务生成后 <b>3 个自然日</b>内没有确认也没有提异议的，系统会视为已确认。<b>建议每周打开看一次</b>，超过这个时间一般就不能再就这节课提出异议了。'],
       ['孩子请假没去上课，算不算这节课？',
-       '如果是孩子自己的原因（请假、生病等）没去，这节课通常仍会正常计入；如果是<b>上课安排出了问题</b>（比如没有实际开课），这节课不计入，会安排补课或退费。'],
+       '算。如果是孩子自己的原因（请假、生病等）没去，但课程按约正常开展，仍然<b>正常结算消课</b>。如果该节课实际没上并且你提出异议，则转人工客服核实后决定是否结算消课。'],
       ['对某节课有疑问怎么办？',
-       '在确认期限内点<b>「有异议」</b>并选择原因提交，这节课会先<b>暂停计入</b>，等核实清楚再处理。如果对核实结果还是不认可，可以联系客服进一步申诉。'],
+       '只有认为该节课<b>实际没上</b>时，才点“没上课，有异议”并选择原因。该节课会转人工客服处理，由客服根据考勤、课堂记录等材料决定是否结算消课。'],
     ]],
     ['退费', [
       ['哪些情况可以退费？',
@@ -1697,7 +1696,7 @@
    * 正文从 docs/ 下的 Markdown 原文读取，保证与法务定稿版本同源
    * ============================================================ */
   const LEGAL_DOCS = [
-    { key: 'platform', title: '平台服务协议', sub: '与天府通签订：账号、平台规则与责任', file: 'docs/家长端平台服务协议.md' },
+    { key: 'platform', title: '平台服务协议', sub: '与四川萃雅签订：账号、平台规则与责任', file: 'docs/家长端平台服务协议.md' },
     { key: 'terms', title: '课程服务协议', sub: '与服务机构签订：报名、付费、销课与退费', file: 'docs/家长端课程服务协议.md' },
     { key: 'privacy', title: '隐私政策', sub: '信息收集与使用，含儿童信息专章', file: 'docs/家长端隐私政策.md' },
   ];

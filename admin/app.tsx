@@ -27,10 +27,10 @@ const STC: Record<string, string> = {
   启用: 'green', 禁用: 'red', 已上架: 'green', 未到购买时间: 'gold',
   报名中: 'blue', 待成班: 'orange', 已成班: 'green', 已排课: 'cyan', 上课中: 'processing', 已结课: 'default', 已取消: 'red',
   待支付: 'orange', 已支付: 'green', 已退款: 'red', 部分退款: 'gold',
-  待上课: 'default', 已上课待确认: 'orange', 待上架确认: 'orange', 部分确认: 'orange', 全部确认: 'green', 已确认销课: 'green', 异常: 'red', 已计入结算: 'cyan',
+  待上课: 'default', 已上课待确认: 'orange', 待上架确认: 'orange', 部分确认: 'orange', 全部确认: 'green', 已确认销课: 'green', 异常: 'red', 客服处理中: 'purple', 不结算已关闭: 'default', 已计入结算: 'cyan',
   待生成: 'default', 结算中: 'blue', 已结算: 'green', 结算异常: 'red', 已驳回: 'red',
   待处理: 'orange', 处理中: 'blue', 机构处理中: 'gold', 平台介入: 'purple', 已完成: 'green',
-  正常: 'green', 未签到: 'default', 已签到: 'green', 待确认: 'orange', 待上架确认: 'orange', 已确认: 'green',
+  正常: 'green', 未签到: 'default', 已签到: 'green', 待确认: 'orange', 待上架确认: 'orange', 已确认: 'green', 无异议: 'green', 有异议: 'red', 客服判定结算: 'green', 客服判定不结算: 'default',
   已上传: 'green', 未上传: 'orange',
   已开通: 'green', 未开通: 'orange',
 };
@@ -38,9 +38,11 @@ const STC: Record<string, string> = {
 const GLOSSARY: { title: string; items: [string, string][] }[] = [
   { title: '销课状态（核心流程）', items: [
     ['待上课', '课程已排期、尚未到上课时间，本节不产生任何费用。'],
-    ['已上课待确认', '教师已完成签到并提交课堂记录，等待家长确认（3 天自动确认）；确认之前本节不计入结算。'],
-    ['已确认销课', '平台/学校已确认本节课真实完成，本节费用进入当月可结算范围。'],
-    ['异常', '本节课数据存疑：如实到人数与签到不符、教师未签到、家长投诉课程未上等，暂停计费。处理方式：机构在 2 个工作日内补充说明或更正记录，平台复核后转为「已确认销课」，或作废本节（不计费）。'],
+    ['已上课待确认', '教师已提交课堂记录，等待家长反馈；3 天内未提出“没上课”异议，系统自动正常结算消课。'],
+    ['已确认销课', '课程正常开展；无论学生已到或因个人原因缺勤，均正常消课并进入当月可结算范围。'],
+    ['客服处理中', '家长反馈该节课没上并提出异议，暂停自动结算，由客服人工核实后决定是否结算消课。'],
+    ['不结算已关闭', '客服核实该节课未按约开展，决定本节不结算、不消课，工单已关闭。'],
+    ['异常', '本节课存在异常线索，已转客服核实；客服将人工决定是否结算消课。'],
     ['已计入结算', '本节课已随月度结算单锁定，金额不再变动。'],
   ] },
   { title: '结算状态', items: [
@@ -123,7 +125,11 @@ GLOSSARY.forEach((g) => g.items.forEach(([t, d]) => {
 TERM_DEF['已签到'] = '教师已在系统完成本节课签到。';
 TERM_DEF['未签到'] = '教师尚未签到，本节课未开始或存在异常。';
 TERM_DEF['待确认'] = TERM_DEF['已上课待确认'];
-TERM_DEF['已确认'] = '平台/学校已确认本节课真实完成。';
+TERM_DEF['已确认'] = '家长无异议，或客服已核实可正常结算消课。';
+TERM_DEF['无异议'] = '家长选择正常结算消课，或在 3 天内未提交异议。';
+TERM_DEF['有异议'] = '家长反馈该节课实际没上，已转客服人工处理。';
+TERM_DEF['客服判定结算'] = '客服核实后决定本节正常结算消课。';
+TERM_DEF['客服判定不结算'] = '客服核实后决定本节不结算、不消课。';
 
 const S = ({ v }: { v: string }) => {
   const t = <Tag color={STC[v] || 'default'} style={TERM_DEF[v] ? { cursor: 'help' } : {}}>{v}</Tag>;
@@ -344,12 +350,12 @@ const initDB = {
     { id: 'DD20260701006', parent: '黄女士', student: '黄雨桐', school: '成都天府新区实验小学', course: '创意水彩画课', cls: '周一班', amount: 960, way: '微信支付', pay: '待支付', refund: '—', time: '2026-07-01 08:30' },
   ],
   lessons: [
-    { id: 'ls1', cls: '人工智能启蒙课·周三班', course: '人工智能启蒙课', org: '智创未来', school: '成都天府新区实验小学', date: '2026-06-24', no: 3, teacher: '王思远', due: 18, actual: 17, sign: '已签到', schoolConfirm: '已确认', status: '已计入结算', amount: 1440 },
-    { id: 'ls2', cls: '人工智能启蒙课·周三班', course: '人工智能启蒙课', org: '智创未来', school: '成都天府新区实验小学', date: '2026-07-01', no: 4, teacher: '王思远', due: 18, actual: 18, sign: '已签到', schoolConfirm: '已确认', status: '已确认销课', amount: 1440 },
+    { id: 'ls1', cls: '人工智能启蒙课·周三班', course: '人工智能启蒙课', org: '智创未来', school: '成都天府新区实验小学', date: '2026-06-24', no: 3, teacher: '王思远', due: 18, actual: 17, sign: '已签到', schoolConfirm: '无异议', status: '已计入结算', amount: 1440 },
+    { id: 'ls2', cls: '人工智能启蒙课·周三班', course: '人工智能启蒙课', org: '智创未来', school: '成都天府新区实验小学', date: '2026-07-01', no: 4, teacher: '王思远', due: 18, actual: 18, sign: '已签到', schoolConfirm: '无异议', status: '已确认销课', amount: 1440 },
     { id: 'ls3', cls: '少儿编程思维课·周二班', course: '少儿编程思维课', org: '智创未来', school: '成都天府新区实验小学', date: '2026-06-30', no: 6, teacher: '陈亦然', due: 25, actual: 24, sign: '已签到', schoolConfirm: '待确认', status: '已上课待确认', amount: 2250 },
     { id: 'ls4', cls: '人工智能启蒙课·周三班', course: '人工智能启蒙课', org: '智创未来', school: '成都天府新区实验小学', date: '2026-07-08', no: 5, teacher: '王思远', due: 18, actual: 0, sign: '未签到', schoolConfirm: '—', status: '待上课', amount: 0 },
-    { id: 'ls5', cls: '少儿编程思维课·周二班', course: '少儿编程思维课', org: '智创未来', school: '成都天府新区实验小学', date: '2026-06-23', no: 5, teacher: '陈亦然', due: 25, actual: 21, sign: '已签到', schoolConfirm: '已确认', status: '异常', amount: 0, note: '实到人数与考勤记录不符，待机构补充说明' },
-    { id: 'ls6', cls: '科学实验探索课·周四班', course: '科学实验探索课', org: '智创未来', school: '成都天府新区第七小学', date: '2026-06-26', no: 8, teacher: '刘嘉敏', due: 28, actual: 27, sign: '已签到', schoolConfirm: '已确认', status: '已计入结算', amount: 2240 },
+    { id: 'ls5', cls: '少儿编程思维课·周二班', course: '少儿编程思维课', org: '智创未来', school: '成都天府新区实验小学', date: '2026-06-23', no: 5, teacher: '陈亦然', due: 25, actual: 21, sign: '已签到', schoolConfirm: '有异议', status: '客服处理中', amount: 0, note: '家长反馈本节课实际没上，待客服核实是否结算消课' },
+    { id: 'ls6', cls: '科学实验探索课·周四班', course: '科学实验探索课', org: '智创未来', school: '成都天府新区第七小学', date: '2026-06-26', no: 8, teacher: '刘嘉敏', due: 28, actual: 27, sign: '已签到', schoolConfirm: '无异议', status: '已计入结算', amount: 2240 },
   ],
   settlements: [
     { id: 'JS202606-01', org: '成都智创未来教育科技有限公司', month: '2026-06', schools: '实验小学、第七小学', clsCount: 3, doneLessons: 18, gross: 25920, fee: 2592, schoolShare: 1296, refund: 900, net: 21132, status: '已结算' },
@@ -521,9 +527,10 @@ const COLDEF: Record<string, string> = {
   '节次': '本班课程的第几节课。',
   '应到/实到': '应到 = 班级报名人数；实到 = 实际到课人数。两者与签到不符会触发销课异常。',
   '教师签到': '教师是否已在系统完成本节课签到。',
-  '确认状态': '家长对本节课的逐节确认（3 天未确认自动转全部确认），平台兜底核实；已剔除学校确认环节',
-  '销课状态': '本节课的计费流转状态（待上课 → 已上课待确认 → 已确认销课 → 已计入结算；异常暂停计费）。',
-  '可结算金额': '本节课确认销课后计入当月结算的金额；待上课 / 异常节次不计费。',
+  '家长反馈': '无异议 = 正常结算消课（含学生个人缺勤）；有异议 = 家长反馈没上课，转客服人工判定。',
+  '确认状态': '家长对课程是否正常开展的反馈；3 天内未提出异议，系统自动正常结算消课。',
+  '销课状态': '正常开展的课时自动结算消课；只有“没上课且有异议”的课时转客服人工判定。',
+  '可结算金额': '正常开展的课时计入当月结算；客服处理中的课时暂不计入，待人工判定。',
   '结算单号': '月度结算单编号。',
   '月份': '结算所属自然月。',
   '涉及学校': '本结算单包含的上课学校。',
@@ -1785,29 +1792,52 @@ function OrderPage({ db, setDb }: any) {
 /* 十一、上课销课管理 */
 function LessonPage({ db, setDb }: any) {
   const [detail, setDetail] = useState<any>(null);
+  const [supportCase, setSupportCase] = useState<any>(null);
+  const [supportDecision, setSupportDecision] = useState('settle');
+  const [supportNote, setSupportNote] = useState('');
   const flt = useTableFilter([
     { key: 'school', label: '学校', width: 200, options: optsOf(db.lessons, 'school', '学校') },
     { key: 'org', label: '机构', options: optsOf(db.lessons, 'org', '机构') },
     { key: 'course', label: '课程', width: 200, options: optsOf(db.lessons, 'course', '课程') },
     { key: 'status', label: '销课状态', options: optsOf(db.lessons, 'status', '销课状态') },
   ]);
+  const submitSupportDecision = () => {
+    if (!supportCase) return;
+    const shouldSettle = supportDecision === 'settle';
+    setDb((d: any) => ({
+      ...d,
+      lessons: patch(d.lessons, supportCase.id, {
+        status: shouldSettle ? '已确认销课' : '不结算已关闭',
+        schoolConfirm: shouldSettle ? '客服判定结算' : '客服判定不结算',
+        amount: shouldSettle ? supportCase.due * 90 : 0,
+        note: supportNote.trim() || (shouldSettle ? '客服核实后确认正常结算消课' : '客服核实后确认不结算、不消课'),
+      }),
+    }));
+    message.success(shouldSettle ? '客服已判定：正常结算消课' : '客服已判定：不结算、不消课');
+    setSupportCase(null);
+    setSupportNote('');
+  };
+  const openSupportCase = (record: any) => {
+    setSupportCase(record);
+    setSupportDecision('settle');
+    setSupportNote('');
+  };
   return (
-    <Card size="small" title="上课销课（教师上完课提交记录 → 确认状态 → 计入可结算）">
+    <Card size="small" title="上课销课（正常课时自动结算消课；没上课且有异议由客服人工判定）">
+      <Alert style={{ marginBottom: 12 }} type="info" showIcon message="销课规则"
+        description="学生已到或因个人原因缺勤，只要课程正常开展，均正常结算消课；只有家长反馈该节没上并提出异议时，才暂停自动结算并转客服人工处理。" />
       <FilterRow>{flt.bar}</FilterRow>
       <Tbl {...tblProps} dataSource={flt.apply(db.lessons)} columns={[
         { title: '班级', dataIndex: 'cls', ellipsis: true }, { title: '机构', dataIndex: 'org' }, { title: '学校', dataIndex: 'school', ellipsis: true },
         { title: '上课日期', dataIndex: 'date' }, { title: '节次', dataIndex: 'no', render: (v: number) => '第 ' + v + ' 节' }, { title: '教师', dataIndex: 'teacher' },
         { title: '应到/实到', render: (_: any, r: any) => `${r.due} / ${r.actual || '—'}` },
         { title: '教师签到', dataIndex: 'sign', render: (v: string) => <S v={v} /> },
-        { title: '确认状态', dataIndex: 'schoolConfirm', render: (v: string) => (v === '—' ? '—' : <S v={v} />) },
+        { title: '家长反馈', dataIndex: 'schoolConfirm', render: (v: string) => (v === '—' ? '—' : <S v={v} />) },
         { title: '销课状态', dataIndex: 'status', render: (v: string) => <S v={v} /> },
         { title: '可结算金额', dataIndex: 'amount', render: (v: number) => (v ? <b style={{ color: '#52c41a' }}>{money(v)}</b> : '—') },
         { title: '操作', render: (_: any, r: any) => <Space><a onClick={() => setDetail(r)}>查看</a>
-          {r.status === '已上课待确认' && <a style={{ color: '#52c41a' }} onClick={() => {
-            setDb((d: any) => ({ ...d, lessons: patch(d.lessons, r.id, { status: '已确认销课', schoolConfirm: '已确认', amount: r.due * 90 }) }));
-            message.success('销课已确认，该节费用计入本月可结算范围');
-          }}>确认销课</a>}
-          <a style={{ color: '#ff4d4f' }} onClick={() => { setDb((d: any) => ({ ...d, lessons: patch(d.lessons, r.id, { status: '异常', amount: 0 }) })); message.warning('已标记异常，待机构补充说明'); }}>标记异常</a></Space> },
+          {['客服处理中', '异常'].includes(r.status) && <a style={{ color: '#722ed1' }} onClick={() => openSupportCase(r)}>客服处理</a>}
+        </Space> },
       ]} />
       <Drawer open={!!detail} width={480} title="销课记录详情" onClose={() => setDetail(null)}>
         {detail && <Descriptions column={1} size="small" bordered items={[
@@ -1815,11 +1845,23 @@ function LessonPage({ db, setDb }: any) {
           { key: '3', label: '机构 / 学校', children: detail.org + ' / ' + detail.school },
           { key: '4', label: '上课时间', children: detail.date + '（第 ' + detail.no + ' 节）' }, { key: '5', label: '任课教师', children: detail.teacher },
           { key: '6', label: '出勤', children: `应到 ${detail.due} 人 · 实到 ${detail.actual || '—'} 人` },
+          { key: '6a', label: '家长反馈', children: detail.schoolConfirm === '—' ? '—' : <S v={detail.schoolConfirm} /> },
           { key: '7', label: '销课状态', children: <S v={detail.status} /> },
           { key: '8', label: '可结算金额', children: detail.amount ? money(detail.amount) : '—' },
           ...(detail.note ? [{ key: '9', label: '异常说明', children: detail.note }] : []),
         ]} />}
       </Drawer>
+      <Modal open={!!supportCase} title="客服人工判定是否结算消课" okText="提交处理结果" cancelText="取消"
+        onCancel={() => setSupportCase(null)} onOk={submitSupportDecision}>
+        <Alert style={{ marginBottom: 16 }} type="warning" showIcon
+          message={supportCase ? `${supportCase.cls} · 第 ${supportCase.no} 节` : ''}
+          description={supportCase?.note || '家长反馈该节课没上并提出异议，请核对教师签到、考勤、课堂记录及沟通材料。'} />
+        <Radio.Group value={supportDecision} onChange={(e: any) => setSupportDecision(e.target.value)} style={{ display: 'grid', gap: 10 }}>
+          <Radio value="settle">核实可结算：正常结算并消课</Radio>
+          <Radio value="no-settle">核实不可结算：不结算、不消课</Radio>
+        </Radio.Group>
+        <TextArea style={{ marginTop: 14 }} rows={3} value={supportNote} onChange={(e: any) => setSupportNote(e.target.value)} placeholder="填写核实依据或处理说明（选填）" />
+      </Modal>
     </Card>
   );
 }
