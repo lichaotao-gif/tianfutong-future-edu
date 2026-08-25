@@ -9,7 +9,7 @@ const {
 } = require('docx');
 
 // 显式写入 East Asia 字体映射，确保 Word 与 LibreOffice 均能正确显示中文。
-const CN = { ascii: 'Arial Unicode MS', hAnsi: 'Arial Unicode MS', eastAsia: 'Arial Unicode MS', cs: 'Arial Unicode MS' };
+const CN = { ascii: 'Hiragino Sans GB', hAnsi: 'Hiragino Sans GB', eastAsia: 'Hiragino Sans GB', cs: 'Hiragino Sans GB' };
 const CN_BOLD = CN;
 const ACCENT = '0C86A0';
 const GRAY = '5B6270';
@@ -66,8 +66,9 @@ function makeTable(head, rows) {
       insideVertical: { style: BorderStyle.SINGLE, size: 3, color: 'DCE1E8' },
     },
     rows: [
-      new TableRow({ tableHeader: true, children: head.map((c, i) => cell(c, i, true)) }),
+      new TableRow({ tableHeader: true, cantSplit: true, children: head.map((c, i) => cell(c, i, true)) }),
       ...rows.map((r) => new TableRow({
+        cantSplit: true,
         children: Array.from({ length: n }, (_, i) => cell(r[i] || '', i, false)),
       })),
     ],
@@ -195,7 +196,7 @@ function build(mdPath, outPath, titleForHeader, version, audience) {
   const doc = new Document({
     creator: '四川萃雅教育科技有限公司',
     title: titleForHeader,
-    description: `天府未来教育中心 · ${audience}法律文本（${version}）`,
+    description: `未来教育中心 · ${audience}法律文本（${version}）`,
     numbering: {
       config: [{
         reference: 'bullets',
@@ -229,7 +230,7 @@ function build(mdPath, outPath, titleForHeader, version, audience) {
             alignment: AlignmentType.RIGHT,
             spacing: { after: 120 },
             border: { bottom: { style: BorderStyle.SINGLE, size: 4, color: 'DCE1E8', space: 4 } },
-            children: [new TextRun({ text: `天府未来教育中心 · ${titleForHeader}（${version}）`, font: CN, size: 16, color: '9097A3' })],
+            children: [new TextRun({ text: `未来教育中心 · ${titleForHeader}（${version}）`, font: CN, size: 16, color: '9097A3' })],
           })],
         }),
       },
@@ -257,10 +258,10 @@ function build(mdPath, outPath, titleForHeader, version, audience) {
 }
 
 const JOBS = [
-  ['家长端平台服务协议.md', '天府未来教育中心_平台服务协议（家长端）_v1.1.docx', '平台服务协议（家长端）', 'v1.1', '家长端'],
-  ['家长端课程服务协议.md', '天府未来教育中心_课程服务协议（家长端）_v1.1.docx', '课程服务协议（家长端）', 'v1.1', '家长端'],
-  ['家长端隐私政策.md', '天府未来教育中心_隐私政策（家长端）_v1.1.docx', '隐私政策（家长端）', 'v1.1', '家长端'],
-  ['商户入驻平台协议.md', '天府未来教育中心_商户入驻平台协议_v0.2.docx', '商户入驻平台协议', 'v0.2', '商户端'],
+  ['家长端平台服务协议.md', '未来教育中心_平台服务协议（家长端）_v1.1.docx', '平台服务协议（家长端）', 'v1.1', '家长端'],
+  ['家长端课程服务协议.md', '未来教育中心_课程服务协议（家长端）_v1.1.docx', '课程服务协议（家长端）', 'v1.1', '家长端'],
+  ['家长端隐私政策.md', '未来教育中心_隐私政策（家长端）_v1.1.docx', '隐私政策（家长端）', 'v1.1', '家长端'],
+  ['商户入驻平台协议.md', '未来教育中心_商户入驻平台协议_v1.1.docx', '商户入驻平台协议', 'v1.1', '商户端'],
 ];
 const SRC = process.argv[2];
 const OUT = process.argv[3];
