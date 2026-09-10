@@ -20,11 +20,17 @@
   /* 本地持久化（Demo：学生 / 家长信息的增删改存 localStorage） */
   const STORE_KEY = 'futureEdu.state.v1';
   const persistState = () => {
+    const base = { students: DB.students, currentStudentId: DB.currentStudentId, parent: DB.parent };
     try {
-      localStorage.setItem(STORE_KEY, JSON.stringify({
-        students: DB.students, currentStudentId: DB.currentStudentId, parent: DB.parent,
-      }));
-    } catch (_) {}
+      localStorage.setItem(STORE_KEY, JSON.stringify({ ...base, contestEntries: DB.contestEntries }));
+    } catch (_) {
+      try {
+        const light = (DB.contestEntries || []).map((e) => ({
+          ...e, work: { ...e.work, images: (e.work.images || []).map(({ thumb, ...rest }) => rest) },
+        }));
+        localStorage.setItem(STORE_KEY, JSON.stringify({ ...base, contestEntries: light }));
+      } catch (__) {}
+    }
   };
   try {
     const saved = JSON.parse(localStorage.getItem(STORE_KEY) || 'null');
@@ -32,6 +38,7 @@
       if (Array.isArray(saved.students) && saved.students.length) DB.students = saved.students;
       if (saved.currentStudentId) DB.currentStudentId = saved.currentStudentId;
       if (saved.parent) Object.assign(DB.parent, saved.parent);
+      if (Array.isArray(saved.contestEntries)) DB.contestEntries = saved.contestEntries;
     }
   } catch (_) {}
   try {
@@ -169,6 +176,16 @@
     trophy: '<svg viewBox="0 0 24 24" fill="currentColor" fill-rule="evenodd"><path d="M7 3.4h10v1.2h3.4v2.2a4.4 4.4 0 0 1-3.9 4.37A5.6 5.6 0 0 1 13 14.5v2.1h2.6a1.2 1.2 0 0 1 1.2 1.2v2.1H7.2v-2.1a1.2 1.2 0 0 1 1.2-1.2H11v-2.1a5.6 5.6 0 0 1-3.5-3.31A4.4 4.4 0 0 1 3.6 6.8V4.6H7v-1.2zM5.4 6.4v.4c0 1.16.77 2.15 1.83 2.48A9.6 9.6 0 0 1 7 6.4H5.4zm13.2 0H17c.1.94.05 1.9-.23 2.88a2.6 2.6 0 0 0 1.83-2.48v-.4z"/></svg>',
     heart: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 20.6 4.7 13.4a5 5 0 0 1 0-7.1 5.1 5.1 0 0 1 7.2 0l.1.2.1-.2a5.1 5.1 0 0 1 7.2 0 5 5 0 0 1 0 7.1L12 20.6z"/></svg>',
     chartStar: '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="12.5" width="3.6" height="7.5" rx="1.3"/><rect x="10.2" y="8.5" width="3.6" height="11.5" rx="1.3"/><rect x="16.4" y="10.8" width="3.6" height="9.2" rx="1.3"/><path d="m12 2.4.9 1.9 2.1.3-1.5 1.4.3 2-1.8-1-1.8 1 .3-2-1.5-1.4 2.1-.3z"/></svg>',
+
+    /* 赛事活动 */
+    play: '<svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.2v13.6L19 12z"/></svg>',
+    download: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M12 3.5v11m0 0 4-4m-4 4-4-4M4.5 19.5h15" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    doc: '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" fill-rule="evenodd"><path d="M6 2.6h7.2L20 9.4V21a1.4 1.4 0 0 1-1.4 1.4H6A1.4 1.4 0 0 1 4.6 21V4A1.4 1.4 0 0 1 6 2.6zm7 1.9V9.6h5.1L13 4.5zM7.8 13h8v1.6h-8V13zm0 3.4h5.4V18H7.8v-1.6z"/></svg>',
+    film: '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" fill-rule="evenodd"><path d="M3.4 5.2A1.6 1.6 0 0 1 5 3.6h14a1.6 1.6 0 0 1 1.6 1.6v13.6A1.6 1.6 0 0 1 19 20.4H5a1.6 1.6 0 0 1-1.6-1.6V5.2zM6 5.4v2.2h2.2V5.4H6zm9.8 0v2.2H18V5.4h-2.2zM6 16.4v2.2h2.2v-2.2H6zm9.8 0v2.2H18v-2.2h-2.2zm-5.6-6.7v4.6l4-2.3-4-2.3z"/></svg>',
+    users: '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="8" r="3.4"/><path d="M2.6 19.4c0-3.1 2.9-4.8 6.4-4.8s6.4 1.7 6.4 4.8v.8H2.6v-.8z"/><path d="M16.6 6.2a3 3 0 0 1 0 5.9c1.2.2 2 .6 2.7 1.1a5 5 0 0 1 2.1 4.1v1h-3.1v-.9c0-1.9-.8-3.4-2.1-4.4a4.5 4.5 0 0 0 .4-6.8z"/></svg>',
+    calendar: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="3.6" y="5.4" width="16.8" height="15" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M8 3.4v3.6M16 3.4v3.6M3.6 10.2h16.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+    plus: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 5.5v13M5.5 12h13" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>',
+    camera: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4.4 8.6h2.5l1.3-2.2h7.6l1.3 2.2h2.5a1.6 1.6 0 0 1 1.6 1.6v7.4a1.6 1.6 0 0 1-1.6 1.6H4.4a1.6 1.6 0 0 1-1.6-1.6v-7.4a1.6 1.6 0 0 1 1.6-1.6z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="12" cy="13.9" r="3.1" stroke="currentColor" stroke-width="1.7"/></svg>',
   };
 
   const navbar = (title, { orange, back = true, right } = {}) => `
@@ -207,7 +224,7 @@
   /* 首页胶囊区入口（列数按条目数自动均分，增删无需改 CSS） */
   const QUICK_ENTRIES = [
     ['研学', I.compass, 'qg-green'],
-    ['赛事活动', I.trophy, 'qg-orange'],
+    ['赛事活动', I.trophy, 'qg-orange', '#/contests'],
     ['志愿活动', I.heart, 'qg-pink'],
     ['素质评价', I.chartStar, 'qg-purple'],
   ];
@@ -314,8 +331,8 @@
 
         <div class="mx quick-grid-wrap">
           <div class="quick-grid" style="grid-template-columns:repeat(${QUICK_ENTRIES.length},1fr)">
-            ${QUICK_ENTRIES.map(([t, icon, cls]) => `
-              <div class="qg-item" onclick="App.soonTip('${t}')">
+            ${QUICK_ENTRIES.map(([t, icon, cls, hash]) => `
+              <div class="qg-item" onclick="${hash ? `location.hash='${hash}'` : `App.soonTip('${t}')`}">
                 <div class="qg-ic ${cls}">${icon}</div>
                 <div class="qg-label">${esc(t)}</div>
               </div>`).join('')}
@@ -1239,6 +1256,7 @@
           </div>
         </div>
         <div class="card mx mt" style="overflow:hidden">
+          ${cell('#12a9c4', I.trophy, '我的参赛', `${(DB.contestEntries || []).length} 条赛事报名与作品记录`, "location.hash='#/my-contests'")}
           ${cell('#f59b1c', I.help, '帮助中心', '报名、销课与退费常见问题', "location.hash='#/help'")}
           ${cell('#8a8f99', I.service, '客服与售后', '在线咨询', "App.soonTip()")}
           ${cell('#6b78f7', I.clip, '协议与规则', '平台服务协议 · 课程服务协议 · 隐私政策', "location.hash='#/legal'")}
@@ -1692,7 +1710,522 @@
   }
 
   /* ============================================================
-   * 屏幕 14：协议与规则（平台服务协议 / 课程服务协议 / 隐私政策）
+   * 屏幕 14：赛事活动（列表 / 详情 / 报名与作品提交 / 我的参赛）
+   * ============================================================ */
+  const CONTEST_TABS = [['all', '全部赛事'], ['open', '报名中'], ['soon', '即将开始'], ['ended', '已结束']];
+  const CONTEST_PHASE = {
+    open: { label: '报名中', cls: 'open' },
+    soon: { label: '即将开始', cls: 'soon' },
+    ended: { label: '已结束', cls: 'ended' },
+  };
+  let contestFilter = 'all';
+
+  const contestById = (id) => (DB.contests || []).find((c) => c.id === routeId(id));
+  const contestPhase = (c) => {
+    const now = new Date();
+    const start = parseBuyTime(c.signupStart);
+    const end = parseBuyTime(c.signupEnd, true);
+    if (start && now < start) return 'soon';
+    if (end && now > end) return 'ended';
+    return 'open';
+  };
+  const contestDaysLeft = (c) => {
+    const end = parseBuyTime(c.signupEnd, true);
+    return end ? Math.max(0, Math.ceil((end - new Date()) / 86400000)) : 0;
+  };
+  /* 时间轴节点是否已过去：取「~」后的末端时间，只有年月时按当月最后一天算 */
+  const stagePast = (dateText) => {
+    const last = String(dateText).split('~').pop().trim();
+    const m = last.match(/^(\d{4})-(\d{1,2})(?:-(\d{1,2}))?/);
+    if (!m) return false;
+    const end = m[3]
+      ? new Date(+m[1], +m[2] - 1, +m[3], 23, 59, 59)
+      : new Date(+m[1], +m[2], 0, 23, 59, 59);
+    return new Date() > end;
+  };
+  const fmtCount = (n) => n >= 10000 ? `${(n / 10000).toFixed(1)}万` : String(n);
+  const fmtFileSize = (bytes) => bytes >= 1048576
+    ? `${(bytes / 1048576).toFixed(1)} MB`
+    : `${Math.max(1, Math.round(bytes / 1024))} KB`;
+
+  function screenContests() {
+    const list = (DB.contests || []).filter((c) => contestFilter === 'all' || contestPhase(c) === contestFilter);
+    const totalSignup = (DB.contests || []).reduce((sum, c) => sum + (c.signupCount || 0), 0);
+    const card = (c) => {
+      const ph = CONTEST_PHASE[contestPhase(c)];
+      return `
+      <div class="card ct-card mx mt" onclick="location.hash='#/contest/${c.id}'">
+        <div class="ct-cover">
+          <span class="ct-badge ${ph.cls}">${ph.cls === 'open' ? '<span class="dot"></span>' : ''}${ph.label}</span>
+          <span class="ct-cat">${esc(c.category)}</span>
+          ${coverImg(c.cover, c.name)}
+        </div>
+        <div class="ct-body">
+          <div class="ct-name">${esc(c.name)}</div>
+          <div class="ct-desc">${esc(c.desc)}</div>
+          <div class="ct-meta">报名 ${esc(c.signupStart)} ~ ${esc(c.signupEnd)} · ${esc(c.audience)}</div>
+          <div class="ct-foot">
+            <span class="cnt"><b>${fmtCount(c.signupCount || 0)}</b> 人已报名</span>
+            <span class="go">查看详情 ›</span>
+          </div>
+        </div>
+      </div>`;
+    };
+    render(`
+    <div class="screen">
+      ${navbar('赛事活动', { orange: true, right: { label: '我的参赛', onclick: "location.hash='#/my-contests'" } })}
+      <div class="scroll">
+        <div class="ct-hero">
+          <h2>赛事活动</h2>
+          <p>面向全市中小学生开放征集，涵盖人工智能、创新实践、机器人等多元主题，激发孩子的创造力与实践力。</p>
+          <div class="ct-hero-stats">
+            <div><div class="n">${(DB.contests || []).length}</div><div class="l">年度赛事</div></div>
+            <div><div class="n">${fmtCount(totalSignup)}+</div><div class="l">累计参与</div></div>
+            <div><div class="n">全市</div><div class="l">覆盖范围</div></div>
+            <div><div class="n">免费</div><div class="l">报名参赛</div></div>
+          </div>
+        </div>
+        <div class="mt"></div>
+        <div class="ct-tabs">
+          ${CONTEST_TABS.map(([k, label]) => `<span class="ct-tab ${contestFilter === k ? 'on' : ''}" onclick="App.setContestFilter('${k}')">${label}</span>`).join('')}
+        </div>
+        ${list.map(card).join('') || '<div class="empty">该分类下暂无赛事</div>'}
+        <div style="height:18px"></div>
+      </div>
+    </div>`);
+  }
+
+  function screenContest(id) {
+    const c = contestById(id);
+    if (!c) return screenContests();
+    const phase = contestPhase(c);
+    const ph = CONTEST_PHASE[phase];
+    const left = contestDaysLeft(c);
+    const action = {
+      open: `<button class="btn btn-primary" onclick="location.hash='#/contest-signup/${c.id}'">立即报名并提交作品</button>`,
+      soon: `<button class="btn btn-primary" disabled>报名 ${esc(c.signupStart)} 开启</button>`,
+      ended: '<button class="btn btn-primary" disabled>报名已结束</button>',
+    }[phase];
+    render(`
+    <div class="screen">
+      ${navbar('赛事详情', { orange: true, right: { label: '我的参赛', onclick: "location.hash='#/my-contests'" } })}
+      <div class="scroll">
+        <div class="cd-hero">
+          <div class="cd-hero-tags">
+            <span class="ct-badge ${ph.cls}" style="position:static">${ph.cls === 'open' ? '<span class="dot"></span>' : ''}${ph.label}</span>
+            <span class="cat">${esc(c.category)}</span>
+          </div>
+          <h1>${esc(c.name)}</h1>
+          <p class="sub">${esc(c.desc)}</p>
+          <div class="cd-hero-meta">
+            <span>${I.calendar} 报名截止 ${esc(c.signupEnd)}</span>
+            <span>${I.users} ${fmtCount(c.signupCount || 0)} 人已报名</span>
+          </div>
+        </div>
+
+        <div class="card mx mt pad">
+          <div class="section-title">赛事简介</div>
+          ${(c.intro || []).map((t) => `<div class="small" style="color:var(--sub);line-height:1.85;margin-bottom:6px">${esc(t)}</div>`).join('')}
+          <div class="cd-gallery">
+            ${(c.gallery || []).map((g) => `
+              <figure class="cd-shot" style="margin:0">
+                <img src="${g.img}" alt="${esc(g.caption)}" loading="lazy">
+                <figcaption>${esc(g.caption)}</figcaption>
+              </figure>`).join('')}
+          </div>
+          ${c.video ? `
+            <div class="cd-video" onclick="App.playContestVideo()">
+              <img src="${c.video.poster}" alt="${esc(c.video.title)}" loading="lazy">
+              <span class="play">${I.play}</span>
+              <span class="dur">${esc(c.video.duration)}</span>
+            </div>
+            <div class="small muted" style="margin-top:6px">${esc(c.video.title)}</div>` : ''}
+        </div>
+
+        <div class="card mx mt pad">
+          <div class="section-title">赛程安排</div>
+          <ol class="cd-timeline">
+            ${(c.schedule || []).map((s) => `
+              <li class="${stagePast(s.date) ? 'past' : ''}">
+                <div class="tl-t">${esc(s.title)}</div>
+                <div class="tl-d">${esc(s.date)} · ${esc(s.desc)}</div>
+              </li>`).join('')}
+          </ol>
+        </div>
+
+        ${(c.attachments || []).length ? `
+        <div class="card mx mt pad">
+          <div class="section-title">参赛附件</div>
+          ${c.attachments.map((f) => `
+            <div class="cd-file" onclick="App.downloadContestFile('${esc(f.name)}')">
+              <div class="ic">${I.doc}</div>
+              <div class="nm"><div>${esc(f.name)}</div><div class="sz">${esc(f.kind)} · ${esc(f.size)}</div></div>
+              <span class="dl">${I.download}</span>
+            </div>`).join('')}
+        </div>` : ''}
+
+        <div class="card mx mt pad">
+          <div class="section-title">奖项设置</div>
+          <div class="cd-awards">
+            ${(c.awards || []).map((a) => `<div class="cd-award">${I.trophy}${esc(a)}</div>`).join('')}
+          </div>
+        </div>
+
+        <div class="card cd-signup-card mx mt">
+          ${phase === 'open' ? `
+            <div class="cd-countdown">
+              <div class="lb">距报名截止</div>
+              <div class="dd"><span class="n">${left}</span><span class="u">天</span></div>
+              <div class="dl">截止日期 ${esc(c.signupEnd)}</div>
+            </div>` : ''}
+          <div class="pad">
+            <div class="kv"><span class="k">主办单位</span><span class="v">${esc(c.organizer)}</span></div>
+            <div class="kv"><span class="k">参赛对象</span><span class="v">${esc(c.audience)}</span></div>
+            <div class="kv"><span class="k">参赛形式</span><span class="v">${esc(c.teamForm)}</span></div>
+            <div class="kv"><span class="k">报名费用</span><span class="v"><b style="color:var(--green)">${esc(c.fee)}</b></span></div>
+            <div class="divider"></div>
+            <div class="small muted" style="line-height:1.75">${esc((c.workSpec || {}).note || '')}</div>
+          </div>
+        </div>
+        <div style="height:14px"></div>
+      </div>
+      <div class="actionbar">${action}</div>
+    </div>`);
+  }
+
+  /* ---------- 报名并提交作品 ---------- */
+  let signupDraft = null;
+
+  function screenContestSignup(id) {
+    const c = contestById(id);
+    if (!c) return screenContests();
+    if (contestPhase(c) !== 'open') {
+      toast(contestPhase(c) === 'soon' ? '报名尚未开启' : '本届报名已结束');
+      return screenContest(c.id);
+    }
+    const spec = c.workSpec || { imageMax: 9, videoMax: 1, fileMax: 5, fileTypes: 'PDF / Word / PPT / 压缩包' };
+    signupDraft = {
+      contestId: c.id,
+      studentId: currentStudent().id,
+      teamType: '个人',
+      images: [], videos: [], files: [],
+      agreed: false,
+      spec,
+    };
+    render(`
+    <div class="screen">
+      ${navbar('赛事报名')}
+      <div class="scroll">
+        <div class="card mx mt pad">
+          <div class="section-title">参赛赛事</div>
+          <div class="bold">${esc(c.name)}</div>
+          <div class="small muted" style="margin-top:4px">${esc(c.organizer)} · 报名截止 ${esc(c.signupEnd)} · ${esc(c.fee)}</div>
+        </div>
+
+        <div class="card mx mt pad">
+          <div class="section-title">参赛学生</div>
+          <div class="form-row" style="margin-top:0">
+            <label>选择学生</label>
+            <select class="input" id="ctStudent" onchange="App.setSignupStudent(this.value)">
+              ${(DB.students || []).map((s) => `<option value="${s.id}" ${s.id === signupDraft.studentId ? 'selected' : ''}>${esc(s.name)}（${esc(s.grade)}）</option>`).join('')}
+            </select>
+          </div>
+          <div class="small muted" id="ctStudentSchool" style="margin-top:8px">${esc(currentStudent().school)}</div>
+          <div class="form-row">
+            <label>参赛形式</label>
+            <div class="seg" id="ctSeg">
+              ${['个人', '团队'].map((t) => `<span class="sg ${t === '个人' ? 'on' : ''}" data-team="${t}" onclick="App.setTeamType('${t}')">${t}</span>`).join('')}
+            </div>
+          </div>
+          <div id="ctTeamFields" style="display:none">
+            <div class="form-row">
+              <label>团队名称</label>
+              <input class="input" id="ctTeamName" placeholder="如：未来创客队" maxlength="20">
+            </div>
+            <div class="form-row">
+              <label>团队成员（含本人，用「、」分隔）</label>
+              <input class="input" id="ctMembers" placeholder="如：李小明、张一帆、周子豪">
+            </div>
+          </div>
+          <div class="form-row">
+            <label>指导老师（选填）</label>
+            <input class="input" id="ctTeacher" placeholder="填写指导老师姓名" maxlength="20">
+          </div>
+        </div>
+
+        <div class="card mx mt pad">
+          <div class="section-title">参赛作品</div>
+          <div class="up-hint">${esc(spec.note || '')}</div>
+          <div class="form-row" style="margin-top:0">
+            <label>作品标题</label>
+            <input class="input" id="ctWorkTitle" placeholder="给作品起一个名字" maxlength="30">
+          </div>
+          <div class="form-row">
+            <label>作品说明（文字）</label>
+            <textarea class="field" id="ctWorkDesc" rows="4" style="margin-top:0" placeholder="介绍创作背景、思路、用到的工具与解决的问题"></textarea>
+          </div>
+
+          <div class="form-row">
+            <label>作品图片（最多 ${spec.imageMax} 张）</label>
+            <div id="upImages"></div>
+            <input type="file" class="up-file-input" id="upImgInput" accept="image/*" multiple onchange="App.pickWorkImages(this)">
+          </div>
+
+          <div class="form-row">
+            <label>作品视频（最多 ${spec.videoMax} 个）</label>
+            <div id="upVideos"></div>
+            <input type="file" class="up-file-input" id="upVidInput" accept="video/*" onchange="App.pickWorkVideos(this)">
+          </div>
+
+          <div class="form-row">
+            <label>作品附件（最多 ${spec.fileMax} 个 · ${esc(spec.fileTypes)}）</label>
+            <div id="upFiles"></div>
+            <input type="file" class="up-file-input" id="upFileInput" accept=".pdf,.doc,.docx,.ppt,.pptx,.zip,.rar,.7z" multiple onchange="App.pickWorkFiles(this)">
+          </div>
+        </div>
+
+        <div class="card mx mt pad">
+          <div class="section-title">原创声明</div>
+          <div class="check" id="ctAgree" onclick="App.toggleContestAgree()">
+            <span class="box">${I.check}</span>
+            <span>我确认作品为学生本人（或团队）原创，未侵犯他人著作权，并同意主办方在赛事宣传中展示该作品。</span>
+          </div>
+        </div>
+        <div style="height:14px"></div>
+      </div>
+      <div class="actionbar">
+        <button class="btn btn-primary" id="ctSubmitBtn" disabled onclick="App.submitContestEntry()">提交报名与作品</button>
+      </div>
+    </div>`);
+    renderUploads();
+  }
+
+  function upImagesHtml() {
+    const d = signupDraft;
+    const cells = d.images.map((im, i) => `
+      <div class="up-thumb">
+        ${im.thumb ? `<img src="${im.thumb}" alt="${esc(im.name)}">` : `<div style="aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--muted)">${esc(im.name.slice(0, 8))}</div>`}
+        <span class="up-del" onclick="App.delWorkAsset('images',${i})">✕</span>
+      </div>`);
+    if (d.images.length < d.spec.imageMax) {
+      cells.push(`<div class="up-add" onclick="document.getElementById('upImgInput').click()">${I.camera}<span>${d.images.length}/${d.spec.imageMax}</span></div>`);
+    }
+    return `<div class="up-grid">${cells.join('')}</div>`;
+  }
+
+  function upRowsHtml(kind, max, icon, iconCls, btnLabel, inputId) {
+    const d = signupDraft;
+    const rows = d[kind].map((f, i) => `
+      <div class="up-row">
+        <div class="ic ${iconCls}">${icon}</div>
+        <div class="nm"><div>${esc(f.name)}</div><div class="sz">${esc(f.size)}</div></div>
+        <span class="up-del" style="position:static" onclick="App.delWorkAsset('${kind}',${i})">✕</span>
+      </div>`).join('');
+    const btn = d[kind].length < max
+      ? `<div class="up-btn"${rows ? ' style="margin-top:8px"' : ''} onclick="document.getElementById('${inputId}').click()">${I.plus}${btnLabel}</div>`
+      : '';
+    return rows + btn;
+  }
+
+  function renderUploads() {
+    if (!signupDraft) return;
+    const imgBox = $('#upImages'); if (imgBox) imgBox.innerHTML = upImagesHtml();
+    const vidBox = $('#upVideos');
+    if (vidBox) vidBox.innerHTML = upRowsHtml('videos', signupDraft.spec.videoMax, I.film, 'vid', '选择视频', 'upVidInput');
+    const fileBox = $('#upFiles');
+    if (fileBox) fileBox.innerHTML = upRowsHtml('files', signupDraft.spec.fileMax, I.doc, 'doc', '选择附件', 'upFileInput');
+    refreshContestSubmitBtn();
+  }
+
+  /* 图片压成 240px 缩略图再存，避免 localStorage 超配额 */
+  function thumbFromFile(file, cb) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const scale = Math.min(1, 240 / Math.max(img.width, img.height));
+        const cv = document.createElement('canvas');
+        cv.width = Math.max(1, Math.round(img.width * scale));
+        cv.height = Math.max(1, Math.round(img.height * scale));
+        cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+        cb(cv.toDataURL('image/jpeg', 0.72));
+      };
+      img.onerror = () => cb('');
+      img.src = reader.result;
+    };
+    reader.onerror = () => cb('');
+    reader.readAsDataURL(file);
+  }
+
+  function pickWorkImages(input) {
+    if (!signupDraft) return;
+    const room = signupDraft.spec.imageMax - signupDraft.images.length;
+    const picked = Array.from(input.files || []).slice(0, Math.max(0, room));
+    if ((input.files || []).length > picked.length) toast(`最多上传 ${signupDraft.spec.imageMax} 张图片`);
+    input.value = '';
+    picked.forEach((file) => {
+      const item = { name: file.name, size: fmtFileSize(file.size), thumb: '' };
+      signupDraft.images.push(item);
+      renderUploads();
+      thumbFromFile(file, (thumb) => { item.thumb = thumb; renderUploads(); });
+    });
+  }
+
+  function pickWorkVideos(input) {
+    if (!signupDraft) return;
+    const room = signupDraft.spec.videoMax - signupDraft.videos.length;
+    Array.from(input.files || []).slice(0, Math.max(0, room))
+      .forEach((f) => signupDraft.videos.push({ name: f.name, size: fmtFileSize(f.size) }));
+    input.value = '';
+    renderUploads();
+  }
+
+  function pickWorkFiles(input) {
+    if (!signupDraft) return;
+    const room = signupDraft.spec.fileMax - signupDraft.files.length;
+    const picked = Array.from(input.files || []).slice(0, Math.max(0, room));
+    if ((input.files || []).length > picked.length) toast(`最多上传 ${signupDraft.spec.fileMax} 个附件`);
+    picked.forEach((f) => signupDraft.files.push({ name: f.name, size: fmtFileSize(f.size) }));
+    input.value = '';
+    renderUploads();
+  }
+
+  function delWorkAsset(kind, idx) {
+    if (!signupDraft) return;
+    signupDraft[kind].splice(idx, 1);
+    renderUploads();
+  }
+
+  function setSignupStudent(id) {
+    if (!signupDraft) return;
+    signupDraft.studentId = id;
+    const stu = (DB.students || []).find((s) => s.id === id);
+    const box = $('#ctStudentSchool');
+    if (stu && box) box.textContent = stu.school;
+  }
+
+  function setTeamType(t) {
+    if (!signupDraft) return;
+    signupDraft.teamType = t;
+    document.querySelectorAll('#ctSeg .sg').forEach((el) => el.classList.toggle('on', el.dataset.team === t));
+    const fields = $('#ctTeamFields');
+    if (fields) fields.style.display = t === '团队' ? '' : 'none';
+    refreshContestSubmitBtn();
+  }
+
+  function toggleContestAgree() {
+    if (!signupDraft) return;
+    signupDraft.agreed = !signupDraft.agreed;
+    $('#ctAgree').classList.toggle('on', signupDraft.agreed);
+    refreshContestSubmitBtn();
+  }
+
+  function refreshContestSubmitBtn() {
+    const btn = $('#ctSubmitBtn');
+    if (!btn || !signupDraft) return;
+    const hasAsset = signupDraft.images.length || signupDraft.videos.length || signupDraft.files.length;
+    btn.disabled = !(signupDraft.agreed && hasAsset);
+  }
+
+  function submitContestEntry() {
+    if (!signupDraft) return;
+    const c = contestById(signupDraft.contestId);
+    if (!c) return screenContests();
+    const val = (sel) => ($(sel) ? $(sel).value.trim() : '');
+    const title = val('#ctWorkTitle');
+    const desc = val('#ctWorkDesc');
+    if (!title) return toast('请填写作品标题');
+    if (!desc) return toast('请填写作品说明');
+    if (!(signupDraft.images.length || signupDraft.videos.length || signupDraft.files.length)) {
+      return toast('请至少上传一项图片 / 视频 / 附件');
+    }
+    const teamName = val('#ctTeamName');
+    const members = val('#ctMembers');
+    if (signupDraft.teamType === '团队') {
+      if (!teamName) return toast('请填写团队名称');
+      if (!members) return toast('请填写团队成员');
+    }
+    if (!signupDraft.agreed) return toast('请先确认原创声明');
+
+    const stu = (DB.students || []).find((s) => s.id === signupDraft.studentId) || currentStudent();
+    const now = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    DB.contestEntries.unshift({
+      id: 'entry-' + Date.now(),
+      contestId: c.id,
+      contestName: c.name,
+      cover: c.cover,
+      studentId: stu.id,
+      studentName: stu.name,
+      school: stu.school,
+      grade: stu.grade,
+      teamType: signupDraft.teamType,
+      teamName: signupDraft.teamType === '团队' ? teamName : '',
+      members: signupDraft.teamType === '团队' ? members : '',
+      guideTeacher: val('#ctTeacher'),
+      state: 'submitted',
+      submittedAt: `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`,
+      work: {
+        title, desc,
+        images: signupDraft.images.slice(),
+        videos: signupDraft.videos.slice(),
+        files: signupDraft.files.slice(),
+      },
+    });
+    c.signupCount = (c.signupCount || 0) + 1;
+    signupDraft = null;
+    persistState();
+    toast('报名成功，作品已提交待评审');
+    go('#/my-contests');
+  }
+
+  /* ---------- 我的参赛 ---------- */
+  function screenMyContests() {
+    const entries = DB.contestEntries || [];
+    const card = (e) => {
+      const st = DB.contestStateMap[e.state] || DB.contestStateMap.submitted;
+      const w = e.work || {};
+      const chips = [
+        (w.images || []).length ? `${I.camera}图片 ${w.images.length}` : '',
+        (w.videos || []).length ? `${I.film}视频 ${w.videos.length}` : '',
+        (w.files || []).length ? `${I.doc}附件 ${w.files.length}` : '',
+      ].filter(Boolean);
+      return `
+      <div class="card ce-card mx mt">
+        <div class="ce-head">
+          <div class="ce-cover">${coverImg(e.cover, e.contestName)}</div>
+          <div style="flex:1;min-width:0">
+            <div class="row between"><div class="bold" style="font-size:14px">${esc(e.contestName)}</div><span class="badge ${st.cls}">${st.label}</span></div>
+            <div class="small muted" style="margin-top:3px">${esc(e.studentName)} · ${esc(e.grade || '')} · ${esc(e.teamType)}${e.teamName ? `「${esc(e.teamName)}」` : ''}</div>
+            <div class="small muted">提交于 ${esc(e.submittedAt)}${e.guideTeacher ? ` · 指导老师 ${esc(e.guideTeacher)}` : ''}</div>
+          </div>
+        </div>
+        <div class="ce-work">
+          <div class="ce-work-t">${esc(w.title || '未命名作品')}</div>
+          <div class="ce-work-d">${esc(w.desc || '')}</div>
+          ${chips.length ? `<div class="ce-assets">${chips.map((t) => `<span class="ce-asset">${t}</span>`).join('')}</div>` : ''}
+        </div>
+        ${e.members ? `<div class="small muted" style="margin-top:8px">团队成员：${esc(e.members)}</div>` : ''}
+        ${e.award ? `<div class="ce-award-tip">${I.trophy}${esc(e.award)}</div>` : ''}
+        <div class="divider"></div>
+        <div class="row between">
+          <span class="small muted">${e.state === 'submitted' ? '作品已提交，等待主办方受理' : e.state === 'reviewing' ? '专家评审中，结果将短信通知' : e.state === 'shortlisted' ? '已入围，请留意决赛通知' : e.state === 'awarded' ? '恭喜获奖，证书将寄送到校' : '本届未入围，欢迎下届再战'}</span>
+          <button class="btn btn-line btn-sm" onclick="location.hash='#/contest/${e.contestId}'">赛事详情</button>
+        </div>
+      </div>`;
+    };
+    render(`
+    <div class="screen">
+      ${navbar('我的参赛', { right: { label: '找赛事', onclick: "location.hash='#/contests'" } })}
+      <div class="scroll">
+        ${entries.length ? entries.map(card).join('') : '<div class="empty">还没有参赛记录<br><span class="small">去「赛事活动」看看有哪些可以报名</span></div>'}
+        <div style="height:18px"></div>
+      </div>
+    </div>`);
+  }
+
+  /* ============================================================
+   * 屏幕 15：协议与规则（平台服务协议 / 课程服务协议 / 隐私政策）
    * 正文从 docs/ 下的 Markdown 原文读取，保证与法务定稿版本同源
    * ============================================================ */
   const LEGAL_DOCS = [
@@ -1841,12 +2374,16 @@
     [/^#\/profile$/, screenProfile],
     [/^#\/login$/, screenLogin],
     [/^#\/help$/, screenHelp],
+    [/^#\/contests$/, screenContests],
+    [/^#\/contest\/([^/]+)$/, (m) => screenContest(m[1])],
+    [/^#\/contest-signup\/([^/]+)$/, (m) => screenContestSignup(m[1])],
+    [/^#\/my-contests$/, screenMyContests],
     [/^#\/legal$/, screenLegalList],
     [/^#\/legal\/([^/]+)$/, (m) => screenLegal(m[1])],
   ];
   function route() {
     const h = location.hash || '#/';
-    if (!DB.parent.loggedIn && /^#\/(me|students|profile)/.test(h)) return screenLogin();
+    if (!DB.parent.loggedIn && /^#\/(me|students|profile|contest-signup|my-contests)/.test(h)) return screenLogin();
     for (const [re, fn] of routes) {
       const m = h.match(re);
       if (m) return fn(m);
@@ -1866,6 +2403,11 @@
     confirmLesson, openDispute, closeDispute, selectDispute, submitDispute,
     openAftersale, closeAftersale, selectAS, submitAftersale,
     toggleFaq,
+    setContestFilter: (k) => { contestFilter = k; screenContests(); },
+    playContestVideo: () => toast('宣传片需连接后台视频源，敬请期待'),
+    downloadContestFile: (name) => toast(`《${name}》需连接后台后下载`),
+    pickWorkImages, pickWorkVideos, pickWorkFiles, delWorkAsset,
+    setSignupStudent, setTeamType, toggleContestAgree, submitContestEntry,
     openStudentForm, closeStudentForm, editStudent, saveStudentForm, deleteStudent,
     openProfileForm, closeProfileForm, pickAvatar, saveProfile, toggleWxBind, logout, sendCode, doLogin, wxLogin,
   };

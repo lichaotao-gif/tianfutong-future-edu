@@ -571,3 +571,228 @@ body {
 .faq-item.open .faq-a { max-height: 600px; }
 .faq-a-in { padding: 0 16px 16px; font-size: 13px; line-height: 1.9; color: var(--sub); }
 .faq-a-in b { color: #1c2026; font-weight: 700; }
+
+/* ============================================================
+ * 赛事活动（实践活动）
+ * ============================================================ */
+
+/* ---------- 列表页横幅 ---------- */
+.ct-hero {
+  position: relative; overflow: hidden;
+  background: var(--orange-grad); color: #fff;
+  padding: 18px 16px 20px;
+}
+.ct-hero::before, .ct-hero::after {
+  content: ''; position: absolute; border-radius: 50%; pointer-events: none;
+}
+.ct-hero::before { width: 190px; height: 190px; top: -86px; right: -56px; background: rgba(255,255,255,.16); }
+.ct-hero::after { width: 150px; height: 150px; bottom: -84px; left: -40px; background: rgba(255,255,255,.1); }
+.ct-hero h2 { position: relative; margin: 0 0 6px; font-size: 22px; font-weight: 800; }
+.ct-hero p { position: relative; margin: 0; font-size: 13px; line-height: 1.7; opacity: .9; }
+.ct-hero-stats { position: relative; display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 16px; }
+.ct-hero-stats .n { font-size: 19px; font-weight: 800; font-family: var(--num); }
+.ct-hero-stats .l { font-size: 11px; opacity: .8; margin-top: 1px; }
+
+/* ---------- 状态筛选 ---------- */
+.ct-tabs { display: flex; gap: 7px; overflow-x: auto; padding: 2px 14px; scrollbar-width: none; }
+.ct-tabs::-webkit-scrollbar { display: none; }
+.ct-tabs .ct-tab {
+  flex-shrink: 0; padding: 6px 15px; border-radius: 18px; font-size: 13px; font-weight: 600;
+  background: #fff; color: var(--sub); border: 1px solid var(--line); cursor: pointer; transition: .15s;
+}
+.ct-tabs .ct-tab.on { background: var(--orange); color: #fff; border-color: var(--orange); box-shadow: 0 4px 12px rgba(18,169,196,.28); }
+
+/* ---------- 赛事卡片 ---------- */
+.ct-card { overflow: hidden; cursor: pointer; }
+.ct-card:active { transform: scale(.99); }
+.ct-cover { position: relative; aspect-ratio: 16 / 9; }
+.ct-cover .cover { width: 100%; height: 100%; border-radius: 0; }
+.ct-badge {
+  position: absolute; top: 10px; left: 10px; z-index: 2;
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 9px; border-radius: 8px; font-size: 11px; font-weight: 700; color: #fff;
+}
+.ct-badge .dot { width: 5px; height: 5px; border-radius: 50%; background: #fff; }
+.ct-badge.open { background: var(--green); }
+.ct-badge.open .dot { animation: ctPulse 1.6s ease-in-out infinite; }
+.ct-badge.soon { background: var(--warn); }
+.ct-badge.ended { background: rgba(28,32,38,.55); backdrop-filter: blur(4px); }
+@keyframes ctPulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+.ct-cat {
+  position: absolute; bottom: 10px; right: 10px; z-index: 2;
+  padding: 3px 9px; border-radius: 7px; font-size: 11px; font-weight: 600;
+  background: rgba(0,0,0,.5); color: #fff; backdrop-filter: blur(4px);
+}
+.ct-body { padding: 12px 14px 13px; }
+.ct-name { font-size: 15px; font-weight: 700; line-height: 1.45; }
+.ct-desc {
+  margin-top: 5px; font-size: 12.5px; color: var(--sub); line-height: 1.6;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.ct-meta { margin-top: 6px; font-size: 11.5px; color: var(--muted); }
+.ct-foot {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); font-size: 12px;
+}
+.ct-foot .cnt { color: var(--muted); }
+.ct-foot .cnt b { color: var(--orange-deep); font-size: 14px; font-family: var(--num); }
+.ct-foot .go { color: var(--orange-deep); font-weight: 700; }
+
+/* ---------- 详情页横幅 ---------- */
+.cd-hero {
+  position: relative; overflow: hidden;
+  background: var(--orange-grad); color: #fff; padding: 14px 16px 18px;
+}
+.cd-hero::after {
+  content: ''; position: absolute; width: 180px; height: 180px; border-radius: 50%;
+  top: -80px; right: -60px; background: rgba(255,255,255,.14); pointer-events: none;
+}
+.cd-hero-tags { position: relative; display: flex; flex-wrap: wrap; gap: 6px; }
+.cd-hero-tags .cat { padding: 4px 9px; border-radius: 8px; font-size: 11px; font-weight: 600; background: rgba(255,255,255,.2); backdrop-filter: blur(4px); }
+.cd-hero h1 { position: relative; margin: 10px 0 0; font-size: 20px; font-weight: 800; line-height: 1.4; }
+.cd-hero .sub { position: relative; margin: 8px 0 0; font-size: 13px; line-height: 1.7; opacity: .88; }
+.cd-hero-meta { position: relative; display: flex; flex-wrap: wrap; gap: 14px; margin-top: 12px; font-size: 12px; opacity: .9; }
+.cd-hero-meta span { display: inline-flex; align-items: center; gap: 5px; }
+
+/* ---------- 简介图集 ---------- */
+.cd-gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; margin-top: 12px; }
+.cd-shot { border-radius: 10px; overflow: hidden; border: 1px solid var(--line); background: #dceff4; }
+.cd-shot img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; }
+.cd-shot figcaption { padding: 4px 6px; font-size: 10.5px; color: var(--muted); line-height: 1.4; }
+
+/* ---------- 宣传片占位 ---------- */
+.cd-video { position: relative; margin-top: 12px; border-radius: 12px; overflow: hidden; background: #0d1b21; cursor: pointer; }
+.cd-video img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; opacity: .78; }
+.cd-video .play {
+  position: absolute; inset: 0; margin: auto; width: 52px; height: 52px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%; background: rgba(255,255,255,.92); color: var(--orange-deep);
+  box-shadow: 0 6px 18px rgba(0,0,0,.28);
+}
+.cd-video .dur {
+  position: absolute; bottom: 8px; right: 8px;
+  padding: 2px 7px; border-radius: 6px; font-size: 11px; font-weight: 600;
+  background: rgba(0,0,0,.6); color: #fff; font-family: var(--num);
+}
+
+/* ---------- 赛程时间轴 ---------- */
+.cd-timeline { position: relative; margin: 4px 0 0; padding: 0 0 0 20px; list-style: none; }
+.cd-timeline::before { content: ''; position: absolute; left: 5px; top: 6px; bottom: 8px; width: 2px; background: var(--line); }
+.cd-timeline li { position: relative; padding: 0 0 16px; }
+.cd-timeline li:last-child { padding-bottom: 0; }
+.cd-timeline li::before {
+  content: ''; position: absolute; left: -20px; top: 4px; width: 12px; height: 12px;
+  border-radius: 50%; background: var(--orange); box-shadow: 0 0 0 4px var(--orange-soft);
+}
+.cd-timeline li.past::before { background: #cfd5dd; box-shadow: 0 0 0 4px #f1f2f4; }
+.cd-timeline .tl-t { font-size: 14px; font-weight: 700; }
+.cd-timeline .tl-d { margin-top: 2px; font-size: 12px; color: var(--muted); line-height: 1.6; }
+
+/* ---------- 参赛附件 ---------- */
+.cd-file {
+  display: flex; align-items: center; gap: 11px; padding: 10px;
+  border: 1px solid var(--line); border-radius: 12px; cursor: pointer; transition: .15s;
+}
+.cd-file + .cd-file { margin-top: 8px; }
+.cd-file:active { background: #fafbfc; }
+.cd-file .ic {
+  width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: #ffefee; color: var(--red);
+}
+.cd-file .ic svg { width: 19px; height: 19px; }
+.cd-file .nm { flex: 1; min-width: 0; }
+.cd-file .nm > div:first-child {
+  font-size: 13.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.cd-file .nm .sz { font-size: 11.5px; color: var(--muted); margin-top: 1px; }
+.cd-file .dl { color: var(--orange); flex-shrink: 0; }
+
+/* ---------- 奖项设置 ---------- */
+.cd-awards { display: flex; flex-direction: column; gap: 9px; }
+.cd-award { display: flex; align-items: center; gap: 9px; font-size: 13.5px; color: var(--sub); }
+.cd-award svg { width: 17px; height: 17px; flex-shrink: 0; }
+
+/* ---------- 报名信息卡 ---------- */
+.cd-signup-card { overflow: hidden; }
+.cd-countdown { background: var(--orange-grad); color: #fff; padding: 16px; }
+.cd-countdown .lb { font-size: 12px; opacity: .85; }
+.cd-countdown .dd { display: flex; align-items: flex-end; gap: 4px; margin-top: 4px; }
+.cd-countdown .dd .n { font-size: 34px; font-weight: 800; line-height: 1; font-family: var(--num); }
+.cd-countdown .dd .u { font-size: 13px; opacity: .85; margin-bottom: 2px; }
+.cd-countdown .dl { margin-top: 4px; font-size: 11.5px; opacity: .78; }
+
+/* ---------- 作品上传 ---------- */
+.up-hint { font-size: 12px; color: var(--muted); margin-bottom: 8px; line-height: 1.6; }
+.up-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.up-thumb { position: relative; border-radius: 10px; overflow: hidden; border: 1px solid var(--line); background: #f1f2f4; }
+.up-thumb img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; }
+.up-del {
+  position: absolute; top: 3px; right: 3px; width: 20px; height: 20px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%; background: rgba(0,0,0,.55); color: #fff; font-size: 13px; line-height: 1; cursor: pointer;
+}
+.up-add {
+  aspect-ratio: 1; border: 1.5px dashed #cfd5dd; border-radius: 10px; background: #fafbfc;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  color: var(--muted); font-size: 11px; cursor: pointer; transition: .15s;
+}
+.up-add:active { border-color: var(--orange); color: var(--orange-deep); background: var(--orange-soft); }
+.up-add svg { width: 20px; height: 20px; }
+.up-row {
+  display: flex; align-items: center; gap: 10px; padding: 10px;
+  border: 1px solid var(--line); border-radius: 12px; background: #fafbfc;
+}
+.up-row + .up-row { margin-top: 8px; }
+.up-row .ic {
+  width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; color: #fff;
+}
+.up-row .ic svg { width: 17px; height: 17px; }
+.up-row .ic.vid { background: var(--purple); }
+.up-row .ic.doc { background: var(--blue); }
+.up-row .nm { flex: 1; min-width: 0; }
+.up-row .nm > div:first-child {
+  font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.up-row .nm .sz { font-size: 11px; color: var(--muted); margin-top: 1px; }
+.up-btn {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  height: 42px; border: 1.5px dashed #cfd5dd; border-radius: 12px; background: #fafbfc;
+  color: var(--sub); font-size: 13px; font-weight: 600; cursor: pointer; transition: .15s;
+}
+.up-btn:active { border-color: var(--orange); color: var(--orange-deep); background: var(--orange-soft); }
+.up-btn svg { width: 17px; height: 17px; }
+.up-file-input { display: none; }
+.seg { display: flex; gap: 6px; background: #eef0f4; border-radius: 13px; padding: 3px; }
+.seg .sg {
+  flex: 1; text-align: center; padding: 7px 0; border-radius: 10px;
+  font-size: 13px; font-weight: 600; color: var(--muted); cursor: pointer; transition: .15s;
+}
+.seg .sg.on { background: #fff; color: var(--orange-deep); box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+
+/* ---------- 我的参赛记录 ---------- */
+.ce-card { padding: 13px 14px; }
+.ce-head { display: flex; gap: 11px; }
+.ce-cover { width: 52px; height: 52px; border-radius: 11px; overflow: hidden; flex-shrink: 0; }
+.ce-cover .cover { width: 100%; height: 100%; border-radius: 0; }
+.ce-work { margin-top: 10px; padding: 10px 11px; border-radius: 11px; background: #f7f9fb; }
+.ce-work-t { font-size: 13.5px; font-weight: 700; }
+.ce-work-d {
+  margin-top: 3px; font-size: 12px; color: var(--sub); line-height: 1.65;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.ce-assets { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.ce-asset {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 8px; border-radius: 7px; background: #fff; border: 1px solid var(--line);
+  font-size: 11px; color: var(--sub);
+}
+.ce-asset svg { width: 12px; height: 12px; }
+.ce-award-tip {
+  display: flex; align-items: center; gap: 7px; margin-top: 10px;
+  padding: 9px 11px; border-radius: 11px;
+  background: linear-gradient(135deg, #fff8e8, #fff2d6); color: #8a5a00;
+  font-size: 12.5px; font-weight: 600;
+}
+.ce-award-tip svg { width: 16px; height: 16px; flex-shrink: 0; color: #e8a317; }
