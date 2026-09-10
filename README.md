@@ -8,11 +8,43 @@
 
 ## 运行方式
 
+- **推荐工作流**：运行 `npm run work:start`，自动同步 GitHub、检查依赖并打开本地预览。
 - **最简单**：双击打开 `index.html`（纯静态，`file://` 即可，无需服务器）。
-- **本地服务器**：`python3 -m http.server 4178`，浏览器访问 `http://localhost:4178`。
+- **手动启动服务器**：`npm run dev`，浏览器访问 `http://127.0.0.1:4178`。
 - 手机查看效果最佳；桌面端会显示为居中的手机外框。
 
-> 注：若用 Claude Code 的 Launch 预览面板，因本目录在 iCloud（`com~apple~CloudDocs`）下会被预览沙箱拦截，直接用浏览器打开即可。
+## 多电脑一键同步
+
+本机推荐开发目录：`~/Documents/www/tianfutong-future-edu`。
+
+### 开始工作
+
+```bash
+npm run work:start
+```
+
+该命令会检查当前分支和工作区；只要存在未提交修改，就立即停止，避免覆盖本地内容。工作区干净时，它会执行 `git pull --ff-only`、检查并安装缺失依赖、启动本地服务，然后打开 `http://127.0.0.1:4178`。
+
+### 结束工作
+
+```bash
+npm run sync:up
+```
+
+该命令会运行测试、暂存项目改动、排查常见密钥和构建产物、使用中文默认提交信息提交，然后执行 `git pull --rebase` 和 `git push`，成功后停止本地预览。也可以传入更具体的中文提交信息：
+
+```bash
+npm run sync:up -- "完善报名流程"
+```
+
+### 其他电脑首次使用
+
+```bash
+mkdir -p ~/Documents/www
+git clone git@github.com:lichaotao-gif/tianfutong-future-edu.git ~/Documents/www/tianfutong-future-edu
+cd ~/Documents/www/tianfutong-future-edu
+npm run work:start
+```
 
 ## 主流程
 
@@ -44,6 +76,10 @@ assets/css/app.css      全部样式（天府通橙色主题）
 assets/js/data.js       全部 mock 数据（学生/课程/订单/状态字典/售后）
 assets/js/app.js        路由 + 各屏渲染 + 交互
 .claude/launch.json     本地预览服务器配置
+package.json            本地预览、测试与同步命令
+scripts/work-start.sh   开始工作：拉取、依赖检查与预览
+scripts/sync-up.sh      结束工作：测试、提交与推送
+scripts/work-stop.sh    安全停止本项目预览服务
 ```
 
 ## 改数据

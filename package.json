@@ -1,0 +1,17 @@
+{
+  "name": "tianfutong-future-edu",
+  "version": "1.0.0",
+  "private": true,
+  "description": "天府通未来教育中心多端静态原型",
+  "scripts": {
+    "dev": "python3 -m http.server 4178 --bind 127.0.0.1",
+    "test": "node --check assets/js/data.js && node --check assets/js/app.js && node --check scripts/md2docx.js",
+    "work:start": "bash scripts/work-start.sh",
+    "work:stop": "bash scripts/work-stop.sh",
+    "sync:down": "bash scripts/work-start.sh",
+    "sync:up": "bash scripts/sync-up.sh"
+  },
+  "dependencies": {
+    "docx": "9.7.1"
+  }
+}
