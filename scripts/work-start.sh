@@ -28,7 +28,8 @@ if [[ ! -f "$PID_FILE" ]]; then
   fi
 
   echo "正在启动本地预览……"
-  nohup python3 -m http.server "$PORT" --bind 127.0.0.1 >"$LOG_FILE" 2>&1 < /dev/null &
+  # 统一经由项目已有的 dev 命令启动，避免工作流与手动预览行为不一致。
+  nohup npm run dev >"$LOG_FILE" 2>&1 < /dev/null &
   SERVER_PID=$!
   echo "$SERVER_PID" > "$PID_FILE"
 

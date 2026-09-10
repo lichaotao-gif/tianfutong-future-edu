@@ -12,6 +12,9 @@ if [[ -z "$BRANCH" ]]; then
 fi
 echo "当前 Git 分支：$BRANCH"
 
+echo "本次实际修改："
+git status --short
+
 echo "正在运行项目测试……"
 npm test
 
@@ -22,22 +25,22 @@ generate_commit_message() {
   while IFS= read -r f; do
     [[ -z "$f" ]] && continue
     case "$f" in
-      *.md|*.docx|docs/*) ((doc_count++)) ;;
-      *.html) ((html_count++)) ;;
-      *.css) ((css_count++)) ;;
-      *.js) ((js_count++)) ;;
-      scripts/*|*.sh|package*.json|*.yml|*.yaml|.gitignore|.gitattributes) ((script_count++)) ;;
-      *) ((other_count++)) ;;
+      *.md|*.docx|docs/*) ((doc_count+=1)) ;;
+      *.html) ((html_count+=1)) ;;
+      *.css) ((css_count+=1)) ;;
+      *.js) ((js_count+=1)) ;;
+      scripts/*|*.sh|package*.json|*.yml|*.yaml|.gitignore|.gitattributes) ((script_count+=1)) ;;
+      *) ((other_count+=1)) ;;
     esac
   done <<< "$files"
 
   local parts=()
-  ((html_count > 0)) && parts+=("页面")
-  ((css_count > 0)) && parts+=("样式")
-  ((js_count > 0)) && parts+=("脚本")
-  ((doc_count > 0)) && parts+=("文档")
-  ((script_count > 0)) && parts+=("配置与脚本")
-  ((other_count > 0)) && parts+=("其他文件")
+  if (( html_count > 0 )); then parts+=("页面"); fi
+  if (( css_count > 0 )); then parts+=("样式"); fi
+  if (( js_count > 0 )); then parts+=("脚本"); fi
+  if (( doc_count > 0 )); then parts+=("文档"); fi
+  if (( script_count > 0 )); then parts+=("配置与脚本"); fi
+  if (( other_count > 0 )); then parts+=("其他文件"); fi
 
   if [[ ${#parts[@]} -eq 0 ]]; then
     echo "同步本地开发修改"
@@ -91,4 +94,7 @@ echo "正在推送到 GitHub……"
 git push origin "$BRANCH"
 
 bash "$REPO_ROOT/scripts/work-stop.sh"
+CURRENT_COMMIT="$(git rev-parse --short HEAD)"
 echo "结束工作完成：测试、提交、同步和推送均已完成。"
+echo "当前提交：$CURRENT_COMMIT"
+echo "已推送分支：origin/$BRANCH"
