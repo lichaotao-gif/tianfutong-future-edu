@@ -224,7 +224,7 @@
   /* 首页胶囊区入口（列数按条目数自动均分，增删无需改 CSS） */
   const QUICK_ENTRIES = [
     ['研学', I.compass, 'qg-green'],
-    ['赛事活动', I.trophy, 'qg-orange', '#/contests'],
+    ['赛事活动', I.trophy, 'qg-indigo', '#/contests'],
     ['志愿活动', I.heart, 'qg-pink'],
     ['素质评价', I.chartStar, 'qg-purple'],
   ];
@@ -1721,6 +1721,13 @@
   let contestFilter = 'all';
 
   const contestById = (id) => (DB.contests || []).find((c) => c.id === routeId(id));
+  const contestEntryById = (id) => (DB.contestEntries || []).find((e) => e.id === routeId(id));
+  /* 同一赛事下每个孩子各自一条参赛记录 */
+  const contestEntryOf = (contestId, studentId) =>
+    (DB.contestEntries || []).find((e) => e.contestId === contestId && e.studentId === studentId);
+  /* 一个家长账号下可能有多个孩子，判断「是否已报名」要看全部孩子 */
+  const contestEntriesOf = (contestId) =>
+    (DB.contestEntries || []).filter((e) => e.contestId === contestId);
   const contestPhase = (c) => {
     const now = new Date();
     const start = parseBuyTime(c.signupStart);
@@ -1772,7 +1779,7 @@
       </div>`;
     };
     render(`
-    <div class="screen">
+    <div class="screen ct-theme">
       ${navbar('赛事活动', { orange: true, right: { label: '我的参赛', onclick: "location.hash='#/my-contests'" } })}
       <div class="scroll">
         <div class="ct-hero">
@@ -1801,13 +1808,18 @@
     const phase = contestPhase(c);
     const ph = CONTEST_PHASE[phase];
     const left = contestDaysLeft(c);
-    const action = {
-      open: `<button class="btn btn-primary" onclick="location.hash='#/contest-signup/${c.id}'">立即报名并提交作品</button>`,
-      soon: `<button class="btn btn-primary" disabled>报名 ${esc(c.signupStart)} 开启</button>`,
-      ended: '<button class="btn btn-primary" disabled>报名已结束</button>',
-    }[phase];
+    const mineList = contestEntriesOf(c.id);
+    const editTarget = mineList.length === 1 && phase === 'open' ? `#/contest-work/${mineList[0].id}` : '#/my-contests';
+    const action = mineList.length
+      ? `<button class="btn btn-primary" onclick="location.hash='${editTarget}'">查看我的作品</button>`
+      : {
+        open: `<button class="btn btn-primary" onclick="location.hash='#/contest-signup/${c.id}'">立即报名并提交作品</button>`,
+        soon: `<button class="btn btn-primary" disabled>报名 ${esc(c.signupStart)} 开启</button>`,
+        ended: '<button class="btn btn-primary" disabled>报名已结束</button>',
+      }[phase];
+    const unsigned = (DB.students || []).filter((s) => !contestEntryOf(c.id, s.id));
     render(`
-    <div class="screen">
+    <div class="screen ct-theme">
       ${navbar('赛事详情', { orange: true, right: { label: '我的参赛', onclick: "location.hash='#/my-contests'" } })}
       <div class="scroll">
         <div class="cd-hero">
@@ -1872,7 +1884,15 @@
         </div>
 
         <div class="card cd-signup-card mx mt">
-          ${phase === 'open' ? `
+          ${mineList.length ? `
+            <div class="pad" style="padding-bottom:0">
+              <div class="cd-mine">
+                <div class="t">已报名 ${mineList.length} 个孩子</div>
+                ${mineList.map((e) => `<div class="d">${esc(e.studentName)} · ${esc((e.work || {}).title || '未命名作品')}<br>提交于 ${esc(e.submittedAt)}${e.updatedAt ? ` · 最后修改 ${esc(e.updatedAt)}` : ''}</div>`).join('')}
+                <div class="d">${phase === 'open' ? '报名截止前可继续修改作品内容。' : '报名已截止，作品不可再修改。'}</div>
+                ${phase === 'open' && unsigned.length ? `<div class="cd-mine-more" onclick="location.hash='#/contest-signup/${c.id}'">继续给其他孩子报名 ›</div>` : ''}
+              </div>
+            </div>` : phase === 'open' ? `
             <div class="cd-countdown">
               <div class="lb">距报名截止</div>
               <div class="dd"><span class="n">${left}</span><span class="u">天</span></div>
@@ -1903,53 +1923,87 @@
       toast(contestPhase(c) === 'soon' ? '报名尚未开启' : '本届报名已结束');
       return screenContest(c.id);
     }
+    const unsigned = (DB.students || []).filter((s) => !contestEntryOf(c.id, s.id));
+    if (!unsigned.length) {
+      toast('孩子都已报名，可直接修改作品');
+      return screenContestWork(contestEntriesOf(c.id)[0].id);
+    }
+    const cur = currentStudent();
+    renderContestForm(c, null, unsigned.includes(cur) ? cur : unsigned[0]);
+  }
+
+  function screenContestWork(entryId) {
+    const entry = contestEntryById(entryId);
+    if (!entry) return screenMyContests();
+    const c = contestById(entry.contestId);
+    if (!c) return screenContests();
+    if (contestPhase(c) !== 'open') {
+      toast('报名已截止，作品不可再修改');
+      return screenContest(c.id);
+    }
+    renderContestForm(c, entry);
+  }
+
+  function renderContestForm(c, entry, defaultStudent) {
+    const editing = !!entry;
     const spec = c.workSpec || { imageMax: 9, videoMax: 1, fileMax: 5, fileTypes: 'PDF / Word / PPT / 压缩包' };
+    const work = editing ? (entry.work || {}) : {};
     signupDraft = {
       contestId: c.id,
-      studentId: currentStudent().id,
-      teamType: '个人',
-      images: [], videos: [], files: [],
-      agreed: false,
+      entryId: editing ? entry.id : null,
+      studentId: editing ? entry.studentId : defaultStudent.id,
+      teamType: editing ? (entry.teamType || '个人') : '个人',
+      images: (work.images || []).slice(),
+      videos: (work.videos || []).slice(),
+      files: (work.files || []).slice(),
+      agreed: editing,
       spec,
     };
+    const student = (DB.students || []).find((s) => s.id === signupDraft.studentId) || currentStudent();
+    const isTeam = signupDraft.teamType === '团队';
     render(`
-    <div class="screen">
-      ${navbar('赛事报名')}
+    <div class="screen ct-theme">
+      ${navbar(editing ? '修改参赛作品' : '赛事报名')}
       <div class="scroll">
         <div class="card mx mt pad">
           <div class="section-title">参赛赛事</div>
           <div class="bold">${esc(c.name)}</div>
           <div class="small muted" style="margin-top:4px">${esc(c.organizer)} · 报名截止 ${esc(c.signupEnd)} · ${esc(c.fee)}</div>
+          ${editing ? `<div class="small muted" style="margin-top:6px">首次提交于 ${esc(entry.submittedAt)}，报名截止前可反复修改。</div>` : ''}
         </div>
 
         <div class="card mx mt pad">
           <div class="section-title">参赛学生</div>
-          <div class="form-row" style="margin-top:0">
-            <label>选择学生</label>
-            <select class="input" id="ctStudent" onchange="App.setSignupStudent(this.value)">
-              ${(DB.students || []).map((s) => `<option value="${s.id}" ${s.id === signupDraft.studentId ? 'selected' : ''}>${esc(s.name)}（${esc(s.grade)}）</option>`).join('')}
-            </select>
-          </div>
-          <div class="small muted" id="ctStudentSchool" style="margin-top:8px">${esc(currentStudent().school)}</div>
+          ${editing ? `
+            <div class="kv"><span class="k">学生姓名</span><span class="v">${esc(student.name)}（${esc(student.grade)}）</span></div>
+            <div class="kv"><span class="k">所在学校</span><span class="v">${esc(student.school)}</span></div>
+            <div class="small muted" style="margin-top:4px">已报名的学生不可更换，如需换人请联系主办方。</div>` : `
+            <div class="form-row" style="margin-top:0">
+              <label>选择学生</label>
+              <select class="input" id="ctStudent" onchange="App.setSignupStudent(this.value)">
+                ${(DB.students || []).filter((s) => !contestEntryOf(c.id, s.id)).map((s) => `<option value="${s.id}" ${s.id === signupDraft.studentId ? 'selected' : ''}>${esc(s.name)}（${esc(s.grade)}）</option>`).join('')}
+              </select>
+            </div>
+            <div class="small muted" id="ctStudentSchool" style="margin-top:8px">${esc(student.school)}</div>`}
           <div class="form-row">
             <label>参赛形式</label>
             <div class="seg" id="ctSeg">
-              ${['个人', '团队'].map((t) => `<span class="sg ${t === '个人' ? 'on' : ''}" data-team="${t}" onclick="App.setTeamType('${t}')">${t}</span>`).join('')}
+              ${['个人', '团队'].map((t) => `<span class="sg ${t === signupDraft.teamType ? 'on' : ''}" data-team="${t}" onclick="App.setTeamType('${t}')">${t}</span>`).join('')}
             </div>
           </div>
-          <div id="ctTeamFields" style="display:none">
+          <div id="ctTeamFields" style="display:${isTeam ? '' : 'none'}">
             <div class="form-row">
               <label>团队名称</label>
-              <input class="input" id="ctTeamName" placeholder="如：未来创客队" maxlength="20">
+              <input class="input" id="ctTeamName" placeholder="如：未来创客队" maxlength="20" value="${esc(editing ? entry.teamName || '' : '')}">
             </div>
             <div class="form-row">
               <label>团队成员（含本人，用「、」分隔）</label>
-              <input class="input" id="ctMembers" placeholder="如：李小明、张一帆、周子豪">
+              <input class="input" id="ctMembers" placeholder="如：李小明、张一帆、周子豪" value="${esc(editing ? entry.members || '' : '')}">
             </div>
           </div>
           <div class="form-row">
             <label>指导老师（选填）</label>
-            <input class="input" id="ctTeacher" placeholder="填写指导老师姓名" maxlength="20">
+            <input class="input" id="ctTeacher" placeholder="填写指导老师姓名" maxlength="20" value="${esc(editing ? entry.guideTeacher || '' : '')}">
           </div>
         </div>
 
@@ -1958,11 +2012,11 @@
           <div class="up-hint">${esc(spec.note || '')}</div>
           <div class="form-row" style="margin-top:0">
             <label>作品标题</label>
-            <input class="input" id="ctWorkTitle" placeholder="给作品起一个名字" maxlength="30">
+            <input class="input" id="ctWorkTitle" placeholder="给作品起一个名字" maxlength="30" value="${esc(work.title || '')}">
           </div>
           <div class="form-row">
             <label>作品说明（文字）</label>
-            <textarea class="field" id="ctWorkDesc" rows="4" style="margin-top:0" placeholder="介绍创作背景、思路、用到的工具与解决的问题"></textarea>
+            <textarea class="field" id="ctWorkDesc" rows="4" style="margin-top:0" placeholder="介绍创作背景、思路、用到的工具与解决的问题">${esc(work.desc || '')}</textarea>
           </div>
 
           <div class="form-row">
@@ -1986,7 +2040,7 @@
 
         <div class="card mx mt pad">
           <div class="section-title">原创声明</div>
-          <div class="check" id="ctAgree" onclick="App.toggleContestAgree()">
+          <div class="check ${signupDraft.agreed ? 'on' : ''}" id="ctAgree" onclick="App.toggleContestAgree()">
             <span class="box">${I.check}</span>
             <span>我确认作品为学生本人（或团队）原创，未侵犯他人著作权，并同意主办方在赛事宣传中展示该作品。</span>
           </div>
@@ -1994,7 +2048,7 @@
         <div style="height:14px"></div>
       </div>
       <div class="actionbar">
-        <button class="btn btn-primary" id="ctSubmitBtn" disabled onclick="App.submitContestEntry()">提交报名与作品</button>
+        <button class="btn btn-primary" id="ctSubmitBtn" disabled onclick="App.submitContestEntry()">${editing ? '保存修改' : '提交报名与作品'}</button>
       </div>
     </div>`);
     renderUploads();
@@ -2150,32 +2204,40 @@
     const stu = (DB.students || []).find((s) => s.id === signupDraft.studentId) || currentStudent();
     const now = new Date();
     const pad = (n) => String(n).padStart(2, '0');
-    DB.contestEntries.unshift({
-      id: 'entry-' + Date.now(),
-      contestId: c.id,
-      contestName: c.name,
-      cover: c.cover,
-      studentId: stu.id,
-      studentName: stu.name,
-      school: stu.school,
-      grade: stu.grade,
+    const stamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    const fields = {
       teamType: signupDraft.teamType,
       teamName: signupDraft.teamType === '团队' ? teamName : '',
       members: signupDraft.teamType === '团队' ? members : '',
       guideTeacher: val('#ctTeacher'),
-      state: 'submitted',
-      submittedAt: `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`,
       work: {
         title, desc,
         images: signupDraft.images.slice(),
         videos: signupDraft.videos.slice(),
         files: signupDraft.files.slice(),
       },
-    });
-    c.signupCount = (c.signupCount || 0) + 1;
+    };
+    const existing = signupDraft.entryId ? contestEntryById(signupDraft.entryId) : null;
+    if (existing) {
+      Object.assign(existing, fields, { updatedAt: stamp });
+    } else {
+      DB.contestEntries.unshift(Object.assign({
+        id: 'entry-' + Date.now(),
+        contestId: c.id,
+        contestName: c.name,
+        cover: c.cover,
+        studentId: stu.id,
+        studentName: stu.name,
+        school: stu.school,
+        grade: stu.grade,
+        state: 'submitted',
+        submittedAt: stamp,
+      }, fields));
+      c.signupCount = (c.signupCount || 0) + 1;
+    }
     signupDraft = null;
     persistState();
-    toast('报名成功，作品已提交待评审');
+    toast(existing ? '修改已保存' : '报名成功，作品已提交待评审');
     go('#/my-contests');
   }
 
@@ -2185,6 +2247,10 @@
     const card = (e) => {
       const st = DB.contestStateMap[e.state] || DB.contestStateMap.submitted;
       const w = e.work || {};
+      const editable = (() => {
+        const c = contestById(e.contestId);
+        return !!c && contestPhase(c) === 'open';
+      })();
       const chips = [
         (w.images || []).length ? `${I.camera}图片 ${w.images.length}` : '',
         (w.videos || []).length ? `${I.film}视频 ${w.videos.length}` : '',
@@ -2198,6 +2264,7 @@
             <div class="row between"><div class="bold" style="font-size:14px">${esc(e.contestName)}</div><span class="badge ${st.cls}">${st.label}</span></div>
             <div class="small muted" style="margin-top:3px">${esc(e.studentName)} · ${esc(e.grade || '')} · ${esc(e.teamType)}${e.teamName ? `「${esc(e.teamName)}」` : ''}</div>
             <div class="small muted">提交于 ${esc(e.submittedAt)}${e.guideTeacher ? ` · 指导老师 ${esc(e.guideTeacher)}` : ''}</div>
+            ${e.updatedAt ? `<div class="small muted">最后修改 ${esc(e.updatedAt)}</div>` : ''}
           </div>
         </div>
         <div class="ce-work">
@@ -2210,12 +2277,15 @@
         <div class="divider"></div>
         <div class="row between">
           <span class="small muted">${e.state === 'submitted' ? '作品已提交，等待主办方受理' : e.state === 'reviewing' ? '专家评审中，结果将短信通知' : e.state === 'shortlisted' ? '已入围，请留意决赛通知' : e.state === 'awarded' ? '恭喜获奖，证书将寄送到校' : '本届未入围，欢迎下届再战'}</span>
-          <button class="btn btn-line btn-sm" onclick="location.hash='#/contest/${e.contestId}'">赛事详情</button>
+          <div class="row" style="gap:8px;flex-shrink:0">
+            ${editable ? `<button class="btn btn-primary btn-sm" onclick="location.hash='#/contest-work/${e.id}'">修改作品</button>` : ''}
+            <button class="btn btn-line btn-sm" onclick="location.hash='#/contest/${e.contestId}'">赛事详情</button>
+          </div>
         </div>
       </div>`;
     };
     render(`
-    <div class="screen">
+    <div class="screen ct-theme">
       ${navbar('我的参赛', { right: { label: '找赛事', onclick: "location.hash='#/contests'" } })}
       <div class="scroll">
         ${entries.length ? entries.map(card).join('') : '<div class="empty">还没有参赛记录<br><span class="small">去「赛事活动」看看有哪些可以报名</span></div>'}
@@ -2377,13 +2447,14 @@
     [/^#\/contests$/, screenContests],
     [/^#\/contest\/([^/]+)$/, (m) => screenContest(m[1])],
     [/^#\/contest-signup\/([^/]+)$/, (m) => screenContestSignup(m[1])],
+    [/^#\/contest-work\/([^/]+)$/, (m) => screenContestWork(m[1])],
     [/^#\/my-contests$/, screenMyContests],
     [/^#\/legal$/, screenLegalList],
     [/^#\/legal\/([^/]+)$/, (m) => screenLegal(m[1])],
   ];
   function route() {
     const h = location.hash || '#/';
-    if (!DB.parent.loggedIn && /^#\/(me|students|profile|contest-signup|my-contests)/.test(h)) return screenLogin();
+    if (!DB.parent.loggedIn && /^#\/(me|students|profile|contest-signup|contest-work|my-contests)/.test(h)) return screenLogin();
     for (const [re, fn] of routes) {
       const m = h.match(re);
       if (m) return fn(m);
