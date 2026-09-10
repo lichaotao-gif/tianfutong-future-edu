@@ -3,3 +3,4 @@
 node_modules/
 .local-dev.pid
 .local-dev.log
+.qoder/
