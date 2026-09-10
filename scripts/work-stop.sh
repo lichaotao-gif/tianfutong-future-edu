@@ -12,7 +12,7 @@ fi
 
 SERVER_PID="$(cat "$PID_FILE")"
 SERVER_COMMAND="$(ps -p "$SERVER_PID" -o command= 2>/dev/null || true)"
-if [[ "$SERVER_COMMAND" == *"http.server"* ]]; then
+if [[ "$SERVER_COMMAND" == *"http.server"* || "$SERVER_COMMAND" == *"npm run dev"* ]]; then
   kill "$SERVER_PID"
   echo "已停止本地预览服务。"
 else
