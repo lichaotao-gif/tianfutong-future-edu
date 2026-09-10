@@ -26,7 +26,7 @@ generate_commit_message() {
       *.html) ((html_count++)) ;;
       *.css) ((css_count++)) ;;
       *.js) ((js_count++)) ;;
-      scripts/*|*.sh|package*.json|*.yml|*.yaml) ((script_count++)) ;;
+      scripts/*|*.sh|package*.json|*.yml|*.yaml|.gitignore|.gitattributes) ((script_count++)) ;;
       *) ((other_count++)) ;;
     esac
   done <<< "$files"
