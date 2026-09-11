@@ -4,6 +4,7 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_ROOT"
+source "$REPO_ROOT/scripts/git-common.sh"
 
 BRANCH="$(git symbolic-ref --quiet --short HEAD || true)"
 if [[ -z "$BRANCH" ]]; then
@@ -17,6 +18,8 @@ if [[ -n "$(git status --porcelain)" ]]; then
   git status --short >&2
   exit 1
 fi
+
+ensure_github_ssh_origin
 
 echo "正在从 GitHub 快进同步……"
 git pull --ff-only origin "$BRANCH"

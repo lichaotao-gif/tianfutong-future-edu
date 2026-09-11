@@ -4,6 +4,7 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_ROOT"
+source "$REPO_ROOT/scripts/git-common.sh"
 
 BRANCH="$(git symbolic-ref --quiet --short HEAD || true)"
 if [[ -z "$BRANCH" ]]; then
@@ -11,6 +12,8 @@ if [[ -z "$BRANCH" ]]; then
   exit 1
 fi
 echo "当前 Git 分支：$BRANCH"
+
+ensure_github_ssh_origin
 
 echo "本次实际修改："
 git status --short
