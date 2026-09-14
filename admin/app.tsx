@@ -4,11 +4,11 @@
  * 业务闭环：建校/场地 → 审机构 → 审教师 → 审课程 → 课程库
  *          → 分发学校 → 家长报名付费 → 按节销课 → 按月结算
  * ============================================================ */
-const { useState, useMemo } = React;
+const { useState, useMemo, useEffect } = React;
 const {
   Layout, Menu, Table: AntTable, Tag, Button, Modal, Drawer, Descriptions, Card, Statistic,
   Row, Col, Space, Input, Select, Steps, message, Tabs, Divider, Form, InputNumber,
-  Checkbox, Timeline, Alert, Progress, Radio, Avatar, Tooltip, List, Upload,
+  Checkbox, Timeline, Alert, Progress, Radio, Avatar, Tooltip, List, Upload, Badge, Grid,
 } = antd;
 const { Header, Sider, Content } = Layout;
 const { TextArea } = Input;
@@ -16,7 +16,8 @@ const {
   DashboardOutlined, TeamOutlined, BankOutlined, EnvironmentOutlined, ShopOutlined,
   IdcardOutlined, BookOutlined, SendOutlined, ClusterOutlined, ProfileOutlined,
   CheckSquareOutlined, AccountBookOutlined, CustomerServiceOutlined, FileSearchOutlined,
-  UserOutlined, PlusOutlined, RightOutlined, QuestionCircleOutlined,
+  UserOutlined, PlusOutlined, RightOutlined, QuestionCircleOutlined, TrophyOutlined, MenuOutlined,
+  ArrowLeftOutlined, LinkOutlined, CopyOutlined, EyeOutlined,
 } = icons;
 
 /* ---------- 状态 → 颜色（全局统一） ---------- */
@@ -33,6 +34,9 @@ const STC: Record<string, string> = {
   正常: 'green', 未签到: 'default', 已签到: 'green', 待确认: 'orange', 待上架确认: 'orange', 已确认: 'green', 无异议: 'green', 有异议: 'red', 客服判定结算: 'green', 客服判定不结算: 'default',
   已上传: 'green', 未上传: 'orange',
   已开通: 'green', 未开通: 'orange',
+  征集中: 'blue', 征集截止: 'gold', 评审中: 'processing', 待发布: 'purple', 结果已发布: 'green', 已归档: 'default',
+  资格待审: 'orange', 资格通过: 'green', 资格驳回: 'red', 待分配: 'gold', 待评分: 'blue', 评分中: 'processing', 已评分: 'cyan', 待复核: 'purple', 结果确定: 'green',
+  可接任务: 'green', 暂停接单: 'default', 已分配: 'blue', 已提交: 'cyan', 已锁定: 'green', 已退回: 'red',
 };
 /* ---------- 名词解释词典（顶部 ? 查看全量，状态标签悬停即显） ---------- */
 const GLOSSARY: { title: string; items: [string, string][] }[] = [
@@ -368,6 +372,115 @@ const initDB = {
     { id: 'SH20260630003', parent: '王女士', student: '王梓萱', cls: '人工智能启蒙课·周三班', type: '教师缺课', org: '智创未来', school: '成都天府新区实验小学', time: '2026-06-30 18:44', status: '待处理' },
     { id: 'SH20260701004', parent: '周先生', student: '周子墨', cls: '创意水彩画课·周一班', type: '其他问题', org: '童心美育', school: '成都天府新区实验小学', time: '2026-07-01 09:12', status: '待处理' },
   ],
+  competitions: [
+    {
+      id: 'innovation-2026', name: '2026 年天府新区青少年创新实践大赛', category: '创新实践', organizer: '成都天府新区教育卫健局',
+      audience: '全区中小学生', signupStart: '2026-06-20', signupEnd: '2026-11-15', reviewEnd: '2026-12-10', status: '征集中', reviewerCount: 2,
+      expertIds: ['expert-001', 'expert-002'],
+      materialRule: '图片、视频、附件至少提交一项；作品须为学生本人或团队原创。',
+      criteria: [
+        { key: 'innovation', name: '创新性', max: 30 }, { key: 'completion', name: '完成度', max: 25 },
+        { key: 'practice', name: '技术与实践', max: 25 }, { key: 'presentation', name: '表达展示', max: 20 },
+      ],
+    },
+    {
+      id: 'ai-2026', name: '2026 年成都市青少年人工智能大赛', category: '人工智能', organizer: '成都市教育局',
+      audience: '全市中小学生', signupStart: '2026-07-01', signupEnd: '2026-10-20', reviewEnd: '2026-11-25', status: '评审中', reviewerCount: 2,
+      expertIds: ['expert-001', 'expert-004'],
+      materialRule: '作品说明须写明使用的 AI 工具，团队作品填写全部成员。',
+      criteria: [
+        { key: 'innovation', name: '创新性', max: 30 }, { key: 'completion', name: '完成度', max: 25 },
+        { key: 'practice', name: '技术与实践', max: 25 }, { key: 'presentation', name: '表达展示', max: 20 },
+      ],
+    },
+  ],
+  contestEntries: [
+    {
+      id: 'work-001', competitionId: 'innovation-2026', studentName: '李小明', school: '成都天府新区实验小学', grade: '三年级 2 班', teamType: '个人',
+      title: '会提醒节水的智能花盆', desc: '通过土壤湿度传感器判断植物是否需要浇水，并用灯光提醒。', submittedAt: '2026-09-10 19:20',
+      assets: [{ name: '作品说明.pdf', type: '附件', size: '1.2 MB' }, { name: '演示视频.mp4', type: '视频', size: '36.5 MB' }],
+      eligibilityStatus: '资格待审', reviewStatus: '资格待审', auditNote: '', award: '', resultPublished: false,
+      audits: [{ t: '2026-09-10 19:20', who: '李先生', act: '提交报名作品', note: '' }],
+    },
+    {
+      id: 'work-002', competitionId: 'innovation-2026', studentName: '李小雨', school: '成都天府新区实验小学', grade: '一年级 4 班', teamType: '团队',
+      title: '校园声音地图', desc: '记录校园不同区域的声音变化，并制作可视化声音地图。', submittedAt: '2026-09-11 20:06',
+      assets: [{ name: '声音地图展示.pptx', type: '附件', size: '4.8 MB' }],
+      eligibilityStatus: '资格通过', reviewStatus: '待分配', auditNote: '资格和材料完整', award: '', resultPublished: false,
+      audits: [{ t: '2026-09-12 09:10', who: '李敏', act: '资格审核通过', note: '资格和材料完整' }],
+    },
+    {
+      id: 'work-003', competitionId: 'innovation-2026', studentName: '李晨曦', school: '成都天府新区第七小学', grade: '五年级 1 班', teamType: '个人',
+      title: '校园垃圾分类识别箱', desc: '用图像识别模型区分常见校园垃圾并提示投放类别。', submittedAt: '2026-09-12 16:30',
+      assets: [{ name: '设计文档.pdf', type: '附件', size: '2.6 MB' }, { name: '识别测试.mp4', type: '视频', size: '28.1 MB' }],
+      eligibilityStatus: '资格通过', reviewStatus: '待评分', auditNote: '材料完整', award: '', resultPublished: false,
+      audits: [{ t: '2026-09-13 10:00', who: '李敏', act: '资格审核通过', note: '材料完整' }],
+    },
+    {
+      id: 'work-004', competitionId: 'ai-2026', studentName: '张一诺', school: '成都天府新区实验小学', grade: '四年级 3 班', teamType: '个人',
+      title: '会认垃圾的小助手', desc: '训练垃圾分类小模型，帮助同学判断垃圾桶类别。', submittedAt: '2026-08-28 20:14',
+      assets: [{ name: '作品说明文档.pdf', type: '附件', size: '1.1 MB' }, { name: '作品演示.mp4', type: '视频', size: '18.4 MB' }],
+      eligibilityStatus: '资格通过', reviewStatus: '待复核', auditNote: '资格通过', award: '', resultPublished: false,
+      audits: [{ t: '2026-08-30 09:20', who: '李敏', act: '资格审核通过', note: '' }],
+    },
+    {
+      id: 'work-005', competitionId: 'ai-2026', studentName: '陈梓航', school: '成都高新区实验小学', grade: '三年级 1 班', teamType: '个人',
+      title: 'AI 故事绘本', desc: '使用生成式 AI 辅助创作环保主题绘本。', submittedAt: '2026-08-29 18:42',
+      assets: [{ name: '绘本作品.pdf', type: '附件', size: '8.7 MB' }],
+      eligibilityStatus: '资格驳回', reviewStatus: '资格驳回', auditNote: '缺少 AI 工具使用说明', award: '', resultPublished: false,
+      audits: [{ t: '2026-08-30 11:05', who: '李敏', act: '资格审核驳回', note: '缺少 AI 工具使用说明' }],
+    },
+    {
+      id: 'work-006', competitionId: 'innovation-2026', studentName: '赵子墨', school: '成都天府新区华阳实验小学', grade: '六年级 2 班', teamType: '团队',
+      title: '校园雨水回收灌溉系统', desc: '收集教学楼屋顶雨水，根据花圃湿度自动控制滴灌。', submittedAt: '2026-09-12 18:20',
+      assets: [{ name: '项目报告.pdf', type: '附件', size: '3.6 MB' }, { name: '现场演示.mp4', type: '视频', size: '42.3 MB' }],
+      eligibilityStatus: '资格通过', reviewStatus: '评分中', auditNote: '材料完整', award: '', resultPublished: false,
+      audits: [{ t: '2026-09-13 09:25', who: '李敏', act: '资格审核通过', note: '材料完整' }],
+    },
+    {
+      id: 'work-007', competitionId: 'innovation-2026', studentName: '周可欣', school: '成都天府新区第三小学', grade: '四年级 4 班', teamType: '个人',
+      title: '盲文药盒提醒器', desc: '结合触觉标记与语音提醒，帮助视障人群安全按时用药。', submittedAt: '2026-09-09 17:46',
+      assets: [{ name: '作品说明.pdf', type: '附件', size: '2.1 MB' }],
+      eligibilityStatus: '资格通过', reviewStatus: '结果确定', auditNote: '材料完整', award: '二等奖', resultPublished: false,
+      audits: [{ t: '2026-09-10 10:18', who: '李敏', act: '资格审核通过', note: '材料完整' }],
+    },
+    {
+      id: 'work-008', competitionId: 'ai-2026', studentName: '孙浩宇', school: '成都高新区锦城小学', grade: '五年级 3 班', teamType: '团队',
+      title: 'AI 校园植物医生', desc: '拍摄植物叶片后识别常见病害，并给出校园养护建议。', submittedAt: '2026-08-30 20:12',
+      assets: [{ name: '模型说明.pdf', type: '附件', size: '3.9 MB' }, { name: '测试视频.mp4', type: '视频', size: '25.7 MB' }],
+      eligibilityStatus: '资格通过', reviewStatus: '待评分', auditNote: '材料完整', award: '', resultPublished: false,
+      audits: [{ t: '2026-08-31 10:05', who: '李敏', act: '资格审核通过', note: '材料完整' }],
+    },
+    {
+      id: 'work-009', competitionId: 'ai-2026', studentName: '何语桐', school: '成都天府新区第七小学', grade: '六年级 1 班', teamType: '个人',
+      title: '课堂专注度自评助手', desc: '通过课堂记录帮助学生进行专注度自评，不采集人脸信息。', submittedAt: '2026-08-31 19:08',
+      assets: [{ name: '隐私设计说明.pdf', type: '附件', size: '1.8 MB' }],
+      eligibilityStatus: '资格通过', reviewStatus: '待分配', auditNote: '资格通过', award: '', resultPublished: false,
+      audits: [{ t: '2026-09-01 09:48', who: '李敏', act: '资格审核通过', note: '资格通过' }],
+    },
+  ],
+  contestExperts: [
+    { id: 'expert-001', reviewToken: 'review-wang-7k2p', name: '王思远', phone: '138****3001', unit: '成都智创未来教育科技有限公司', specialties: ['人工智能', '创新实践'], capacity: 8, status: '可接任务' },
+    { id: 'expert-002', reviewToken: 'review-liu-9m4x', name: '刘嘉敏', phone: '137****3003', unit: '成都智创未来教育科技有限公司', specialties: ['创新实践', '科学实验'], capacity: 6, status: '可接任务' },
+    { id: 'expert-003', reviewToken: 'review-chen-3c8n', name: '陈亦然', phone: '139****3002', unit: '成都天府新区实验小学', specialties: ['人工智能', '机器人'], capacity: 6, status: '暂停接单' },
+    { id: 'expert-004', reviewToken: 'review-zhou-5h6q', name: '周若兰', phone: '136****3018', unit: '电子科技大学信息与软件工程学院', specialties: ['人工智能', '创新实践'], capacity: 8, status: '可接任务' },
+  ],
+  contestAssignments: [
+    { id: 'assignment-001', entryId: 'work-003', expertId: 'expert-002', status: '已分配', assignedAt: '2026-09-13 11:20', submittedAt: '' },
+    { id: 'assignment-002', entryId: 'work-004', expertId: 'expert-001', status: '已提交', assignedAt: '2026-09-01 10:00', submittedAt: '2026-09-05 16:40' },
+    { id: 'assignment-003', entryId: 'work-006', expertId: 'expert-001', status: '评分中', assignedAt: '2026-09-13 14:10', submittedAt: '' },
+    { id: 'assignment-004', entryId: 'work-007', expertId: 'expert-002', status: '已锁定', assignedAt: '2026-09-10 11:30', submittedAt: '2026-09-12 15:20' },
+    { id: 'assignment-005', entryId: 'work-008', expertId: 'expert-004', status: '已分配', assignedAt: '2026-09-02 09:15', submittedAt: '' },
+  ],
+  contestScores: [
+    { id: 'score-002', assignmentId: 'assignment-002', status: '已提交', items: { innovation: 27, completion: 22, practice: 21, presentation: 18 }, total: 88, comment: '选题贴近校园生活，模型演示完整；建议补充训练样本来源和误识别分析。', updatedAt: '2026-09-05 16:40' },
+    { id: 'score-003', assignmentId: 'assignment-003', status: '暂存', items: { innovation: 26, completion: 21 }, total: 47, comment: '', updatedAt: '2026-09-14 09:32' },
+    { id: 'score-004', assignmentId: 'assignment-004', status: '已锁定', items: { innovation: 28, completion: 23, practice: 22, presentation: 18 }, total: 91, comment: '需求洞察清晰，原型完整且注重无障碍体验，建议继续优化药盒尺寸。', updatedAt: '2026-09-12 15:20', reviewNote: '评分依据完整，同意二等奖。' },
+  ],
+  contestLogs: [
+    { id: 'contest-log-001', t: '2026-09-13 11:20', who: '张运营', mod: '评审分配', act: '将《校园垃圾分类识别箱》分配给专家刘嘉敏', ret: '成功' },
+    { id: 'contest-log-002', t: '2026-09-05 16:40', who: '王思远', mod: '专家评分', act: '提交《会认垃圾的小助手》评分 88 分', ret: '成功' },
+  ],
   users: [
     { id: 'u1', name: '张运营', phone: '138****9001', role: '平台管理员', unit: '天府未来教育中心', status: '启用', last: '2026-07-01 09:12' },
     { id: 'u2', name: '李敏', phone: '139****9002', role: '审核人员', unit: '天府未来教育中心', status: '启用', last: '2026-07-01 08:45' },
@@ -375,12 +488,15 @@ const initDB = {
     { id: 'u4', name: '周校长', phone: '138****1001', role: '学校管理员', unit: '成都天府新区实验小学', status: '启用', last: '2026-06-30 16:02' },
     { id: 'u5', name: '王总', phone: '138****2001', role: '机构管理员', unit: '成都智创未来教育科技有限公司', status: '启用', last: '2026-07-01 10:18' },
     { id: 'u6', name: '测试客服', phone: '135****9006', role: '客服人员', unit: '天府未来教育中心', status: '禁用', last: '2026-05-20 11:00' },
+    { id: 'u7', name: '王思远', phone: '138****3001', role: '赛事专家', unit: '成都智创未来教育科技有限公司', status: '启用', last: '2026-09-14 09:35' },
+    { id: 'u8', name: '赛事复核员', phone: '139****9010', role: '赛事复核员', unit: '天府未来教育中心', status: '启用', last: '2026-09-14 08:50' },
   ],
   roles: [
-    { id: 'r1', name: '平台管理员', desc: '全部权限', perms: 24 }, { id: 'r2', name: '运营人员', desc: '学校 / 课程配置 / 班级', perms: 14 },
-    { id: 'r3', name: '审核人员', desc: '机构 / 教师 / 课程审核', perms: 8 }, { id: 'r4', name: '财务人员', desc: '订单 / 销课 / 结算', perms: 9 },
+    { id: 'r1', name: '平台管理员', desc: '全部权限', perms: 32 }, { id: 'r2', name: '运营人员', desc: '学校 / 课程配置 / 班级 / 赛事运营', perms: 20 },
+    { id: 'r3', name: '审核人员', desc: '机构 / 教师 / 课程 / 作品资格审核', perms: 10 }, { id: 'r4', name: '财务人员', desc: '订单 / 销课 / 结算', perms: 9 },
     { id: 'r5', name: '客服人员', desc: '售后 / 订单查看', perms: 5 }, { id: 'r6', name: '学校管理员', desc: '本校场地 / 班级 / 销课确认', perms: 7 },
     { id: 'r7', name: '机构管理员', desc: '本机构教师 / 课程 / 销课', perms: 10 }, { id: 'r8', name: '教师子账号', desc: '上课签到 / 提交销课', perms: 3 },
+    { id: 'r9', name: '赛事专家', desc: '仅查看本人分配作品并评分', perms: 3 }, { id: 'r10', name: '赛事复核员', desc: '评分复核、退回重评与结果确认', perms: 4 },
   ],
   logs: [
     { t: '2026-07-01 10:32', who: '张运营', mod: '学校课程配置', act: '将「人工智能启蒙课」分发至 成都天府新区第七小学', ip: '10.8.1.21', ret: '成功' },
@@ -392,6 +508,35 @@ const initDB = {
     { t: '2026-06-28 11:30', who: '李敏', mod: '教师审核', act: '通过教师「刘嘉敏」资质审核', ip: '10.8.1.22', ret: '成功' },
     { t: '2026-06-24 11:06', who: '王芳', mod: '订单管理', act: '订单 DD20260624005 退款 ¥900', ip: '10.8.1.23', ret: '成功' },
   ],
+};
+
+const ADMIN_STORE_KEY = 'futureEdu.admin.state.v3';
+const contestStore = (window as any).FutureEduContestStore;
+const toAdminContestEntry = (entry: any) => {
+  const canonical = contestStore ? contestStore.normalizeEntry(entry) : entry;
+  const work = canonical.work || { title: canonical.title || '', desc: canonical.desc || '', images: [], videos: [], files: [] };
+  return {
+    ...canonical,
+    title: work.title,
+    desc: work.desc,
+    assets: [
+      ...(work.images || []).map((asset: any) => ({ ...asset, type: '图片' })),
+      ...(work.videos || []).map((asset: any) => ({ ...asset, type: '视频' })),
+      ...(work.files || []).map((asset: any) => ({ ...asset, type: '附件' })),
+    ],
+  };
+};
+const loadAdminDB = () => {
+  let saved: any = null;
+  try { saved = JSON.parse(localStorage.getItem(ADMIN_STORE_KEY) || 'null'); } catch (_) {}
+  const adminState = saved ? { ...initDB, ...saved } : initDB;
+  if (!contestStore) return adminState;
+  const publicDB = (window as any).DB || {};
+  const shared = contestStore.load(
+    [...(publicDB.contests || []), ...(initDB.competitions || []), ...(saved?.competitions || [])],
+    [...(publicDB.contestEntries || []), ...(initDB.contestEntries || []), ...(saved?.contestEntries || [])],
+  );
+  return { ...adminState, competitions: shared.competitions, contestEntries: shared.contestEntries.map(toAdminContestEntry) };
 };
 
 /* ---------- 工具 ---------- */
@@ -550,12 +695,23 @@ const COLDEF: Record<string, string> = {
   '结果': '操作是否执行成功。',
   '状态': '当前业务状态，悬停状态标签查看含义，全量见右上角「名词解释」。',
 };
-const colTip = (cols: any[]) => (cols || []).map((c: any) =>
-  typeof c.title === 'string' && COLDEF[c.title]
-    ? { ...c, title: <span>{c.title} <Tooltip title={COLDEF[c.title]}><QuestionCircleOutlined style={{ color: '#b6bcc7', fontSize: 12, cursor: 'help' }} /></Tooltip></span> }
-    : c);
+const colTip = (cols: any[]) => (cols || []).map((c: any) => {
+  const column = c.title === '操作' ? { ...c, onCell: () => ({ style: { whiteSpace: 'nowrap' } }) } : c;
+  return typeof column.title === 'string' && COLDEF[column.title]
+    ? { ...column, title: <span>{column.title} <Tooltip title={COLDEF[column.title]}><QuestionCircleOutlined style={{ color: '#b6bcc7', fontSize: 12, cursor: 'help' }} /></Tooltip></span> }
+    : column;
+});
 const Tbl = (props: any) => <Table {...props} columns={colTip(props.columns)} />;
 const now = () => '2026-07-01 ' + new Date().toTimeString().slice(0, 5);
+const contestNow = () => {
+  const d = new Date();
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+};
+const contestLog = (mod: string, act: string, who = '张运营') => ({
+  id: 'contest-log-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+  t: contestNow(), who, mod, act, ret: '成功',
+});
 
 /* ---------- 通用列表筛选（下拉框，默认全部，可组合多个，一键重置） ---------- */
 // 生成「全部 + 去重可选值」的下拉项
@@ -763,7 +919,7 @@ function UserPage({ db, setDb }: any) {
               onOk={() => { setPermRole(null); message.success('Demo：权限已保存'); }}>
               <Checkbox.Group style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}
                 defaultValue={['看板', '学校/点位管理', '机构审核']}
-                options={['看板', '用户管理', '学校/点位管理', '场地管理', '机构审核', '教师审核', '课程审核', '课程配置', '成班管理', '订单管理', '销课管理', '结算管理', '售后管理', '操作日志'].map((x) => ({ label: x, value: x }))} />
+                options={['看板', '用户管理', '学校/点位管理', '场地管理', '机构审核', '教师审核', '课程审核', '课程配置', '赛事配置', '作品资格审核', '专家库', '评审分配', '专家评分', '评分复核', '结果发布', '成班管理', '订单管理', '销课管理', '结算管理', '售后管理', '操作日志'].map((x) => ({ label: x, value: x }))} />
             </Modal>
           </Card>
         ),
@@ -1926,7 +2082,730 @@ function SettlePage({ db, setDb }: any) {
   );
 }
 
-/* 十三、售后管理 */
+function ExpertReviewPage({ db, setDb, token, eventId }: any) {
+  const [scoreTarget, setScoreTarget] = useState<any>(null);
+  const [draft, setDraft] = useState<any>({ items: {}, comment: '' });
+  const expert = (db.contestExperts || []).find((item: any) => item.reviewToken === token);
+  const competition = (db.competitions || []).find((item: any) => item.id === eventId && (item.expertIds || []).includes(expert?.id));
+  const entries = db.contestEntries || [];
+  const assignments = db.contestAssignments || [];
+  const scores = db.contestScores || [];
+  const tasks = expert && competition ? assignments.filter((assignment: any) => assignment.expertId === expert.id).map((assignment: any) => {
+    const entry = entries.find((item: any) => item.id === assignment.entryId);
+    const score = scores.find((item: any) => item.assignmentId === assignment.id);
+    return entry?.competitionId === competition.id ? { assignment, entry, score } : null;
+  }).filter(Boolean) : [];
+  const openReview = (task: any) => {
+    setScoreTarget(task);
+    setDraft({ items: { ...(task.score?.items || {}) }, comment: task.score?.comment || '' });
+  };
+  const saveReview = (submit: boolean) => {
+    if (!scoreTarget) return;
+    const criteria = competition.criteria || [];
+    if (submit && criteria.some((criterion: any) => !Number.isFinite(draft.items[criterion.key]))) return message.warning('请完成全部评分维度');
+    if (submit && !draft.comment.trim()) return message.warning('请填写专家评语');
+    const invalid = criteria.find((criterion: any) => Number(draft.items[criterion.key] || 0) < 0 || Number(draft.items[criterion.key] || 0) > criterion.max);
+    if (invalid) return message.warning(`${invalid.name}应在 0-${invalid.max} 分之间`);
+    const total = criteria.reduce((sum: number, criterion: any) => sum + Number(draft.items[criterion.key] || 0), 0);
+    const score = {
+      id: scoreTarget.score?.id || 'score-' + Date.now(), assignmentId: scoreTarget.assignment.id,
+      status: submit ? '已提交' : '暂存', items: { ...draft.items }, total,
+      comment: draft.comment.trim(), updatedAt: contestNow(),
+    };
+    setDb((state: any) => ({
+      ...state,
+      contestScores: scoreTarget.score ? patch(state.contestScores, score.id, score) : [score, ...state.contestScores],
+      contestAssignments: patch(state.contestAssignments, scoreTarget.assignment.id, { status: submit ? '已提交' : '评分中', submittedAt: submit ? contestNow() : '' }),
+      contestEntries: patch(state.contestEntries, scoreTarget.entry.id, { reviewStatus: submit ? '待复核' : '评分中' }),
+      contestLogs: [contestLog('专家评分', `${submit ? '提交' : '暂存'}《${scoreTarget.entry.title}》评分${submit ? ` ${total} 分` : ''}`, expert.name), ...(state.contestLogs || [])],
+    }));
+    setScoreTarget(null);
+    message.success(submit ? '评分已提交，等待赛事方复核' : '评分草稿已保存');
+  };
+  if (!expert || !competition) return <div style={{ minHeight: '100vh', background: '#f5f7fa', padding: 24 }}><Card style={{ maxWidth: 620, margin: '80px auto' }}><Alert type="error" showIcon message="评审链接无效或已失效" description="请联系赛事工作人员重新获取专属评审链接。" /></Card></div>;
+  const doneCount = tasks.filter((task: any) => ['已提交', '已锁定'].includes(task.assignment.status)).length;
+  return (
+    <Layout style={{ minHeight: '100vh', background: '#f5f7fa' }}>
+      <Header style={{ height: 'auto', minHeight: 64, lineHeight: 1.4, padding: '12px 20px', background: '#fff', borderBottom: '1px solid #e8e8e8', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+        <Space><div style={{ width: 36, height: 36, borderRadius: 8, background: '#1677ff', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>未</div><span><b>专家评审工作台</b><div style={{ color: '#777', fontSize: 12 }}>天府未来教育中心</div></span></Space>
+        <Space><Tag color="green">专属链接 · 免登录</Tag><Avatar style={{ background: '#1677ff' }}>{expert.name.slice(0, 1)}</Avatar><b>{expert.name} 专家</b></Space>
+      </Header>
+      <Content style={{ width: '100%', maxWidth: 1180, margin: '0 auto', padding: '20px 12px 40px', boxSizing: 'border-box' }}>
+        <Card size="small" style={{ marginBottom: 12 }}>
+          <Row gutter={[16, 12]} align="middle">
+            <Col xs={24} md={17}><Space direction="vertical" size={4}><Space wrap><h1 style={{ margin: 0, fontSize: 22 }}>{competition.name}</h1><S v={competition.status} /></Space><span style={{ color: '#666' }}>{competition.organizer} · 评审截止 {competition.reviewEnd}</span></Space></Col>
+            <Col xs={24} md={7}><Progress percent={tasks.length ? Math.round(doneCount / tasks.length * 100) : 0} format={() => `${doneCount} / ${tasks.length} 已提交`} /></Col>
+          </Row>
+        </Card>
+        <Alert type="info" showIcon style={{ marginBottom: 12 }} message="此链接仅供本人评审使用，请勿转发" description="您只能查看赛事方分配给您的作品。评分提交后不可修改，如需调整请联系赛事复核员退回。" />
+        <Row gutter={[12, 12]} style={{ marginBottom: 12 }}>
+          {[
+            ['全部任务', tasks.length],
+            ['待评分', tasks.filter((task: any) => task.assignment.status === '已分配').length],
+            ['评分中', tasks.filter((task: any) => task.assignment.status === '评分中').length],
+            ['已提交', doneCount],
+          ].map(([title, value], index) => <Col xs={12} md={6} key={String(title)}><Card size="small" style={statCardStyle(index)}><Statistic title={title} value={value} /></Card></Col>)}
+        </Row>
+        <Card size="small" title="我的评审任务">
+          <Tbl {...tblProps} dataSource={tasks} columns={[
+            { title: '作品', width: 260, render: (_: any, task: any) => <span><b>{task.entry.title}</b><div style={{ color: '#888', fontSize: 12 }}>{task.entry.teamType} · {task.entry.assets.length} 项材料</div></span> },
+            { title: '参赛学生', width: 150, render: (_: any, task: any) => <span>{task.entry.studentName}<div style={{ color: '#888', fontSize: 12 }}>{task.entry.grade}</div></span> },
+            { title: '学校', render: (_: any, task: any) => task.entry.school },
+            { title: '分配时间', width: 160, render: (_: any, task: any) => task.assignment.assignedAt },
+            { title: '状态', width: 100, render: (_: any, task: any) => <S v={task.assignment.status} /> },
+            { title: '得分', width: 80, render: (_: any, task: any) => task.score ? <b style={{ color: '#1677ff' }}>{task.score.total} 分</b> : '—' },
+            { title: '操作', fixed: 'right', width: 110, render: (_: any, task: any) => <Button type="link" onClick={() => openReview(task)}>{['已提交', '已锁定'].includes(task.assignment.status) ? '查看评分' : task.score ? '继续评分' : '开始评审'}</Button> },
+          ]} />
+        </Card>
+      </Content>
+      <Modal open={!!scoreTarget} width={760} title={`作品评审：${scoreTarget?.entry.title || ''}`} onCancel={() => setScoreTarget(null)} footer={scoreTarget && ['已提交', '已锁定'].includes(scoreTarget.assignment.status) ? <Button onClick={() => setScoreTarget(null)}>关闭</Button> : [<Button key="cancel" onClick={() => setScoreTarget(null)}>取消</Button>, <Button key="draft" onClick={() => saveReview(false)}>保存草稿</Button>, <Button key="submit" type="primary" onClick={() => saveReview(true)}>提交评分</Button>]}>
+        {scoreTarget && <>
+          <Descriptions bordered size="small" column={2} items={[
+            { key: 'student', label: '参赛学生', children: `${scoreTarget.entry.studentName} · ${scoreTarget.entry.grade}` },
+            { key: 'school', label: '学校', children: scoreTarget.entry.school },
+            { key: 'desc', label: '作品说明', span: 2, children: scoreTarget.entry.desc },
+          ]} />
+          <Divider orientation="left">作品材料</Divider>
+          <List bordered size="small" dataSource={scoreTarget.entry.assets} renderItem={(asset: any) => <List.Item actions={[<a onClick={() => message.info('演示环境未连接真实文件存储')}>查看材料</a>]}><List.Item.Meta title={asset.name} description={`${asset.type} · ${asset.size}`} /></List.Item>} />
+          <Divider orientation="left">评分表</Divider>
+          {(competition.criteria || []).map((criterion: any) => <div key={criterion.key} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}><span style={{ width: 110 }}>{criterion.name}</span><InputNumber disabled={['已提交', '已锁定'].includes(scoreTarget.assignment.status)} min={0} max={criterion.max} value={draft.items[criterion.key]} onChange={(value) => setDraft((state: any) => ({ ...state, items: { ...state.items, [criterion.key]: value } }))} /><span style={{ color: '#777' }}>/ {criterion.max} 分</span></div>)}
+          <div style={{ marginBottom: 8 }}>专家评语</div>
+          <TextArea disabled={['已提交', '已锁定'].includes(scoreTarget.assignment.status)} rows={4} value={draft.comment} onChange={(event: any) => setDraft((state: any) => ({ ...state, comment: event.target.value }))} placeholder="请评价作品亮点、问题与改进建议" />
+          <div style={{ textAlign: 'right', marginTop: 12, fontSize: 18 }}>总分：<b style={{ color: '#1677ff' }}>{(competition.criteria || []).reduce((sum: number, criterion: any) => sum + Number(draft.items[criterion.key] || 0), 0)}</b> / 100</div>
+        </>}
+      </Modal>
+    </Layout>
+  );
+}
+
+/* 十三、赛事评审中心 */
+function CompetitionPage({ db, setDb }: any) {
+  const [tab, setTab] = useState('events');
+  const [activeCompetitionId, setActiveCompetitionId] = useState('');
+  const [reviewLinkCompetition, setReviewLinkCompetition] = useState<any>(null);
+  const [expertManageCompetition, setExpertManageCompetition] = useState<any>(null);
+  const [expertToAdd, setExpertToAdd] = useState('');
+  const [eventEdit, setEventEdit] = useState<any>(null);
+  const [eventOpen, setEventOpen] = useState(false);
+  const [workDetail, setWorkDetail] = useState<any>(null);
+  const [auditTarget, setAuditTarget] = useState<any>(null);
+  const [assignTarget, setAssignTarget] = useState<any>(null);
+  const [assignExpertId, setAssignExpertId] = useState('');
+  const [expertOpen, setExpertOpen] = useState(false);
+  const [scoreTarget, setScoreTarget] = useState<any>(null);
+  const [scoreDraft, setScoreDraft] = useState<any>({ items: {}, comment: '' });
+  const [scoreExpertId, setScoreExpertId] = useState('expert-001');
+  const [reviewTarget, setReviewTarget] = useState<any>(null);
+  const [reviewAction, setReviewAction] = useState('confirm');
+  const [reviewAward, setReviewAward] = useState('无奖项');
+  const [reviewNote, setReviewNote] = useState('');
+  const [selectedWorks, setSelectedWorks] = useState<React.Key[]>([]);
+  const [resultCompetitionId, setResultCompetitionId] = useState((db.competitions || [])[0]?.id || '');
+  const [eventForm] = Form.useForm();
+  const [expertForm] = Form.useForm();
+  const screens = Grid.useBreakpoint();
+
+  const competitions = db.competitions || [];
+  const entries = db.contestEntries || [];
+  const experts = db.contestExperts || [];
+  const assignments = db.contestAssignments || [];
+  const scores = db.contestScores || [];
+  const competitionOf = (id: string) => competitions.find((c: any) => c.id === id);
+  const entryOf = (id: string) => entries.find((e: any) => e.id === id);
+  const expertOf = (id: string) => experts.find((e: any) => e.id === id);
+  const assignmentOf = (entryId: string) => assignments.find((a: any) => a.entryId === entryId);
+  const scoreOf = (assignmentId: string) => scores.find((s: any) => s.assignmentId === assignmentId);
+  const expertLoad = (expertId: string, competitionId?: string) => assignments.filter((a: any) => {
+    const entry = entryOf(a.entryId);
+    return a.expertId === expertId && (!competitionId || entry?.competitionId === competitionId);
+  }).length;
+  const competitionExperts = (competitionId: string) => {
+    const competition = competitionOf(competitionId);
+    return experts.filter((expert: any) => (competition?.expertIds || []).includes(expert.id));
+  };
+  const reviewUrl = (competition: any, expert: any) => `${window.location.origin}${window.location.pathname}?review=${expert.reviewToken}&event=${competition.id}`;
+  const copyReviewUrl = (competition: any, expert: any) => {
+    navigator.clipboard.writeText(reviewUrl(competition, expert))
+      .then(() => message.success(`已复制 ${expert.name} 的评审链接`))
+      .catch(() => message.warning('浏览器未允许复制，请先点击页面后重试'));
+  };
+  const addLog = (state: any, mod: string, act: string, who?: string) => ({
+    ...state,
+    contestLogs: [contestLog(mod, act, who), ...(state.contestLogs || [])],
+  });
+
+  const openEvent = (event?: any) => {
+    const row = event || {
+      name: '', category: '创新实践', desc: '', organizer: '', audience: '全区中小学生', signupStart: '', signupEnd: '', reviewEnd: '', status: '草稿',
+      materialRule: '图片、视频、附件至少提交一项；作品须为学生本人或团队原创。',
+      criteria: [
+        { key: 'innovation', name: '创新性', max: 30 }, { key: 'completion', name: '完成度', max: 25 },
+        { key: 'practice', name: '技术与实践', max: 25 }, { key: 'presentation', name: '表达展示', max: 20 },
+      ],
+    };
+    const maxOf = (key: string) => row.criteria.find((x: any) => x.key === key)?.max || 0;
+    setEventEdit(event || null);
+    eventForm.setFieldsValue({
+      ...row,
+      materialRule: row.materialRule || row.workSpec?.note,
+      innovationMax: maxOf('innovation'), completionMax: maxOf('completion'),
+      practiceMax: maxOf('practice'), presentationMax: maxOf('presentation'),
+    });
+    setEventOpen(true);
+  };
+
+  const saveEvent = () => {
+    eventForm.validateFields().then((v: any) => {
+      const total = v.innovationMax + v.completionMax + v.practiceMax + v.presentationMax;
+      if (total !== 100) return message.warning('评分维度总分必须为 100 分');
+      const coverByCategory: Record<string, string> = { 创新实践: 'science', 人工智能: 'ai', 机器人: 'code', 无人机: 'science' };
+      const row = {
+        ...(eventEdit || {}),
+        id: eventEdit?.id || 'contest-' + Date.now(),
+        name: v.name,
+        category: v.category,
+        cover: eventEdit?.cover || coverByCategory[v.category] || 'science',
+        desc: v.desc,
+        organizer: v.organizer,
+        audience: v.audience,
+        signupStart: v.signupStart,
+        signupEnd: v.signupEnd,
+        reviewEnd: v.reviewEnd,
+        status: v.status,
+        signupCount: eventEdit?.signupCount || 0,
+        eligibility: eventEdit?.eligibility || { gradeMin: 1, gradeMax: 12 },
+        teamForm: eventEdit?.teamForm || '个人 / 团队',
+        fee: eventEdit?.fee || '免费',
+        intro: eventEdit?.intro || [v.desc],
+        gallery: eventEdit?.gallery || [],
+        schedule: eventEdit?.schedule || [],
+        attachments: eventEdit?.attachments || [],
+        awards: eventEdit?.awards || [],
+        expertIds: eventEdit?.expertIds || [],
+        reviewerCount: (eventEdit?.expertIds || []).length,
+        materialRule: v.materialRule,
+        workSpec: { ...(eventEdit?.workSpec || {}), note: v.materialRule },
+        criteria: [
+          { key: 'innovation', name: '创新性', max: v.innovationMax },
+          { key: 'completion', name: '完成度', max: v.completionMax },
+          { key: 'practice', name: '技术与实践', max: v.practiceMax },
+          { key: 'presentation', name: '表达展示', max: v.presentationMax },
+        ],
+      };
+      setDb((d: any) => {
+        const list = eventEdit ? patch(d.competitions, row.id, row) : [row, ...d.competitions];
+        return addLog({ ...d, competitions: list }, '赛事配置', `${eventEdit ? '更新' : '创建'}赛事《${row.name}》`);
+      });
+      setEventOpen(false);
+      message.success(eventEdit ? '赛事配置已保存' : '赛事已创建');
+    });
+  };
+
+  const addCompetitionExpert = () => {
+    if (!expertManageCompetition || !expertToAdd) return message.warning('请选择要加入的专家');
+    const expert = expertOf(expertToAdd);
+    if (!expert) return;
+    const currentIds = competitionOf(expertManageCompetition.id)?.expertIds || [];
+    if (currentIds.includes(expert.id)) return message.info('该专家已在本赛事中');
+    const expertIds = [...currentIds, expert.id];
+    setDb((state: any) => addLog({ ...state, competitions: patch(state.competitions, expertManageCompetition.id, { expertIds, reviewerCount: expertIds.length }) }, '赛事专家', `将专家${expert.name}加入《${expertManageCompetition.name}》`));
+    setExpertToAdd('');
+    message.success(`已将 ${expert.name} 加入本赛事`);
+  };
+
+  const removeCompetitionExpert = (expert: any) => {
+    if (!expertManageCompetition) return;
+    const assignedCount = assignments.filter((assignment: any) => assignment.expertId === expert.id && entryOf(assignment.entryId)?.competitionId === expertManageCompetition.id).length;
+    if (assignedCount) return message.warning(`该专家还有 ${assignedCount} 份作品，请先调整作品分配后再移除`);
+    const currentIds = competitionOf(expertManageCompetition.id)?.expertIds || [];
+    const expertIds = currentIds.filter((id: string) => id !== expert.id);
+    setDb((state: any) => addLog({ ...state, competitions: patch(state.competitions, expertManageCompetition.id, { expertIds, reviewerCount: expertIds.length }) }, '赛事专家', `将专家${expert.name}移出《${expertManageCompetition.name}》`));
+    message.success(`已将 ${expert.name} 从本赛事移除`);
+  };
+
+  const auditWork = (result: string, reason: string) => {
+    if (!auditTarget) return;
+    const passed = result === '通过';
+    const audit = { t: contestNow(), who: '李敏', act: passed ? '资格审核通过' : '资格审核驳回', note: reason };
+    setDb((d: any) => {
+      const contestEntries = d.contestEntries.map((e: any) => e.id === auditTarget.id ? {
+        ...e,
+        eligibilityStatus: passed ? '资格通过' : '资格驳回',
+        reviewStatus: passed ? '待分配' : '资格驳回',
+        auditNote: reason,
+        audits: [audit, ...(e.audits || [])],
+      } : e);
+      return addLog({ ...d, contestEntries }, '作品审核', `${passed ? '通过' : '驳回'}《${auditTarget.title}》资格审核：${reason || '材料完整'}`, '李敏');
+    });
+    setAuditTarget(null);
+    message.success(passed ? '资格审核已通过，作品进入待分配' : '作品已驳回');
+  };
+
+  const batchApprove = () => {
+    const ids = selectedWorks.filter((id) => entryOf(String(id))?.eligibilityStatus === '资格待审');
+    if (!ids.length) return message.warning('请选择资格待审作品');
+    const stamp = contestNow();
+    setDb((d: any) => {
+      const contestEntries = d.contestEntries.map((e: any) => ids.includes(e.id) ? {
+        ...e, eligibilityStatus: '资格通过', reviewStatus: '待分配', auditNote: '批量审核通过',
+        audits: [{ t: stamp, who: '李敏', act: '资格审核通过', note: '批量审核通过' }, ...(e.audits || [])],
+      } : e);
+      return addLog({ ...d, contestEntries }, '作品审核', `批量通过 ${ids.length} 份作品资格审核`, '李敏');
+    });
+    setSelectedWorks([]);
+    message.success(`已通过 ${ids.length} 份作品`);
+  };
+
+  const availableExperts = (entry: any) => {
+    const competition = competitionOf(entry.competitionId);
+    const existing = assignmentOf(entry.id);
+    return competitionExperts(entry.competitionId).filter((expert: any) => {
+      const load = expertLoad(expert.id) - (existing?.expertId === expert.id ? 1 : 0);
+      return expert.status === '可接任务'
+        && expert.unit !== entry.school
+        && expert.specialties.includes(competition?.category)
+        && load < expert.capacity;
+    });
+  };
+
+  const assignWork = (entryId: string, expertId: string, automatic = false) => {
+    const entry = entryOf(entryId);
+    const expert = expertOf(expertId);
+    if (!entry || entry.eligibilityStatus !== '资格通过') return message.warning('仅资格通过的作品可以分配');
+    if (!expert || !availableExperts(entry).some((x: any) => x.id === expert.id)) return message.warning('该专家不满足专业、容量或回避要求');
+    const existing = assignmentOf(entryId);
+    if (existing && ['已提交', '已锁定'].includes(existing.status)) return message.warning('专家已提交评分，不能直接重新分配');
+    const assignment = existing
+      ? { ...existing, expertId, status: '已分配', assignedAt: contestNow(), submittedAt: '' }
+      : { id: 'assignment-' + Date.now() + '-' + entryId, entryId, expertId, status: '已分配', assignedAt: contestNow(), submittedAt: '' };
+    setDb((d: any) => {
+      const contestAssignments = existing
+        ? patch(d.contestAssignments, existing.id, assignment)
+        : [assignment, ...d.contestAssignments];
+      const contestEntries = patch(d.contestEntries, entryId, { reviewStatus: '待评分' });
+      const contestScores = existing ? d.contestScores.filter((s: any) => s.assignmentId !== existing.id) : d.contestScores;
+      return addLog({ ...d, contestAssignments, contestEntries, contestScores }, '评审分配', `${automatic ? '自动' : '手动'}将《${entry.title}》分配给专家${expert.name}`);
+    });
+    setAssignTarget(null);
+    setAssignExpertId('');
+    message.success(`已分配给 ${expert.name}；该作品仅保留这一位专家`);
+  };
+
+  const autoAssign = (competitionId: string) => {
+    const selectedIds = new Set(selectedWorks.map(String));
+    const pending = entries.filter((entry: any) => entry.competitionId === competitionId
+      && entry.eligibilityStatus === '资格通过'
+      && entry.reviewStatus === '待分配'
+      && !assignmentOf(entry.id)
+      && (!selectedIds.size || selectedIds.has(entry.id)));
+    if (!pending.length) return message.info(selectedIds.size ? '所选作品中没有待分配作品' : '当前赛事没有待分配作品');
+    const eventExperts = competitionExperts(competitionId);
+    if (!eventExperts.length) return message.warning('请先在赛事配置中加入评审专家');
+    const loads: Record<string, number> = {};
+    eventExperts.forEach((expert: any) => { loads[expert.id] = expertLoad(expert.id, competitionId); });
+    const created: any[] = [];
+    const assignedEntryIds = new Set<string>();
+    const logs: any[] = [];
+    pending.forEach((entry: any) => {
+      const competition = competitionOf(entry.competitionId);
+      const candidates = eventExperts.filter((expert: any) => expert.status === '可接任务'
+        && expert.unit !== entry.school
+        && expert.specialties.includes(competition?.category)
+        && expertLoad(expert.id) + created.filter((item: any) => item.expertId === expert.id).length < expert.capacity)
+        .sort((a: any, b: any) => loads[a.id] - loads[b.id]);
+      const expert = candidates[0];
+      if (!expert) return;
+      created.push({ id: 'assignment-' + Date.now() + '-' + entry.id, entryId: entry.id, expertId: expert.id, status: '已分配', assignedAt: contestNow(), submittedAt: '' });
+      assignedEntryIds.add(entry.id);
+      loads[expert.id] += 1;
+      logs.push(contestLog('评审分配', `均衡分配《${entry.title}》给专家${expert.name}`));
+    });
+    if (!created.length) return message.warning('没有符合专业、容量与回避条件的专家');
+    setDb((d: any) => ({
+      ...d,
+      contestAssignments: [...created, ...d.contestAssignments],
+      contestEntries: d.contestEntries.map((entry: any) => assignedEntryIds.has(entry.id) ? { ...entry, reviewStatus: '待评分' } : entry),
+      contestLogs: [...logs, ...(d.contestLogs || [])],
+    }));
+    setSelectedWorks([]);
+    message.success(`已将 ${created.length} 份作品平均分配给 ${new Set(created.map((item: any) => item.expertId)).size} 位专家`);
+  };
+
+  const saveExpert = () => {
+    expertForm.validateFields().then((v: any) => {
+      const stamp = Date.now();
+      const row = { id: 'expert-' + stamp, reviewToken: `review-${stamp.toString(36)}-${Math.random().toString(36).slice(2, 7)}`, ...v, status: '可接任务' };
+      setDb((d: any) => addLog({ ...d, contestExperts: [row, ...d.contestExperts] }, '专家库', `新增专家${row.name}`));
+      setExpertOpen(false);
+      expertForm.resetFields();
+      message.success('专家已加入专家库');
+    });
+  };
+
+  const openScore = (assignment: any) => {
+    const saved = scoreOf(assignment.id);
+    setScoreTarget(assignment);
+    setScoreDraft({ items: { ...(saved?.items || {}) }, comment: saved?.comment || '' });
+  };
+
+  const saveScore = (submit: boolean) => {
+    if (!scoreTarget) return;
+    const entry = entryOf(scoreTarget.entryId);
+    const competition = competitionOf(entry?.competitionId);
+    const criteria = competition?.criteria || [];
+    if (submit && criteria.some((c: any) => !Number.isFinite(scoreDraft.items[c.key]))) return message.warning('请完成全部评分维度');
+    if (submit && !scoreDraft.comment.trim()) return message.warning('请填写专家评语');
+    const invalid = criteria.find((c: any) => Number(scoreDraft.items[c.key] || 0) < 0 || Number(scoreDraft.items[c.key] || 0) > c.max);
+    if (invalid) return message.warning(`${invalid.name}应在 0-${invalid.max} 分之间`);
+    const total = criteria.reduce((sum: number, c: any) => sum + Number(scoreDraft.items[c.key] || 0), 0);
+    const existing = scoreOf(scoreTarget.id);
+    const score = {
+      id: existing?.id || 'score-' + Date.now(), assignmentId: scoreTarget.id,
+      status: submit ? '已提交' : '暂存', items: { ...scoreDraft.items }, total,
+      comment: scoreDraft.comment.trim(), updatedAt: contestNow(),
+    };
+    setDb((d: any) => {
+      const contestScores = existing ? patch(d.contestScores, existing.id, score) : [score, ...d.contestScores];
+      const contestAssignments = patch(d.contestAssignments, scoreTarget.id, { status: submit ? '已提交' : '评分中', submittedAt: submit ? contestNow() : '' });
+      const contestEntries = patch(d.contestEntries, scoreTarget.entryId, { reviewStatus: submit ? '待复核' : '评分中' });
+      return addLog({ ...d, contestScores, contestAssignments, contestEntries }, '专家评分', `${submit ? '提交' : '暂存'}《${entry.title}》评分${submit ? ` ${total} 分` : ''}`, expertOf(scoreTarget.expertId)?.name || '专家');
+    });
+    setScoreTarget(null);
+    message.success(submit ? '评分已提交，等待复核' : '评分草稿已保存');
+  };
+
+  const reviewScore = () => {
+    if (!reviewTarget) return;
+    if (!reviewNote.trim()) return message.warning('请填写复核意见');
+    if (reviewAction === 'confirm' && !reviewAward) return message.warning('请选择奖项结果');
+    const assignment = assignmentOf(reviewTarget.id);
+    const score = assignment && scoreOf(assignment.id);
+    if (!assignment || !score) return message.warning('评分记录不存在');
+    const confirmed = reviewAction === 'confirm';
+    setDb((d: any) => {
+      const contestEntries = patch(d.contestEntries, reviewTarget.id, {
+        reviewStatus: confirmed ? '结果确定' : '评分中',
+        award: confirmed && reviewAward !== '无奖项' ? reviewAward : '',
+        reviewNote,
+      });
+      const contestAssignments = patch(d.contestAssignments, assignment.id, { status: confirmed ? '已锁定' : '已退回' });
+      const contestScores = patch(d.contestScores, score.id, { status: confirmed ? '已锁定' : '暂存', reviewNote });
+      return addLog({ ...d, contestEntries, contestAssignments, contestScores }, '评分复核', `${confirmed ? '确认' : '退回'}《${reviewTarget.title}》评分：${reviewNote}`, '复核员-李敏');
+    });
+    setReviewTarget(null);
+    setReviewNote('');
+    setReviewAction('confirm');
+    setReviewAward('无奖项');
+    message.success(confirmed ? '评分已锁定，作品结果已确定' : '已退回原专家重新评分');
+  };
+
+  const publishResults = (competition: any) => {
+    const qualified = entries.filter((e: any) => e.competitionId === competition.id && e.eligibilityStatus === '资格通过');
+    if (!qualified.length) return message.warning('当前赛事没有资格通过的作品');
+    if (qualified.some((e: any) => e.reviewStatus !== '结果确定')) return message.warning('仍有作品未完成评分复核，不能发布结果');
+    Modal.confirm({
+      title: '确认发布赛事结果？',
+      content: '发布后家长端可查看最终结果。本原型仅模拟发布状态。',
+      okText: '确认发布',
+      onOk: () => {
+        setDb((d: any) => {
+          const competitions = patch(d.competitions, competition.id, { status: '结果已发布' });
+          const contestEntries = d.contestEntries.map((e: any) => e.competitionId === competition.id && e.reviewStatus === '结果确定' ? { ...e, resultPublished: true } : e);
+          return addLog({ ...d, competitions, contestEntries }, '结果发布', `发布赛事《${competition.name}》评审结果`, '发布员-张运营');
+        });
+        message.success('赛事结果已发布（演示状态）');
+      },
+    });
+  };
+
+  const workRows = entries.map((entry: any) => ({ ...entry, competitionName: competitionOf(entry.competitionId)?.name || '—' }));
+  const assignmentRows = entries.filter((e: any) => e.eligibilityStatus === '资格通过').map((entry: any) => {
+    const assignment = assignmentOf(entry.id);
+    return { ...entry, assignment, expert: assignment ? expertOf(assignment.expertId) : null };
+  });
+  const expertAssignments = assignments.filter((a: any) => a.expertId === scoreExpertId).map((assignment: any) => {
+    const entry = entryOf(assignment.entryId);
+    const score = scoreOf(assignment.id);
+    return { ...assignment, entry, score, competition: competitionOf(entry?.competitionId) };
+  });
+  const resultRows = entries.filter((e: any) => e.competitionId === resultCompetitionId).map((entry: any) => {
+    const assignment = assignmentOf(entry.id);
+    const score = assignment ? scoreOf(assignment.id) : null;
+    return { ...entry, assignment, expert: assignment ? expertOf(assignment.expertId) : null, score };
+  }).filter((e: any) => e.score).sort((a: any, b: any) => b.score.total - a.score.total).map((e: any, index: number) => ({ ...e, rank: index + 1 }));
+  const activeCompetition = competitionOf(activeCompetitionId);
+  const activeWorkRows = activeCompetition ? entries.filter((entry: any) => entry.competitionId === activeCompetition.id).map((entry: any) => {
+    const assignment = assignmentOf(entry.id);
+    return { ...entry, assignment, expert: assignment ? expertOf(assignment.expertId) : null };
+  }) : [];
+  const activeExperts = activeCompetition ? competitionExperts(activeCompetition.id) : [];
+  const worksPage = activeCompetition && (
+    <div>
+      <Button type="text" icon={<ArrowLeftOutlined />} style={{ marginBottom: 8, paddingInline: 0 }} onClick={() => { setActiveCompetitionId(''); setSelectedWorks([]); }}>返回赛事列表</Button>
+      <Card size="small" style={{ marginBottom: 12 }}>
+        <Row gutter={[16, 12]} align="middle">
+          <Col xs={24} lg={16}>
+            <Space direction="vertical" size={4}>
+              <Space wrap><h2 style={{ margin: 0, fontSize: 20 }}>{activeCompetition.name}</h2><S v={activeCompetition.status} /></Space>
+              <span style={{ color: '#666' }}>{activeCompetition.category} · 评审截止 {activeCompetition.reviewEnd} · 共 {activeWorkRows.length} 份参赛作品</span>
+            </Space>
+          </Col>
+          <Col xs={24} lg={8} style={{ textAlign: screens.lg ? 'right' : 'left' }}>
+            <Space wrap>
+              <Button icon={<LinkOutlined />} onClick={() => setReviewLinkCompetition(activeCompetition)}>专家评审链接</Button>
+              <Button type="primary" onClick={() => autoAssign(activeCompetition.id)}>一键平均分配</Button>
+            </Space>
+          </Col>
+        </Row>
+      </Card>
+      <Row gutter={[12, 12]} style={{ marginBottom: 12 }}>
+        {[
+          ['作品总数', activeWorkRows.length],
+          ['资格待审', activeWorkRows.filter((entry: any) => entry.eligibilityStatus === '资格待审').length],
+          ['待分配', activeWorkRows.filter((entry: any) => entry.reviewStatus === '待分配').length],
+          ['评审进行中', activeWorkRows.filter((entry: any) => ['待评分', '评分中', '待复核'].includes(entry.reviewStatus)).length],
+        ].map(([title, value], index) => <Col xs={12} lg={6} key={String(title)}><Card size="small" style={statCardStyle(index)}><Statistic title={title} value={value} /></Card></Col>)}
+      </Row>
+      <Card size="small" title={`本赛事专家（${activeExperts.length} 人）`} extra={<Space><Button type="link" onClick={() => { setExpertManageCompetition(activeCompetition); setExpertToAdd(''); }}>配置专家</Button><Button type="link" icon={<LinkOutlined />} onClick={() => setReviewLinkCompetition(activeCompetition)}>生成评审链接</Button></Space>} style={{ marginBottom: 12 }}>
+        <Row gutter={[12, 12]}>
+          {activeExperts.map((expert: any) => <Col xs={24} md={12} xl={8} key={expert.id}>
+            <div style={{ border: '1px solid #f0f0f0', borderRadius: 8, padding: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+              <Space><Avatar style={{ background: '#1677ff' }}>{expert.name.slice(0, 1)}</Avatar><span><b>{expert.name}</b><div style={{ color: '#777', fontSize: 12 }}>{expertLoad(expert.id, activeCompetition.id)} 项任务 · 容量 {expert.capacity}</div></span></Space>
+              <S v={expert.status} />
+            </div>
+          </Col>)}
+          {!activeExperts.length && <Col span={24}><Alert type="warning" showIcon message="尚未为本赛事添加专家，请点击“配置专家”添加。" /></Col>}
+        </Row>
+      </Card>
+      <Card size="small" title="全部学生参赛作品" extra={<Space wrap><span style={{ color: '#777' }}>{selectedWorks.length ? `已选 ${selectedWorks.length} 份待分配作品` : '可勾选待分配作品'}</span><Button disabled={!selectedWorks.length} type="primary" onClick={() => autoAssign(activeCompetition.id)}>平均分配所选</Button></Space>}>
+        <Alert type="info" showIcon style={{ marginBottom: 12 }} message="一键平均分配会在本赛事专家中按当前任务量均衡分配；也可在每份作品后单独指定或调整专家。" />
+        <Tbl {...tblProps} rowSelection={{ selectedRowKeys: selectedWorks, onChange: setSelectedWorks, getCheckboxProps: (row: any) => ({ disabled: row.reviewStatus !== '待分配' || row.eligibilityStatus !== '资格通过' }) }} dataSource={activeWorkRows} columns={[
+          { title: '作品', dataIndex: 'title', width: 240, render: (value: string, row: any) => <span><b>{value}</b><div style={{ color: '#888', fontSize: 12 }}>{row.teamType} · {row.assets.length} 项材料</div></span> },
+          { title: '学生', width: 130, render: (_: any, row: any) => <span>{row.studentName}<div style={{ color: '#888', fontSize: 12 }}>{row.grade}</div></span> },
+          { title: '学校', dataIndex: 'school', width: 220, ellipsis: true },
+          { title: '资格状态', dataIndex: 'eligibilityStatus', width: 110, render: (value: string) => <S v={value} /> },
+          { title: '评审状态', dataIndex: 'reviewStatus', width: 110, render: (value: string) => <S v={value} /> },
+          { title: '分配专家', width: 150, render: (_: any, row: any) => row.expert ? <span>{row.expert.name}<div style={{ color: '#888', fontSize: 12 }}>{row.assignment.status}</div></span> : <Tag>未分配</Tag> },
+          { title: '操作', fixed: 'right', width: 170, render: (_: any, row: any) => {
+            const locked = row.assignment && ['已提交', '已锁定'].includes(row.assignment.status);
+            return <Space><a onClick={() => setWorkDetail(row)}>查看详情</a>{row.eligibilityStatus === '资格通过' && !locked && <a onClick={() => { setAssignTarget(row); setAssignExpertId(row.assignment?.expertId || ''); }}>{row.assignment ? '调整专家' : '指定专家'}</a>}{['资格待审', '资格驳回'].includes(row.eligibilityStatus) && <a onClick={() => setAuditTarget(row)}>资格审核</a>}</Space>;
+          } },
+        ]} />
+      </Card>
+    </div>
+  );
+
+  const eventTab = (
+    <div>
+      <Row gutter={[12, 12]} style={{ marginBottom: 12 }}>
+        {[
+          ['赛事总数', competitions.length], ['征集中', competitions.filter((c: any) => c.status === '征集中').length],
+          ['待审核作品', entries.filter((e: any) => e.eligibilityStatus === '资格待审').length], ['待复核评分', entries.filter((e: any) => e.reviewStatus === '待复核').length],
+        ].map(([title, value], index) => <Col xs={12} lg={6} key={String(title)}><Card size="small" style={statCardStyle(index)}><Statistic title={title} value={value} /></Card></Col>)}
+      </Row>
+      <Card size="small" title="赛事配置" extra={<Button type="primary" icon={<PlusOutlined />} onClick={() => openEvent()}>创建赛事</Button>}>
+        <Tbl {...tblProps} dataSource={competitions} columns={[
+          { title: '赛事名称', dataIndex: 'name', width: 290 }, { title: '分类', dataIndex: 'category', render: (v: string) => <Tag color="cyan">{v}</Tag> },
+          { title: '报名时间', render: (_: any, r: any) => `${r.signupStart} ~ ${r.signupEnd}` }, { title: '评审截止', dataIndex: 'reviewEnd' },
+          { title: '参赛作品', render: (_: any, r: any) => <a onClick={() => { setActiveCompetitionId(r.id); setSelectedWorks([]); }}><b>{entries.filter((e: any) => e.competitionId === r.id).length} 份作品</b></a> },
+          { title: '赛事专家', render: (_: any, r: any) => <a onClick={() => { setExpertManageCompetition(r); setExpertToAdd(''); }}>{competitionExperts(r.id).length} 位专家</a> },
+          { title: '状态', dataIndex: 'status', render: (v: string) => <S v={v} /> },
+          { title: '操作', width: 330, render: (_: any, r: any) => <Space><a onClick={() => { setActiveCompetitionId(r.id); setSelectedWorks([]); }}>参赛作品</a><a onClick={() => { setExpertManageCompetition(r); setExpertToAdd(''); }}>配置专家</a><a onClick={() => setReviewLinkCompetition(r)}>评审链接</a><a onClick={() => openEvent(r)}>编辑配置</a><a onClick={() => { setResultCompetitionId(r.id); setTab('results'); }}>查看结果</a></Space> },
+        ]} />
+      </Card>
+    </div>
+  );
+
+  const worksTab = (
+    <Card size="small" title="报名与作品库" extra={<Button disabled={!selectedWorks.length} onClick={batchApprove}>批量通过资格</Button>}>
+      <Alert type="info" showIcon style={{ marginBottom: 12 }} message="家长端上传在本原型中仅保存文件名、大小和缩略图；正式环境须接入私有对象存储与病毒扫描。" />
+      <Tbl {...tblProps} rowSelection={{ selectedRowKeys: selectedWorks, onChange: setSelectedWorks, getCheckboxProps: (r: any) => ({ disabled: r.eligibilityStatus !== '资格待审' }) }} dataSource={workRows} columns={[
+        { title: '作品', dataIndex: 'title', width: 220 }, { title: '学生', render: (_: any, r: any) => <span>{r.studentName}<div style={{ color: '#999', fontSize: 12 }}>{r.grade}</div></span> },
+        { title: '学校', dataIndex: 'school', width: 220, ellipsis: true }, { title: '赛事', dataIndex: 'competitionName', width: 260, ellipsis: true },
+        { title: '材料', render: (_: any, r: any) => `${r.assets.length} 项` }, { title: '提交时间', dataIndex: 'submittedAt' },
+        { title: '资格状态', dataIndex: 'eligibilityStatus', render: (v: string) => <S v={v} /> }, { title: '评审状态', dataIndex: 'reviewStatus', render: (v: string) => <S v={v} /> },
+        { title: '操作', fixed: 'right', render: (_: any, r: any) => <Space><a onClick={() => setWorkDetail(r)}>详情</a>{['资格待审', '资格驳回'].includes(r.eligibilityStatus) && <a onClick={() => setAuditTarget(r)}>审核</a>}</Space> },
+      ]} />
+    </Card>
+  );
+
+  const expertsTab = (
+    <Card size="small" title="专家库" extra={<Button type="primary" icon={<PlusOutlined />} onClick={() => setExpertOpen(true)}>新增专家</Button>}>
+      <Tbl {...tblProps} dataSource={experts} columns={[
+        { title: '专家', render: (_: any, r: any) => <Space><Avatar>{r.name.slice(0, 1)}</Avatar><span>{r.name}<div style={{ color: '#999', fontSize: 12 }}>{r.phone}</div></span></Space> },
+        { title: '所属单位', dataIndex: 'unit', width: 260, ellipsis: true }, { title: '专业方向', dataIndex: 'specialties', render: (v: string[]) => v.map((x) => <Tag key={x}>{x}</Tag>) },
+        { title: '任务量', render: (_: any, r: any) => <span>{expertLoad(r.id)} / {r.capacity}</span> }, { title: '状态', dataIndex: 'status', render: (v: string) => <S v={v} /> },
+        { title: '操作', render: (_: any, r: any) => <a onClick={() => setDb((d: any) => addLog({ ...d, contestExperts: patch(d.contestExperts, r.id, { status: r.status === '可接任务' ? '暂停接单' : '可接任务' }) }, '专家库', `${r.status === '可接任务' ? '暂停' : '启用'}专家${r.name}`))}>{r.status === '可接任务' ? '暂停接单' : '恢复接单'}</a> },
+      ]} />
+    </Card>
+  );
+
+  const assignmentsTab = (
+    <Card size="small" title="评审分配" extra={<Button type="primary" onClick={autoAssign}>自动补齐待分配作品</Button>}>
+      <Alert type="success" showIcon style={{ marginBottom: 12 }} message="当前规则：一份作品固定一位专家。系统按专业匹配、任务容量和同校回避进行分配，不计算多人平均分。" />
+      <Tbl {...tblProps} dataSource={assignmentRows} columns={[
+        { title: '作品', dataIndex: 'title', width: 240 }, { title: '赛事', render: (_: any, r: any) => competitionOf(r.competitionId)?.name },
+        { title: '学校', dataIndex: 'school', ellipsis: true }, { title: '专家', render: (_: any, r: any) => r.expert ? <span>{r.expert.name}<div style={{ color: '#999', fontSize: 12 }}>{r.expert.unit}</div></span> : <Tag>未分配</Tag> },
+        { title: '任务状态', render: (_: any, r: any) => r.assignment ? <S v={r.assignment.status} /> : <S v="待分配" /> },
+        { title: '操作', render: (_: any, r: any) => {
+          const locked = r.assignment && ['已提交', '已锁定'].includes(r.assignment.status);
+          return locked ? <span style={{ color: '#999' }}>评分提交后不可改派</span> : <a onClick={() => { setAssignTarget(r); setAssignExpertId(r.assignment?.expertId || ''); }}>{r.assignment ? '重新分配' : '分配专家'}</a>;
+        } },
+      ]} />
+    </Card>
+  );
+
+  const scoringTab = (
+    <Card size="small" title="专家评分台" extra={<Select style={{ width: 220 }} value={scoreExpertId} onChange={setScoreExpertId} options={experts.map((x: any) => ({ value: x.id, label: `${x.name} · ${expertLoad(x.id)} 项任务` }))} />}>
+      <Alert type="info" showIcon style={{ marginBottom: 12 }} message="演示模式下可切换专家身份。正式环境中专家只能通过本人账号查看分配给自己的脱敏作品。" />
+      <Tbl {...tblProps} dataSource={expertAssignments} columns={[
+        { title: '作品', render: (_: any, r: any) => r.entry?.title || '—' }, { title: '赛事', render: (_: any, r: any) => r.competition?.name || '—' },
+        { title: '学生', render: (_: any, r: any) => r.entry?.studentName || '—' }, { title: '分配时间', dataIndex: 'assignedAt' },
+        { title: '任务状态', dataIndex: 'status', render: (v: string) => <S v={v} /> }, { title: '当前得分', render: (_: any, r: any) => r.score ? `${r.score.total} 分` : '—' },
+        { title: '操作', render: (_: any, r: any) => ['已提交', '已锁定'].includes(r.status) ? <a onClick={() => openScore(r)}>查看评分</a> : <a onClick={() => openScore(r)}>{r.score ? '继续评分' : '开始评分'}</a> },
+      ]} />
+    </Card>
+  );
+
+  const resultsTab = (
+    <Card size="small" title="评分复核与结果发布" extra={<Space><Select style={{ width: 280 }} value={resultCompetitionId} onChange={setResultCompetitionId} options={competitions.map((c: any) => ({ value: c.id, label: c.name }))} /><Button type="primary" onClick={() => publishResults(competitionOf(resultCompetitionId))}>发布结果</Button></Space>}>
+      <Alert type="warning" showIcon style={{ marginBottom: 12 }} message="单专家评分即该作品最终分。复核员只检查评分完整性与违规情况，可退回原专家重评，不重新打分。" />
+      <Tbl {...tblProps} dataSource={resultRows} columns={[
+        { title: '排名', dataIndex: 'rank', render: (v: number) => <b>#{v}</b> }, { title: '作品', dataIndex: 'title', width: 240 },
+        { title: '学生', dataIndex: 'studentName' }, { title: '专家', render: (_: any, r: any) => r.expert?.name || '—' },
+        { title: '专家评分', render: (_: any, r: any) => <b style={{ color: '#1677ff' }}>{r.score.total} 分</b> },
+        { title: '复核状态', dataIndex: 'reviewStatus', render: (v: string) => <S v={v} /> }, { title: '奖项', dataIndex: 'award', render: (v: string) => v ? <Tag color="gold">{v}</Tag> : '—' },
+        { title: '发布', render: (_: any, r: any) => r.resultPublished ? <Tag color="green">已发布</Tag> : '未发布' },
+        { title: '操作', render: (_: any, r: any) => r.reviewStatus === '待复核' ? <a onClick={() => setReviewTarget(r)}>复核</a> : <a onClick={() => setWorkDetail(r)}>查看</a> },
+      ]} />
+    </Card>
+  );
+
+  const logsTab = (
+    <Card size="small" title="赛事操作日志">
+      <Tbl {...tblProps} dataSource={db.contestLogs || []} columns={[
+        { title: '操作时间', dataIndex: 't' }, { title: '操作人', dataIndex: 'who' }, { title: '模块', dataIndex: 'mod', render: (v: string) => <Tag>{v}</Tag> },
+        { title: '操作内容', dataIndex: 'act' }, { title: '结果', dataIndex: 'ret', render: (v: string) => <Tag color="green">{v}</Tag> },
+      ]} />
+    </Card>
+  );
+
+  const pendingCount = entries.filter((e: any) => e.eligibilityStatus === '资格待审').length;
+  const unassignedCount = entries.filter((e: any) => e.reviewStatus === '待分配').length;
+  const reviewCount = entries.filter((e: any) => e.reviewStatus === '待复核').length;
+  return (
+    <div>
+      {worksPage || <>
+        <Alert type="info" showIcon style={{ marginBottom: 12 }} message="赛事评审演示中心" description="从赛事列表进入参赛作品页，可统一均衡分配或单独指定专家；专家通过专属链接免登录评审。" />
+        <Tabs activeKey={tab} onChange={setTab} items={[
+          { key: 'events', label: '赛事列表', children: eventTab },
+          { key: 'experts', label: '专家库', children: expertsTab },
+          { key: 'results', label: <Badge count={reviewCount} size="small" offset={[8, -2]}>复核与发布</Badge>, children: resultsTab },
+          { key: 'logs', label: '赛事日志', children: logsTab },
+        ]} />
+      </>}
+
+      <Modal open={eventOpen} width={760} title={eventEdit ? '编辑赛事配置' : '创建赛事'} okText="保存" cancelText="取消" onCancel={() => setEventOpen(false)} onOk={saveEvent} destroyOnClose>
+        <Form form={eventForm} layout="vertical">
+          <Row gutter={12}>
+            <Col span={16}><Form.Item name="name" label="赛事名称" rules={[{ required: true, message: '请输入赛事名称' }]}><Input /></Form.Item></Col>
+            <Col span={8}><Form.Item name="category" label="赛事分类" rules={[{ required: true }]}><Select options={['创新实践', '人工智能', '机器人', '无人机'].map((x) => ({ value: x, label: x }))} /></Form.Item></Col>
+            <Col span={24}><Form.Item name="desc" label="赛事简介" rules={[{ required: true, message: '请输入赛事简介' }]}><TextArea rows={2} /></Form.Item></Col>
+            <Col span={12}><Form.Item name="organizer" label="主办单位" rules={[{ required: true }]}><Input /></Form.Item></Col>
+            <Col span={12}><Form.Item name="audience" label="参赛对象" rules={[{ required: true }]}><Input /></Form.Item></Col>
+            <Col span={8}><Form.Item name="signupStart" label="报名开始" rules={[{ required: true }]}><Input placeholder="YYYY-MM-DD" /></Form.Item></Col>
+            <Col span={8}><Form.Item name="signupEnd" label="报名截止" rules={[{ required: true }]}><Input placeholder="YYYY-MM-DD" /></Form.Item></Col>
+            <Col span={8}><Form.Item name="reviewEnd" label="评审截止" rules={[{ required: true }]}><Input placeholder="YYYY-MM-DD" /></Form.Item></Col>
+            <Col span={12}><Form.Item name="status" label="赛事状态" rules={[{ required: true }]}><Select options={['草稿', '征集中', '征集截止', '评审中', '待发布', '结果已发布', '已归档'].map((x) => ({ value: x, label: x }))} /></Form.Item></Col>
+            <Col span={24}><Form.Item name="materialRule" label="作品与材料规则" rules={[{ required: true }]}><TextArea rows={2} /></Form.Item></Col>
+          </Row>
+          <Divider orientation="left">评分维度（总分必须为 100）</Divider>
+          <Row gutter={12}>
+            {[['innovationMax', '创新性'], ['completionMax', '完成度'], ['practiceMax', '技术与实践'], ['presentationMax', '表达展示']].map(([name, label]) => <Col span={6} key={name}><Form.Item name={name} label={label} rules={[{ required: true }]}><InputNumber min={1} max={100} style={{ width: '100%' }} /></Form.Item></Col>)}
+          </Row>
+        </Form>
+      </Modal>
+
+      <Drawer open={!!workDetail} width={620} title={workDetail ? `作品详情：${workDetail.title}` : ''} onClose={() => setWorkDetail(null)}>
+        {workDetail && <>
+          <Descriptions bordered size="small" column={2} items={[
+            { key: '1', label: '赛事', span: 2, children: competitionOf(workDetail.competitionId)?.name },
+            { key: '2', label: '学生', children: workDetail.studentName }, { key: '3', label: '年级', children: workDetail.grade },
+            { key: '4', label: '学校', span: 2, children: workDetail.school }, { key: '5', label: '参赛形式', children: workDetail.teamType },
+            { key: '6', label: '资格', children: <S v={workDetail.eligibilityStatus} /> }, { key: '7', label: '评审', children: <S v={workDetail.reviewStatus} /> },
+            { key: '8', label: '作品说明', span: 2, children: workDetail.desc },
+          ]} />
+          <Divider orientation="left">作品材料</Divider>
+          <List bordered size="small" dataSource={workDetail.assets || []} renderItem={(asset: any) => <List.Item actions={[<a onClick={() => message.info('演示环境未连接真实文件存储')}>查看</a>]}><List.Item.Meta title={asset.name} description={`${asset.type} · ${asset.size}`} /></List.Item>} />
+          <Divider orientation="left">审核记录</Divider>
+          <AuditTimeline items={workDetail.audits || []} />
+        </>}
+      </Drawer>
+
+      <AuditModal open={!!auditTarget} title={`资格审核：${auditTarget?.title || ''}`} onClose={() => setAuditTarget(null)} onSubmit={auditWork} />
+
+      <Modal open={!!expertManageCompetition} width={720} title={`配置赛事专家：${expertManageCompetition?.name || ''}`} footer={<Button onClick={() => { setExpertManageCompetition(null); setExpertToAdd(''); }}>关闭</Button>} onCancel={() => { setExpertManageCompetition(null); setExpertToAdd(''); }}>
+        <Alert type="info" showIcon style={{ marginBottom: 14 }} message="从专家库单独添加或移除本赛事专家" description="已分配作品的专家需先调整作品分配后才能移出赛事。专家库资料不受影响。" />
+        <Space.Compact style={{ width: '100%', marginBottom: 14 }}>
+          <Select style={{ flex: 1 }} value={expertToAdd || undefined} placeholder="选择要加入本赛事的专家" onChange={setExpertToAdd} options={experts.filter((expert: any) => !(competitionOf(expertManageCompetition?.id)?.expertIds || []).includes(expert.id)).map((expert: any) => ({ value: expert.id, label: `${expert.name} · ${expert.specialties.join('/')} · ${expert.status}` }))} />
+          <Button type="primary" disabled={!expertToAdd} onClick={addCompetitionExpert}>添加专家</Button>
+        </Space.Compact>
+        <List bordered dataSource={expertManageCompetition ? competitionExperts(expertManageCompetition.id) : []} locale={{ emptyText: '本赛事暂无专家' }} renderItem={(expert: any) => {
+          const assignedCount = assignments.filter((assignment: any) => assignment.expertId === expert.id && entryOf(assignment.entryId)?.competitionId === expertManageCompetition.id).length;
+          const removeButton = <Button key="remove" type="link" danger style={{ minHeight: 44, paddingInline: screens.sm ? undefined : 0 }} onClick={() => removeCompetitionExpert(expert)}>移出赛事</Button>;
+          return <List.Item actions={screens.sm ? [removeButton] : undefined}><List.Item.Meta avatar={<Avatar style={{ background: '#1677ff' }}>{expert.name.slice(0, 1)}</Avatar>} title={<Space wrap size={8}><span style={{ whiteSpace: 'nowrap' }}>{expert.name}</span><S v={expert.status} /></Space>} description={<Space direction="vertical" size={2}><span>{expert.unit} · {expert.specialties.join('/')} · 已分配 {assignedCount} 份作品</span>{!screens.sm && removeButton}</Space>} /></List.Item>;
+        }} />
+      </Modal>
+
+      <Modal open={!!reviewLinkCompetition} width={720} title={`专家评审链接：${reviewLinkCompetition?.name || ''}`} footer={<Button onClick={() => setReviewLinkCompetition(null)}>关闭</Button>} onCancel={() => setReviewLinkCompetition(null)}>
+        <Alert type="success" showIcon style={{ marginBottom: 14 }} message="专家无需用户名和密码" description="每位专家使用自己的专属链接，只能看到本赛事中分配给自己的作品。可直接复制发送，也可打开链接演示评审。" />
+        <List bordered dataSource={reviewLinkCompetition ? competitionExperts(reviewLinkCompetition.id) : []} locale={{ emptyText: '本赛事尚未加入专家' }} renderItem={(expert: any) => <List.Item actions={[
+          <Button key="copy" type="link" icon={<CopyOutlined />} onClick={() => copyReviewUrl(reviewLinkCompetition, expert)}>复制链接</Button>,
+          <Button key="open" type="link" icon={<EyeOutlined />} onClick={() => window.open(reviewUrl(reviewLinkCompetition, expert), '_blank', 'noopener,noreferrer')}>打开评审页</Button>,
+        ]}><List.Item.Meta avatar={<Avatar style={{ background: '#1677ff' }}>{expert.name.slice(0, 1)}</Avatar>} title={<Space>{expert.name}<S v={expert.status} /></Space>} description={<span>{expert.unit}<br /><span style={{ color: '#1677ff' }}>当前分配 {expertLoad(expert.id, reviewLinkCompetition.id)} 份作品</span></span>} /></List.Item>} />
+      </Modal>
+
+      <Modal open={!!assignTarget} title={`分配专家：${assignTarget?.title || ''}`} okText="确认分配" cancelText="取消" onCancel={() => setAssignTarget(null)} onOk={() => assignWork(assignTarget.id, assignExpertId)}>
+        <Alert type="info" showIcon style={{ marginBottom: 14 }} message="仅显示已加入本赛事且符合专业、容量与同校回避规则的专家。每份作品分配 1 位专家。" />
+        <Select style={{ width: '100%' }} value={assignExpertId || undefined} placeholder="请选择专家" onChange={setAssignExpertId} options={(assignTarget ? availableExperts(assignTarget) : []).map((x: any) => ({ value: x.id, label: `${x.name} · ${x.specialties.join('/')} · 本赛事 ${expertLoad(x.id, assignTarget.competitionId)} 项` }))} />
+      </Modal>
+
+      <Modal open={expertOpen} title="新增专家" okText="加入专家库" cancelText="取消" onCancel={() => setExpertOpen(false)} onOk={saveExpert} destroyOnClose>
+        <Form form={expertForm} layout="vertical" initialValues={{ capacity: 6 }}>
+          <Row gutter={12}>
+            <Col span={12}><Form.Item name="name" label="姓名" rules={[{ required: true }]}><Input /></Form.Item></Col>
+            <Col span={12}><Form.Item name="phone" label="手机号" rules={[{ required: true }]}><Input /></Form.Item></Col>
+            <Col span={24}><Form.Item name="unit" label="所属单位" rules={[{ required: true }]}><Input /></Form.Item></Col>
+            <Col span={16}><Form.Item name="specialties" label="专业方向" rules={[{ required: true }]}><Select mode="multiple" options={['创新实践', '人工智能', '机器人', '无人机', '科学实验'].map((x) => ({ value: x, label: x }))} /></Form.Item></Col>
+            <Col span={8}><Form.Item name="capacity" label="任务容量" rules={[{ required: true }]}><InputNumber min={1} max={50} style={{ width: '100%' }} /></Form.Item></Col>
+          </Row>
+        </Form>
+      </Modal>
+
+      <Modal open={!!scoreTarget} width={680} title={`专家评分：${entryOf(scoreTarget?.entryId)?.title || ''}`} footer={scoreTarget && ['已提交', '已锁定'].includes(scoreTarget.status) ? <Button onClick={() => setScoreTarget(null)}>关闭</Button> : [<Button key="cancel" onClick={() => setScoreTarget(null)}>取消</Button>, <Button key="draft" onClick={() => saveScore(false)}>暂存</Button>, <Button key="submit" type="primary" onClick={() => saveScore(true)}>提交评分</Button>]} onCancel={() => setScoreTarget(null)}>
+        {scoreTarget && <>
+          <Alert type="info" showIcon style={{ marginBottom: 14 }} message="评分提交后不可修改；如需重评，必须由复核员退回。" />
+          {(competitionOf(entryOf(scoreTarget.entryId)?.competitionId)?.criteria || []).map((criterion: any) => <div key={criterion.key} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}><span style={{ width: 110 }}>{criterion.name}</span><InputNumber disabled={['已提交', '已锁定'].includes(scoreTarget.status)} min={0} max={criterion.max} value={scoreDraft.items[criterion.key]} onChange={(v) => setScoreDraft((s: any) => ({ ...s, items: { ...s.items, [criterion.key]: v } }))} /><span style={{ color: '#999' }}>/ {criterion.max} 分</span></div>)}
+          <Divider />
+          <div style={{ marginBottom: 8 }}>专家评语</div>
+          <TextArea disabled={['已提交', '已锁定'].includes(scoreTarget.status)} rows={4} value={scoreDraft.comment} onChange={(e: any) => setScoreDraft((s: any) => ({ ...s, comment: e.target.value }))} placeholder="请评价作品亮点、问题与改进建议" />
+          <div style={{ textAlign: 'right', marginTop: 12, fontSize: 18 }}>总分：<b style={{ color: '#1677ff' }}>{(competitionOf(entryOf(scoreTarget.entryId)?.competitionId)?.criteria || []).reduce((sum: number, c: any) => sum + Number(scoreDraft.items[c.key] || 0), 0)}</b> / 100</div>
+        </>}
+      </Modal>
+
+      <Modal open={!!reviewTarget} title={`评分复核：${reviewTarget?.title || ''}`} okText="提交复核" cancelText="取消" onCancel={() => setReviewTarget(null)} onOk={reviewScore}>
+        {reviewTarget && <Space direction="vertical" style={{ width: '100%' }} size={14}>
+          <Alert type="info" showIcon message={`专家 ${reviewTarget.expert?.name || ''} 评分：${reviewTarget.score?.total || 0} 分`} description={reviewTarget.score?.comment} />
+          <Radio.Group value={reviewAction} onChange={(e: any) => setReviewAction(e.target.value)}><Radio.Button value="confirm">确认评分</Radio.Button><Radio.Button value="return">退回重评</Radio.Button></Radio.Group>
+          {reviewAction === 'confirm' && <Select style={{ width: '100%' }} value={reviewAward} onChange={setReviewAward} options={['一等奖', '二等奖', '三等奖', '优秀奖', '无奖项'].map((x) => ({ value: x, label: x }))} />}
+          <TextArea rows={3} value={reviewNote} onChange={(e: any) => setReviewNote(e.target.value)} placeholder={reviewAction === 'confirm' ? '填写复核意见' : '填写退回原因，专家将重新评分'} />
+        </Space>}
+      </Modal>
+    </div>
+  );
+}
+
+/* 十四、售后管理 */
 function AftersalePage({ db, setDb }: any) {
   const [handle, setHandle] = useState<any>(null);
   return (
@@ -1971,6 +2850,7 @@ const MENUS = [
   { key: 'org', icon: <ShopOutlined />, label: '机构入驻管理' },
   { key: 'teacher', icon: <IdcardOutlined />, label: '教师审核管理' },
   { key: 'course', icon: <BookOutlined />, label: '课程审核与课程库' },
+  { key: 'competition', icon: <TrophyOutlined />, label: '赛事评审中心' },
   { key: 'deploy', icon: <SendOutlined />, label: '学校课程配置' },
   { key: 'class', icon: <ClusterOutlined />, label: '成班管理' },
   { key: 'order', icon: <ProfileOutlined />, label: '订单管理' },
@@ -1982,52 +2862,75 @@ const MENUS = [
 
 function App() {
   const [nav, setNav] = useState('dash');
-  const [db, setDb] = useState(initDB);
+  const [db, setDb] = useState(loadAdminDB);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [navOpen, setNavOpen] = useState(false);
+  const screens = Grid.useBreakpoint();
+  const isMobile = screens.md === false;
+  const query = new URLSearchParams(window.location.search);
+  const reviewToken = query.get('review');
+  const reviewEventId = contestStore ? contestStore.normalizeCompetitionId(query.get('event')) : query.get('event');
+  useEffect(() => {
+    const { competitions, contestEntries, ...adminState } = db;
+    try { localStorage.setItem(ADMIN_STORE_KEY, JSON.stringify(adminState)); } catch (_) {}
+    if (contestStore) contestStore.save({ competitions, contestEntries });
+  }, [db]);
+  if (reviewToken) return <ExpertReviewPage db={db} setDb={setDb} token={reviewToken} eventId={reviewEventId} />;
   const title = MENUS.find((m) => m.key === nav)?.label || '';
   const pages: Record<string, any> = {
     dash: <Dashboard db={db} go={setNav} />, user: <UserPage db={db} setDb={setDb} />,
     school: <SchoolPage db={db} setDb={setDb} go={setNav} />, venue: <VenuePage db={db} setDb={setDb} />,
     org: <OrgPage db={db} setDb={setDb} />, teacher: <TeacherPage db={db} setDb={setDb} />,
-    course: <CoursePage db={db} setDb={setDb} />, deploy: <DeployPage db={db} setDb={setDb} />,
-    class: <ClassPage db={db} setDb={setDb} />, order: <OrderPage db={db} setDb={setDb} />,
+    course: <CoursePage db={db} setDb={setDb} />, competition: <CompetitionPage db={db} setDb={setDb} />,
+    deploy: <DeployPage db={db} setDb={setDb} />, class: <ClassPage db={db} setDb={setDb} />, order: <OrderPage db={db} setDb={setDb} />,
     lesson: <LessonPage db={db} setDb={setDb} />, settle: <SettlePage db={db} setDb={setDb} />,
     aftersale: <AftersalePage db={db} setDb={setDb} />, log: <LogPage db={db} />,
   };
+  const selectNav = (key: string) => {
+    setNav(key);
+    setNavOpen(false);
+  };
+  const sidebar = (
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#001529' }}>
+      <div style={{ color: '#fff', padding: '18px 16px', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+        <div style={{ width: 34, height: 34, borderRadius: 8, background: '#1677ff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>未</div>
+        <div style={{ lineHeight: 1.25 }}><b>天府未来教育中心</b><div style={{ fontSize: 11, opacity: .65 }}>后台管理系统 Demo</div></div>
+      </div>
+      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+        <Menu theme="dark" mode="inline" selectedKeys={[nav]} items={MENUS} onClick={(e: any) => selectNav(e.key)} />
+      </div>
+      <div style={{ flexShrink: 0, padding: '12px 14px 16px', borderTop: '1px solid rgba(255,255,255,.12)', background: '#001529' }}>
+        <div style={{ color: 'rgba(255,255,255,.45)', fontSize: 12, marginBottom: 8 }}>友情链接</div>
+        <Space direction="vertical" size={4} style={{ width: '100%' }}>
+          <a href="../" style={{ color: 'rgba(255,255,255,.82)', fontSize: 13 }}>家长端</a>
+          <a href="../school/" style={{ color: 'rgba(255,255,255,.82)', fontSize: 13 }}>学校端</a>
+          <a href="../org/" style={{ color: 'rgba(255,255,255,.82)', fontSize: 13 }}>机构端 / 教师端</a>
+          <a href="../edu/" style={{ color: 'rgba(255,255,255,.82)', fontSize: 13 }}>教育局端</a>
+        </Space>
+      </div>
+    </div>
+  );
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      <Sider width={216} theme="dark" style={{ height: '100vh', position: 'sticky', top: 0 }}>
-        <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ color: '#fff', padding: '18px 16px', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-            <div style={{ width: 34, height: 34, borderRadius: 8, background: '#1677ff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>未</div>
-            <div style={{ lineHeight: 1.25 }}><b>天府未来教育中心</b><div style={{ fontSize: 11, opacity: .65 }}>后台管理系统 Demo</div></div>
+      {!isMobile && <Sider width={216} theme="dark" style={{ height: '100vh', position: 'sticky', top: 0 }}>{sidebar}</Sider>}
+      <Drawer open={isMobile && navOpen} placement="left" width={280} closable={false} onClose={() => setNavOpen(false)} styles={{ body: { padding: 0, background: '#001529' } }}>
+        {sidebar}
+      </Drawer>
+      <Layout style={{ minWidth: 0 }}>
+        <Header style={{ background: '#fff', height: isMobile ? 56 : 64, padding: isMobile ? '0 10px' : '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, boxShadow: '0 1px 4px rgba(0,21,41,.06)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
+            {isMobile && <Button type="text" aria-label="打开导航" icon={<MenuOutlined />} onClick={() => setNavOpen(true)} style={{ width: 44, height: 44, flexShrink: 0 }} />}
+            <b style={{ fontSize: 16, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{title}</b>
           </div>
-          <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
-            <Menu theme="dark" mode="inline" selectedKeys={[nav]} items={MENUS} onClick={(e: any) => setNav(e.key)} />
-          </div>
-          <div style={{ flexShrink: 0, padding: '12px 14px 16px', borderTop: '1px solid rgba(255,255,255,.12)', background: '#001529' }}>
-            <div style={{ color: 'rgba(255,255,255,.45)', fontSize: 12, marginBottom: 8 }}>友情链接</div>
-            <Space direction="vertical" size={4} style={{ width: '100%' }}>
-              <a href="../" style={{ color: 'rgba(255,255,255,.82)', fontSize: 13 }}>家长端</a>
-              <a href="../school/" style={{ color: 'rgba(255,255,255,.82)', fontSize: 13 }}>学校端</a>
-              <a href="../org/" style={{ color: 'rgba(255,255,255,.82)', fontSize: 13 }}>机构端 / 教师端</a>
-              <a href="../edu/" style={{ color: 'rgba(255,255,255,.82)', fontSize: 13 }}>教育局端</a>
-            </Space>
-          </div>
-        </div>
-      </Sider>
-      <Layout>
-        <Header style={{ background: '#fff', padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 1px 4px rgba(0,21,41,.06)' }}>
-          <b style={{ fontSize: 16 }}>{title}</b>
-          <Space size={14}>
-            <Button size="small" icon={<QuestionCircleOutlined />} onClick={() => setHelpOpen(true)}>名词解释</Button>
-            <Tag color="blue">天府通 · 课后延时服务平台</Tag>
+          <Space size={isMobile ? 4 : 14}>
+            <Button size={isMobile ? 'middle' : 'small'} aria-label="打开名词解释" icon={<QuestionCircleOutlined />} onClick={() => setHelpOpen(true)} style={isMobile ? { width: 44, height: 44 } : undefined}>{isMobile ? null : '名词解释'}</Button>
+            {!isMobile && <Tag color="blue">天府通 · 课后延时服务平台</Tag>}
             <Avatar size="small" icon={<UserOutlined />} style={{ background: '#1677ff' }} />
-            <span>张运营（平台管理员）</span>
+            {!isMobile && <span>张运营（平台管理员）</span>}
           </Space>
         </Header>
-        <Content style={{ margin: 16, overflow: 'auto' }}>{pages[nav]}</Content>
-        <Drawer open={helpOpen} width={560} title="平台名词解释" onClose={() => setHelpOpen(false)}>
+        <Content style={{ margin: isMobile ? 8 : 16, overflow: 'auto', minWidth: 0 }}>{pages[nav]}</Content>
+        <Drawer open={helpOpen} width={isMobile ? 'calc(100vw - 16px)' : 560} title="平台名词解释" onClose={() => setHelpOpen(false)}>
           <Alert type="info" showIcon style={{ marginBottom: 16 }} message="表格中的状态标签，鼠标悬停也会显示对应解释" />
           {GLOSSARY.map((g) => (
             <div key={g.title}>

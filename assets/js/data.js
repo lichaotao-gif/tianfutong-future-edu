@@ -720,9 +720,12 @@ window.DB = {
       desc: '以真实问题为驱动，鼓励学生开展跨学科创意设计、实验探究与实践表达。',
       signupStart: '2026-06-20',
       signupEnd: '2026-11-15',
+      reviewEnd: '2026-12-10',
+      status: '征集中',
       signupCount: 8924,
       organizer: '成都天府新区教育卫健局',
       audience: '全区中小学生',
+      eligibility: { gradeMin: 1, gradeMax: 12, schoolKeywords: ['天府新区'] },
       teamForm: '个人 / 团队',
       fee: '免费',
       intro: [
@@ -768,9 +771,12 @@ window.DB = {
       desc: '聚焦 AI 创意应用、算法思维与智能作品展示，鼓励青少年用人工智能解决真实问题。',
       signupStart: '2026-07-01',
       signupEnd: '2026-10-20',
+      reviewEnd: '2026-11-25',
+      status: '评审中',
       signupCount: 5860,
       organizer: '成都市教育局',
       audience: '全市中小学生',
+      eligibility: { gradeMin: 1, gradeMax: 12, schoolKeywords: ['成都'] },
       teamForm: '个人 / 团队',
       fee: '免费',
       intro: [
@@ -815,9 +821,12 @@ window.DB = {
       desc: '围绕无人机操控、编程、任务协同与工程实践，展示青少年航空科技创新能力。',
       signupStart: '2026-10-08',
       signupEnd: '2026-12-15',
+      reviewEnd: '2027-03-31',
+      status: '征集中',
       signupCount: 0,
       organizer: '四川省科学技术协会',
       audience: '全省中小学生',
+      eligibility: { gradeMin: 1, gradeMax: 12 },
       teamForm: '个人 / 团队',
       fee: '免费',
       intro: [
@@ -851,6 +860,7 @@ window.DB = {
         videoMax: 1,
         fileMax: 5,
         fileTypes: 'PDF / Word / PPT / 压缩包',
+        requiredFileNameIncludes: ['安全承诺书'],
       },
     },
     {
@@ -861,9 +871,12 @@ window.DB = {
       desc: '面向青少年开展机器人设计与信息素养综合挑战，突出工程实践、创意设计与数字素养。',
       signupStart: '2026-04-10',
       signupEnd: '2026-07-30',
+      reviewEnd: '2026-09-30',
+      status: '结果已发布',
       signupCount: 6312,
       organizer: '中国电子学会',
       audience: '西南赛区中小学生',
+      eligibility: { gradeMin: 1, gradeMax: 12 },
       teamForm: '个人 / 团队',
       fee: '免费',
       intro: [
@@ -904,7 +917,7 @@ window.DB = {
   contestEntries: [
     {
       id: 'entry-001',
-      contestId: 'ai-2026',
+      competitionId: 'ai-2026',
       contestName: '2026 年成都市青少年人工智能大赛',
       cover: 'ai',
       studentId: 'li-xiaoming',
@@ -927,7 +940,7 @@ window.DB = {
     },
     {
       id: 'entry-002',
-      contestId: 'robot-2026',
+      competitionId: 'robot-2026',
       contestName: '2026 世界机器人大会青少年机器人设计与信息素养大赛西南赛区',
       cover: 'code',
       studentId: 'li-xiaoming',
@@ -987,3 +1000,127 @@ window.DB = {
     '其他问题',
   ],
 };
+
+(function () {
+  const KEY = 'futureEdu.contests.v1';
+  const ID_ALIASES = {
+    'competition-innovation-2026': 'innovation-2026',
+    'competition-ai-2026': 'ai-2026',
+  };
+  const normalizeCompetitionId = (id) => ID_ALIASES[id] || id;
+  const mergeById = (...lists) => {
+    const rows = new Map();
+    lists.flat().filter(Boolean).forEach((row) => {
+      const id = row.id;
+      rows.set(id, { ...(rows.get(id) || {}), ...row });
+    });
+    return Array.from(rows.values());
+  };
+  const normalizeCompetition = (competition) => {
+    const source = competition || {};
+    const id = normalizeCompetitionId(source.id);
+    const desc = source.desc || source.intro?.[0] || '';
+    const workSpec = {
+      imageMax: 9,
+      videoMax: 1,
+      fileMax: 5,
+      fileTypes: 'PDF / Word / PPT / 压缩包',
+      ...(source.workSpec || {}),
+      note: source.workSpec?.note || source.materialRule || '',
+    };
+    return {
+      cover: 'science',
+      desc,
+      signupCount: 0,
+      reviewEnd: source.signupEnd || '',
+      status: '征集中',
+      eligibility: { gradeMin: 1, gradeMax: 12 },
+      teamForm: '个人 / 团队',
+      fee: '免费',
+      intro: desc ? [desc] : [],
+      gallery: [],
+      schedule: [],
+      attachments: [],
+      awards: [],
+      expertIds: [],
+      reviewerCount: 0,
+      criteria: [
+        { key: 'innovation', name: '创新性', max: 30 },
+        { key: 'completion', name: '完成度', max: 25 },
+        { key: 'practice', name: '技术与实践', max: 25 },
+        { key: 'presentation', name: '表达展示', max: 20 },
+      ],
+      ...source,
+      id,
+      eligibility: { gradeMin: 1, gradeMax: 12, ...(source.eligibility || {}) },
+      materialRule: source.materialRule || workSpec.note,
+      workSpec,
+    };
+  };
+  const stateOf = (entry) => {
+    if (entry.resultPublished) return entry.award && entry.award !== '无奖项' ? 'awarded' : 'rejected';
+    if (entry.eligibilityStatus === '资格驳回') return 'rejected';
+    if (['待分配', '待评分', '评分中', '待复核', '结果确定'].includes(entry.reviewStatus)) return 'reviewing';
+    return entry.state || 'submitted';
+  };
+  const normalizeEntry = (entry) => {
+    const source = entry || {};
+    const work = source.work || {
+      title: source.title || '',
+      desc: source.desc || '',
+      images: (source.assets || []).filter((asset) => asset.type === '图片').map(({ type, ...asset }) => asset),
+      videos: (source.assets || []).filter((asset) => asset.type === '视频').map(({ type, ...asset }) => asset),
+      files: (source.assets || []).filter((asset) => !['图片', '视频'].includes(asset.type)).map(({ type, ...asset }) => asset),
+    };
+    const state = stateOf(source);
+    const eligibilityStatus = source.eligibilityStatus || (state === 'submitted' ? '资格待审' : '资格通过');
+    const reviewStatus = source.reviewStatus || (state === 'submitted' ? '资格待审' : state === 'awarded' ? '结果确定' : '待分配');
+    const { contestId, title, desc, assets, ...rest } = source;
+    return {
+      ...rest,
+      competitionId: normalizeCompetitionId(source.competitionId || contestId),
+      state,
+      eligibilityStatus,
+      reviewStatus,
+      auditNote: source.auditNote || '',
+      award: source.award || '',
+      resultPublished: source.resultPublished ?? state === 'awarded',
+      audits: source.audits || [],
+      work: {
+        title: work.title || '',
+        desc: work.desc || '',
+        images: work.images || [],
+        videos: work.videos || [],
+        files: work.files || [],
+      },
+    };
+  };
+  const mergeCompetitions = (...lists) => mergeById(...lists.map((list) => (list || []).map((competition) => ({ ...competition, id: normalizeCompetitionId(competition.id) })))).map(normalizeCompetition);
+  const mergeEntries = (...lists) => mergeById(...lists.map((list) => (list || []).map(normalizeEntry)));
+  const load = (seedCompetitions = [], seedEntries = []) => {
+    let saved = null;
+    try { saved = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (_) {}
+    return {
+      competitions: mergeCompetitions(seedCompetitions, saved?.competitions || []),
+      contestEntries: mergeEntries(seedEntries, saved?.contestEntries || []),
+    };
+  };
+  const save = ({ competitions = [], contestEntries = [] }) => {
+    const payload = {
+      version: 1,
+      updatedAt: new Date().toISOString(),
+      competitions: mergeCompetitions(competitions),
+      contestEntries: mergeEntries(contestEntries),
+    };
+    try {
+      localStorage.setItem(KEY, JSON.stringify(payload));
+    } catch (_) {
+      payload.contestEntries = payload.contestEntries.map((entry) => ({
+        ...entry,
+        work: { ...entry.work, images: entry.work.images.map(({ thumb, ...image }) => image) },
+      }));
+      try { localStorage.setItem(KEY, JSON.stringify(payload)); } catch (__) {}
+    }
+  };
+  window.FutureEduContestStore = { KEY, load, save, normalizeCompetitionId, normalizeCompetition, normalizeEntry, mergeCompetitions, mergeEntries };
+})();

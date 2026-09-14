@@ -17,19 +17,17 @@
     const list = DB.students || [DB.student];
     return list.find((s) => s.id === DB.currentStudentId) || list[0];
   };
-  /* 本地持久化（Demo：学生 / 家长信息的增删改存 localStorage） */
+  /* 本地持久化（Demo：账号信息与赛事数据分别存储） */
   const STORE_KEY = 'futureEdu.state.v1';
+  const contestStore = window.FutureEduContestStore;
   const persistState = () => {
     const base = { students: DB.students, currentStudentId: DB.currentStudentId, parent: DB.parent };
-    try {
-      localStorage.setItem(STORE_KEY, JSON.stringify({ ...base, contestEntries: DB.contestEntries }));
-    } catch (_) {
-      try {
-        const light = (DB.contestEntries || []).map((e) => ({
-          ...e, work: { ...e.work, images: (e.work.images || []).map(({ thumb, ...rest }) => rest) },
-        }));
-        localStorage.setItem(STORE_KEY, JSON.stringify({ ...base, contestEntries: light }));
-      } catch (__) {}
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(base)); } catch (_) {}
+    if (contestStore) {
+      const shared = contestStore.load();
+      const familyStudentIds = new Set((DB.students || []).map((student) => student.id));
+      const otherEntries = shared.contestEntries.filter((entry) => !familyStudentIds.has(entry.studentId));
+      contestStore.save({ competitions: DB.contests, contestEntries: [...otherEntries, ...(DB.contestEntries || [])] });
     }
   };
   try {
@@ -39,6 +37,11 @@
       if (saved.currentStudentId) DB.currentStudentId = saved.currentStudentId;
       if (saved.parent) Object.assign(DB.parent, saved.parent);
       if (Array.isArray(saved.contestEntries)) DB.contestEntries = saved.contestEntries;
+      if (saved.contestSignupCounts) {
+        (DB.contests || []).forEach((c) => {
+          if (Number.isFinite(saved.contestSignupCounts[c.id])) c.signupCount = saved.contestSignupCounts[c.id];
+        });
+      }
     }
   } catch (_) {}
   try {
@@ -46,6 +49,13 @@
     if ((DB.students || []).some((s) => s.id === savedStudentId)) DB.currentStudentId = savedStudentId;
   } catch (_) {}
   if (!(DB.students || []).some((s) => s.id === DB.currentStudentId)) DB.currentStudentId = (DB.students[0] || {}).id;
+  if (contestStore) {
+    const shared = contestStore.load(DB.contests, DB.contestEntries);
+    const familyStudentIds = new Set((DB.students || []).map((student) => student.id));
+    DB.contests = shared.competitions;
+    DB.contestEntries = shared.contestEntries.filter((entry) => familyStudentIds.has(entry.studentId));
+    contestStore.save(shared);
+  }
   const syncCurrentStudent = () => {
     DB.student = currentStudent();
     return DB.student;
@@ -1724,10 +1734,10 @@
   const contestEntryById = (id) => (DB.contestEntries || []).find((e) => e.id === routeId(id));
   /* 同一赛事下每个孩子各自一条参赛记录 */
   const contestEntryOf = (contestId, studentId) =>
-    (DB.contestEntries || []).find((e) => e.contestId === contestId && e.studentId === studentId);
+    (DB.contestEntries || []).find((e) => e.competitionId === contestId && e.studentId === studentId);
   /* 一个家长账号下可能有多个孩子，判断「是否已报名」要看全部孩子 */
   const contestEntriesOf = (contestId) =>
-    (DB.contestEntries || []).filter((e) => e.contestId === contestId);
+    (DB.contestEntries || []).filter((e) => e.competitionId === contestId);
   const contestPhase = (c) => {
     const now = new Date();
     const start = parseBuyTime(c.signupStart);
@@ -1756,8 +1766,8 @@
     : `${Math.max(1, Math.round(bytes / 1024))} KB`;
 
   function screenContests() {
-    const list = (DB.contests || []).filter((c) => contestFilter === 'all' || contestPhase(c) === contestFilter);
-    const totalSignup = (DB.contests || []).reduce((sum, c) => sum + (c.signupCount || 0), 0);
+    const visible = (DB.contests || []).filter((c) => !['草稿', '已归档'].includes(c.status));
+    const list = visible.filter((c) => contestFilter === 'all' || contestPhase(c) === contestFilter);
     const card = (c) => {
       const ph = CONTEST_PHASE[contestPhase(c)];
       return `
@@ -1779,18 +1789,12 @@
       </div>`;
     };
     render(`
-    <div class="screen ct-theme">
+    <div class="screen ct-theme ct-home">
       ${navbar('赛事活动', { orange: true, right: { label: '我的参赛', onclick: "location.hash='#/my-contests'" } })}
       <div class="scroll">
         <div class="ct-hero">
           <h2>赛事活动</h2>
           <p>面向全市中小学生开放征集，涵盖人工智能、创新实践、机器人等多元主题，激发孩子的创造力与实践力。</p>
-          <div class="ct-hero-stats">
-            <div><div class="n">${(DB.contests || []).length}</div><div class="l">年度赛事</div></div>
-            <div><div class="n">${fmtCount(totalSignup)}+</div><div class="l">累计参与</div></div>
-            <div><div class="n">全市</div><div class="l">覆盖范围</div></div>
-            <div><div class="n">免费</div><div class="l">报名参赛</div></div>
-          </div>
         </div>
         <div class="mt"></div>
         <div class="ct-tabs">
@@ -1804,10 +1808,11 @@
 
   function screenContest(id) {
     const c = contestById(id);
-    if (!c) return screenContests();
+    if (!c || ['草稿', '已归档'].includes(c.status)) return screenContests();
     const phase = contestPhase(c);
     const ph = CONTEST_PHASE[phase];
     const left = contestDaysLeft(c);
+    const intro = (c.intro || []).length ? c.intro : [c.desc];
     const mineList = contestEntriesOf(c.id);
     const editTarget = mineList.length === 1 && phase === 'open' ? `#/contest-work/${mineList[0].id}` : '#/my-contests';
     const action = mineList.length
@@ -1837,7 +1842,7 @@
 
         <div class="card mx mt pad">
           <div class="section-title">赛事简介</div>
-          ${(c.intro || []).map((t) => `<div class="small" style="color:var(--sub);line-height:1.85;margin-bottom:6px">${esc(t)}</div>`).join('')}
+          ${intro.map((t) => `<div class="small" style="color:var(--sub);line-height:1.85;margin-bottom:6px">${esc(t)}</div>`).join('')}
           <div class="cd-gallery">
             ${(c.gallery || []).map((g) => `
               <figure class="cd-shot" style="margin:0">
@@ -1854,16 +1859,17 @@
             <div class="small muted" style="margin-top:6px">${esc(c.video.title)}</div>` : ''}
         </div>
 
+        ${(c.schedule || []).length ? `
         <div class="card mx mt pad">
           <div class="section-title">赛程安排</div>
           <ol class="cd-timeline">
-            ${(c.schedule || []).map((s) => `
+            ${c.schedule.map((s) => `
               <li class="${stagePast(s.date) ? 'past' : ''}">
                 <div class="tl-t">${esc(s.title)}</div>
                 <div class="tl-d">${esc(s.date)} · ${esc(s.desc)}</div>
               </li>`).join('')}
           </ol>
-        </div>
+        </div>` : ''}
 
         ${(c.attachments || []).length ? `
         <div class="card mx mt pad">
@@ -1876,12 +1882,13 @@
             </div>`).join('')}
         </div>` : ''}
 
+        ${(c.awards || []).length ? `
         <div class="card mx mt pad">
           <div class="section-title">奖项设置</div>
           <div class="cd-awards">
-            ${(c.awards || []).map((a) => `<div class="cd-award">${I.trophy}${esc(a)}</div>`).join('')}
+            ${c.awards.map((a) => `<div class="cd-award">${I.trophy}${esc(a)}</div>`).join('')}
           </div>
-        </div>
+        </div>` : ''}
 
         <div class="card cd-signup-card mx mt">
           ${mineList.length ? `
@@ -1915,6 +1922,120 @@
 
   /* ---------- 报名并提交作品 ---------- */
   let signupDraft = null;
+  let contestDraftTimer = null;
+  let contestDraftSaveFailed = false;
+  const CONTEST_DRAFT_KEY = 'futureEdu.contestDrafts.v1';
+  const contestWorkSpec = (c) => ({
+    imageMax: 9,
+    videoMax: 1,
+    fileMax: 5,
+    fileTypes: 'PDF / Word / PPT / 压缩包',
+    imageMaxBytes: 10 * 1024 * 1024,
+    videoMaxBytes: 200 * 1024 * 1024,
+    fileMaxBytes: 20 * 1024 * 1024,
+    allowedFileExtensions: ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'zip', 'rar', '7z'],
+    ...(c.workSpec || {}),
+  });
+  const contestDraftId = (draft) => draft.entryId ? `entry:${draft.entryId}` : `contest:${draft.contestId}`;
+  const readContestDrafts = () => {
+    try { return JSON.parse(localStorage.getItem(CONTEST_DRAFT_KEY) || '{}') || {}; } catch (_) { return {}; }
+  };
+  const syncContestDraftFields = () => {
+    if (!signupDraft) return;
+    const fields = {
+      teamName: '#ctTeamName',
+      members: '#ctMembers',
+      guideTeacher: '#ctTeacher',
+      title: '#ctWorkTitle',
+      desc: '#ctWorkDesc',
+    };
+    Object.entries(fields).forEach(([key, selector]) => {
+      const input = $(selector);
+      if (input) signupDraft[key] = input.value.trim();
+    });
+  };
+  const saveContestDraft = () => {
+    if (!signupDraft) return;
+    clearTimeout(contestDraftTimer);
+    contestDraftTimer = null;
+    syncContestDraftFields();
+    try {
+      const drafts = readContestDrafts();
+      const { spec, ...stored } = signupDraft;
+      stored.savedAt = new Date().toISOString();
+      drafts[contestDraftId(signupDraft)] = stored;
+      localStorage.setItem(CONTEST_DRAFT_KEY, JSON.stringify(drafts));
+      contestDraftSaveFailed = false;
+      const status = $('#ctDraftStatus');
+      if (status) status.textContent = '草稿已自动保存';
+    } catch (_) {
+      if (!contestDraftSaveFailed) toast('草稿保存失败，请及时提交');
+      contestDraftSaveFailed = true;
+    }
+  };
+  const queueContestDraftSave = () => {
+    if (!signupDraft) return;
+    syncContestDraftFields();
+    const status = $('#ctDraftStatus');
+    if (status) status.textContent = '正在保存草稿…';
+    clearTimeout(contestDraftTimer);
+    contestDraftTimer = setTimeout(saveContestDraft, 350);
+  };
+  window.addEventListener('beforeunload', saveContestDraft);
+  const clearContestDraft = (draft) => {
+    if (!draft) return;
+    clearTimeout(contestDraftTimer);
+    contestDraftTimer = null;
+    try {
+      const drafts = readContestDrafts();
+      delete drafts[contestDraftId(draft)];
+      localStorage.setItem(CONTEST_DRAFT_KEY, JSON.stringify(drafts));
+    } catch (_) {}
+  };
+  const contestGradeNumber = (grade) => {
+    const text = String(grade || '');
+    const primary = { 一: 1, 二: 2, 三: 3, 四: 4, 五: 5, 六: 6 };
+    const middle = { 初一: 7, 初二: 8, 初三: 9, 高一: 10, 高二: 11, 高三: 12 };
+    const stage = Object.keys(middle).find((key) => text.includes(key));
+    if (stage) return middle[stage];
+    const match = text.match(/([一二三四五六])年级/);
+    return match ? primary[match[1]] : null;
+  };
+  const contestEligibilityIssue = (c, student) => {
+    if (!student) return '未找到参赛学生';
+    const rule = c.eligibility || {};
+    const grade = contestGradeNumber(student.grade);
+    if (grade && rule.gradeMin && grade < rule.gradeMin) return `参赛对象仅限${c.audience}`;
+    if (grade && rule.gradeMax && grade > rule.gradeMax) return `参赛对象仅限${c.audience}`;
+    if ((rule.schoolKeywords || []).length && !rule.schoolKeywords.some((key) => student.school.includes(key))) {
+      return `当前学校不在赛事范围内，仅限${c.audience}`;
+    }
+    return '';
+  };
+  const contestFileIssue = (file, kind, spec) => {
+    const name = String(file.name || '文件');
+    const ext = name.split('.').pop().toLowerCase();
+    const mime = String(file.type || '');
+    const bytes = Number.isFinite(file.bytes) ? file.bytes : Number(file.size) || 0;
+    if (kind === 'images') {
+      if (!mime.startsWith('image/')) return `${name} 不是支持的图片格式`;
+      if (bytes > spec.imageMaxBytes) return `${name} 超过 ${fmtFileSize(spec.imageMaxBytes)}`;
+    }
+    if (kind === 'videos') {
+      if (!mime.startsWith('video/')) return `${name} 不是支持的视频格式`;
+      if (bytes > spec.videoMaxBytes) return `${name} 超过 ${fmtFileSize(spec.videoMaxBytes)}`;
+    }
+    if (kind === 'files') {
+      if (!spec.allowedFileExtensions.includes(ext)) return `${name} 的文件格式不支持`;
+      if (bytes > spec.fileMaxBytes) return `${name} 超过 ${fmtFileSize(spec.fileMaxBytes)}`;
+    }
+    return '';
+  };
+  const contestMaterialIssue = (draft) => {
+    const required = draft.spec.requiredFileNameIncludes || [];
+    const missing = required.find((keyword) => !draft.files.some((file) => file.name.includes(keyword)));
+    return missing ? `请上传${missing}扫描件` : '';
+  };
 
   function screenContestSignup(id) {
     const c = contestById(id);
@@ -1925,41 +2046,69 @@
     }
     const unsigned = (DB.students || []).filter((s) => !contestEntryOf(c.id, s.id));
     if (!unsigned.length) {
-      toast('孩子都已报名，可直接修改作品');
-      return screenContestWork(contestEntriesOf(c.id)[0].id);
+      toast('孩子都已报名，可直接查看参赛记录');
+      return screenMyContests();
+    }
+    const eligible = unsigned.filter((student) => !contestEligibilityIssue(c, student));
+    if (!eligible.length) {
+      toast(`当前孩子均不符合参赛范围：${c.audience}`);
+      return screenContest(c.id);
     }
     const cur = currentStudent();
-    renderContestForm(c, null, unsigned.includes(cur) ? cur : unsigned[0]);
+    renderContestForm(c, null, eligible.includes(cur) ? cur : eligible[0]);
   }
 
   function screenContestWork(entryId) {
     const entry = contestEntryById(entryId);
     if (!entry) return screenMyContests();
-    const c = contestById(entry.contestId);
+    const c = contestById(entry.competitionId);
     if (!c) return screenContests();
     if (contestPhase(c) !== 'open') {
       toast('报名已截止，作品不可再修改');
       return screenContest(c.id);
     }
+    if (entry.state !== 'submitted') {
+      toast('作品已进入评审流程，不可继续修改');
+      return screenMyContests();
+    }
     renderContestForm(c, entry);
   }
 
   function renderContestForm(c, entry, defaultStudent) {
+    if (signupDraft) saveContestDraft();
     const editing = !!entry;
-    const spec = c.workSpec || { imageMax: 9, videoMax: 1, fileMax: 5, fileTypes: 'PDF / Word / PPT / 压缩包' };
+    const spec = contestWorkSpec(c);
     const work = editing ? (entry.work || {}) : {};
+    const availableStudents = editing
+      ? (DB.students || []).filter((s) => s.id === entry.studentId)
+      : (DB.students || []).filter((s) => !contestEntryOf(c.id, s.id) && !contestEligibilityIssue(c, s));
+    const draftKey = editing ? `entry:${entry.id}` : `contest:${c.id}`;
+    const stored = readContestDrafts()[draftKey];
+    const restored = !!stored;
+    const preferredStudentId = editing ? entry.studentId : (stored || {}).studentId || defaultStudent.id;
+    const studentId = availableStudents.some((s) => s.id === preferredStudentId)
+      ? preferredStudentId
+      : availableStudents[0].id;
+    const teamType = ['个人', '团队'].includes((stored || {}).teamType)
+      ? stored.teamType
+      : editing ? (entry.teamType || '个人') : '个人';
     signupDraft = {
       contestId: c.id,
       entryId: editing ? entry.id : null,
-      studentId: editing ? entry.studentId : defaultStudent.id,
-      teamType: editing ? (entry.teamType || '个人') : '个人',
-      images: (work.images || []).slice(),
-      videos: (work.videos || []).slice(),
-      files: (work.files || []).slice(),
-      agreed: editing,
+      studentId,
+      teamType,
+      teamName: restored ? (stored.teamName || '') : editing ? (entry.teamName || '') : '',
+      members: restored ? (stored.members || '') : editing ? (entry.members || '') : '',
+      guideTeacher: restored ? (stored.guideTeacher || '') : editing ? (entry.guideTeacher || '') : '',
+      title: restored ? (stored.title || '') : (work.title || ''),
+      desc: restored ? (stored.desc || '') : (work.desc || ''),
+      images: restored && Array.isArray(stored.images) ? stored.images.slice() : (work.images || []).slice(),
+      videos: restored && Array.isArray(stored.videos) ? stored.videos.slice() : (work.videos || []).slice(),
+      files: restored && Array.isArray(stored.files) ? stored.files.slice() : (work.files || []).slice(),
+      agreed: restored ? !!stored.agreed : editing,
       spec,
     };
-    const student = (DB.students || []).find((s) => s.id === signupDraft.studentId) || currentStudent();
+    const student = availableStudents.find((s) => s.id === signupDraft.studentId);
     const isTeam = signupDraft.teamType === '团队';
     render(`
     <div class="screen ct-theme">
@@ -1970,6 +2119,7 @@
           <div class="bold">${esc(c.name)}</div>
           <div class="small muted" style="margin-top:4px">${esc(c.organizer)} · 报名截止 ${esc(c.signupEnd)} · ${esc(c.fee)}</div>
           ${editing ? `<div class="small muted" style="margin-top:6px">首次提交于 ${esc(entry.submittedAt)}，报名截止前可反复修改。</div>` : ''}
+          <div class="small muted" id="ctDraftStatus" style="margin-top:6px">${restored ? '已恢复上次未提交的草稿' : '填写内容将在本机自动保存'}</div>
         </div>
 
         <div class="card mx mt pad">
@@ -1981,7 +2131,7 @@
             <div class="form-row" style="margin-top:0">
               <label>选择学生</label>
               <select class="input" id="ctStudent" onchange="App.setSignupStudent(this.value)">
-                ${(DB.students || []).filter((s) => !contestEntryOf(c.id, s.id)).map((s) => `<option value="${s.id}" ${s.id === signupDraft.studentId ? 'selected' : ''}>${esc(s.name)}（${esc(s.grade)}）</option>`).join('')}
+                ${availableStudents.map((s) => `<option value="${s.id}" ${s.id === signupDraft.studentId ? 'selected' : ''}>${esc(s.name)}（${esc(s.grade)}）</option>`).join('')}
               </select>
             </div>
             <div class="small muted" id="ctStudentSchool" style="margin-top:8px">${esc(student.school)}</div>`}
@@ -1994,16 +2144,16 @@
           <div id="ctTeamFields" style="display:${isTeam ? '' : 'none'}">
             <div class="form-row">
               <label>团队名称</label>
-              <input class="input" id="ctTeamName" placeholder="如：未来创客队" maxlength="20" value="${esc(editing ? entry.teamName || '' : '')}">
+              <input class="input" id="ctTeamName" placeholder="如：未来创客队" maxlength="20" value="${esc(signupDraft.teamName)}">
             </div>
             <div class="form-row">
               <label>团队成员（含本人，用「、」分隔）</label>
-              <input class="input" id="ctMembers" placeholder="如：李小明、张一帆、周子豪" value="${esc(editing ? entry.members || '' : '')}">
+              <input class="input" id="ctMembers" placeholder="如：李小明、张一帆、周子豪" value="${esc(signupDraft.members)}">
             </div>
           </div>
           <div class="form-row">
             <label>指导老师（选填）</label>
-            <input class="input" id="ctTeacher" placeholder="填写指导老师姓名" maxlength="20" value="${esc(editing ? entry.guideTeacher || '' : '')}">
+            <input class="input" id="ctTeacher" placeholder="填写指导老师姓名" maxlength="20" value="${esc(signupDraft.guideTeacher)}">
           </div>
         </div>
 
@@ -2012,27 +2162,27 @@
           <div class="up-hint">${esc(spec.note || '')}</div>
           <div class="form-row" style="margin-top:0">
             <label>作品标题</label>
-            <input class="input" id="ctWorkTitle" placeholder="给作品起一个名字" maxlength="30" value="${esc(work.title || '')}">
+            <input class="input" id="ctWorkTitle" placeholder="给作品起一个名字" maxlength="30" value="${esc(signupDraft.title)}">
           </div>
           <div class="form-row">
             <label>作品说明（文字）</label>
-            <textarea class="field" id="ctWorkDesc" rows="4" style="margin-top:0" placeholder="介绍创作背景、思路、用到的工具与解决的问题">${esc(work.desc || '')}</textarea>
+            <textarea class="field" id="ctWorkDesc" rows="4" style="margin-top:0" placeholder="介绍创作背景、思路、用到的工具与解决的问题">${esc(signupDraft.desc)}</textarea>
           </div>
 
           <div class="form-row">
-            <label>作品图片（最多 ${spec.imageMax} 张）</label>
+            <label>作品图片（最多 ${spec.imageMax} 张，每张不超过 ${esc(fmtFileSize(spec.imageMaxBytes))}）</label>
             <div id="upImages"></div>
             <input type="file" class="up-file-input" id="upImgInput" accept="image/*" multiple onchange="App.pickWorkImages(this)">
           </div>
 
           <div class="form-row">
-            <label>作品视频（最多 ${spec.videoMax} 个）</label>
+            <label>作品视频（最多 ${spec.videoMax} 个，每个不超过 ${esc(fmtFileSize(spec.videoMaxBytes))}）</label>
             <div id="upVideos"></div>
             <input type="file" class="up-file-input" id="upVidInput" accept="video/*" onchange="App.pickWorkVideos(this)">
           </div>
 
           <div class="form-row">
-            <label>作品附件（最多 ${spec.fileMax} 个 · ${esc(spec.fileTypes)}）</label>
+            <label>作品附件（最多 ${spec.fileMax} 个 · ${esc(spec.fileTypes)} · 每个不超过 ${esc(fmtFileSize(spec.fileMaxBytes))}）</label>
             <div id="upFiles"></div>
             <input type="file" class="up-file-input" id="upFileInput" accept=".pdf,.doc,.docx,.ppt,.pptx,.zip,.rar,.7z" multiple onchange="App.pickWorkFiles(this)">
           </div>
@@ -2051,6 +2201,10 @@
         <button class="btn btn-primary" id="ctSubmitBtn" disabled onclick="App.submitContestEntry()">${editing ? '保存修改' : '提交报名与作品'}</button>
       </div>
     </div>`);
+    ['#ctTeamName', '#ctMembers', '#ctTeacher', '#ctWorkTitle', '#ctWorkDesc'].forEach((selector) => {
+      const input = $(selector);
+      if (input) input.addEventListener('input', queueContestDraftSave);
+    });
     renderUploads();
   }
 
@@ -2113,65 +2267,105 @@
 
   function pickWorkImages(input) {
     if (!signupDraft) return;
-    const room = signupDraft.spec.imageMax - signupDraft.images.length;
-    const picked = Array.from(input.files || []).slice(0, Math.max(0, room));
-    if ((input.files || []).length > picked.length) toast(`最多上传 ${signupDraft.spec.imageMax} 张图片`);
+    const files = Array.from(input.files || []);
+    const issue = files.map((file) => contestFileIssue(file, 'images', signupDraft.spec)).find(Boolean);
     input.value = '';
-    picked.forEach((file) => {
-      const item = { name: file.name, size: fmtFileSize(file.size), thumb: '' };
-      signupDraft.images.push(item);
-      renderUploads();
-      thumbFromFile(file, (thumb) => { item.thumb = thumb; renderUploads(); });
+    if (issue) return toast(issue);
+    const room = signupDraft.spec.imageMax - signupDraft.images.length;
+    const picked = files.slice(0, Math.max(0, room));
+    if (files.length > picked.length) toast(`最多上传 ${signupDraft.spec.imageMax} 张图片`);
+    const items = picked.map((file) => ({
+      name: file.name,
+      size: fmtFileSize(file.size),
+      bytes: file.size,
+      type: file.type,
+      thumb: '',
+    }));
+    signupDraft.images.push(...items);
+    renderUploads();
+    queueContestDraftSave();
+    picked.forEach((file, index) => {
+      thumbFromFile(file, (thumb) => {
+        items[index].thumb = thumb;
+        renderUploads();
+        queueContestDraftSave();
+      });
     });
   }
 
   function pickWorkVideos(input) {
     if (!signupDraft) return;
-    const room = signupDraft.spec.videoMax - signupDraft.videos.length;
-    Array.from(input.files || []).slice(0, Math.max(0, room))
-      .forEach((f) => signupDraft.videos.push({ name: f.name, size: fmtFileSize(f.size) }));
+    const files = Array.from(input.files || []);
+    const issue = files.map((file) => contestFileIssue(file, 'videos', signupDraft.spec)).find(Boolean);
     input.value = '';
+    if (issue) return toast(issue);
+    const room = signupDraft.spec.videoMax - signupDraft.videos.length;
+    const picked = files.slice(0, Math.max(0, room));
+    if (files.length > picked.length) toast(`最多上传 ${signupDraft.spec.videoMax} 个视频`);
+    signupDraft.videos.push(...picked.map((file) => ({
+      name: file.name,
+      size: fmtFileSize(file.size),
+      bytes: file.size,
+      type: file.type,
+    })));
     renderUploads();
+    queueContestDraftSave();
   }
 
   function pickWorkFiles(input) {
     if (!signupDraft) return;
-    const room = signupDraft.spec.fileMax - signupDraft.files.length;
-    const picked = Array.from(input.files || []).slice(0, Math.max(0, room));
-    if ((input.files || []).length > picked.length) toast(`最多上传 ${signupDraft.spec.fileMax} 个附件`);
-    picked.forEach((f) => signupDraft.files.push({ name: f.name, size: fmtFileSize(f.size) }));
+    const files = Array.from(input.files || []);
+    const issue = files.map((file) => contestFileIssue(file, 'files', signupDraft.spec)).find(Boolean);
     input.value = '';
+    if (issue) return toast(issue);
+    const room = signupDraft.spec.fileMax - signupDraft.files.length;
+    const picked = files.slice(0, Math.max(0, room));
+    if (files.length > picked.length) toast(`最多上传 ${signupDraft.spec.fileMax} 个附件`);
+    signupDraft.files.push(...picked.map((file) => ({
+      name: file.name,
+      size: fmtFileSize(file.size),
+      bytes: file.size,
+      type: file.type,
+    })));
     renderUploads();
+    queueContestDraftSave();
   }
 
   function delWorkAsset(kind, idx) {
-    if (!signupDraft) return;
+    if (!signupDraft || !['images', 'videos', 'files'].includes(kind)) return;
     signupDraft[kind].splice(idx, 1);
     renderUploads();
+    queueContestDraftSave();
   }
 
   function setSignupStudent(id) {
     if (!signupDraft) return;
-    signupDraft.studentId = id;
+    const c = contestById(signupDraft.contestId);
     const stu = (DB.students || []).find((s) => s.id === id);
+    if (!c || !stu || contestEntryOf(c.id, stu.id) || contestEligibilityIssue(c, stu)) return;
+    signupDraft.studentId = id;
     const box = $('#ctStudentSchool');
-    if (stu && box) box.textContent = stu.school;
+    if (box) box.textContent = stu.school;
+    queueContestDraftSave();
   }
 
   function setTeamType(t) {
-    if (!signupDraft) return;
+    if (!signupDraft || !['个人', '团队'].includes(t)) return;
     signupDraft.teamType = t;
     document.querySelectorAll('#ctSeg .sg').forEach((el) => el.classList.toggle('on', el.dataset.team === t));
     const fields = $('#ctTeamFields');
     if (fields) fields.style.display = t === '团队' ? '' : 'none';
     refreshContestSubmitBtn();
+    queueContestDraftSave();
   }
 
   function toggleContestAgree() {
     if (!signupDraft) return;
     signupDraft.agreed = !signupDraft.agreed;
-    $('#ctAgree').classList.toggle('on', signupDraft.agreed);
+    const agree = $('#ctAgree');
+    if (agree) agree.classList.toggle('on', signupDraft.agreed);
     refreshContestSubmitBtn();
+    queueContestDraftSave();
   }
 
   function refreshContestSubmitBtn() {
@@ -2185,45 +2379,71 @@
     if (!signupDraft) return;
     const c = contestById(signupDraft.contestId);
     if (!c) return screenContests();
-    const val = (sel) => ($(sel) ? $(sel).value.trim() : '');
-    const title = val('#ctWorkTitle');
-    const desc = val('#ctWorkDesc');
+    const phase = contestPhase(c);
+    if (phase !== 'open') return toast(phase === 'soon' ? '报名尚未开启，暂不能提交' : '报名已截止，无法提交作品');
+
+    const existing = signupDraft.entryId ? contestEntryById(signupDraft.entryId) : null;
+    if (signupDraft.entryId && !existing) return toast('参赛记录不存在，请返回后重试');
+    if (existing && existing.state !== 'submitted') return toast('作品已进入评审流程，不可继续修改');
+
+    syncContestDraftFields();
+    const stu = (DB.students || []).find((s) => s.id === signupDraft.studentId);
+    const eligibilityIssue = contestEligibilityIssue(c, stu);
+    if (eligibilityIssue) return toast(eligibilityIssue);
+    const duplicate = contestEntryOf(c.id, stu.id);
+    if (duplicate && duplicate.id !== signupDraft.entryId) return toast(`${stu.name}已报名该赛事，请勿重复提交`);
+
+    const title = signupDraft.title;
+    const desc = signupDraft.desc;
     if (!title) return toast('请填写作品标题');
     if (!desc) return toast('请填写作品说明');
+    if (signupDraft.images.length > signupDraft.spec.imageMax
+      || signupDraft.videos.length > signupDraft.spec.videoMax
+      || signupDraft.files.length > signupDraft.spec.fileMax) {
+      return toast('上传材料数量超过赛事限制，请删除后重试');
+    }
     if (!(signupDraft.images.length || signupDraft.videos.length || signupDraft.files.length)) {
       return toast('请至少上传一项图片 / 视频 / 附件');
     }
-    const teamName = val('#ctTeamName');
-    const members = val('#ctMembers');
+    const assetGroups = [
+      ['images', signupDraft.images],
+      ['videos', signupDraft.videos],
+      ['files', signupDraft.files],
+    ];
+    for (const [kind, assets] of assetGroups) {
+      const issue = assets.map((file) => contestFileIssue(file, kind, signupDraft.spec)).find(Boolean);
+      if (issue) return toast(issue);
+    }
+    const materialIssue = contestMaterialIssue(signupDraft);
+    if (materialIssue) return toast(materialIssue);
     if (signupDraft.teamType === '团队') {
-      if (!teamName) return toast('请填写团队名称');
-      if (!members) return toast('请填写团队成员');
+      if (!signupDraft.teamName) return toast('请填写团队名称');
+      if (!signupDraft.members) return toast('请填写团队成员');
     }
     if (!signupDraft.agreed) return toast('请先确认原创声明');
 
-    const stu = (DB.students || []).find((s) => s.id === signupDraft.studentId) || currentStudent();
     const now = new Date();
     const pad = (n) => String(n).padStart(2, '0');
     const stamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
     const fields = {
       teamType: signupDraft.teamType,
-      teamName: signupDraft.teamType === '团队' ? teamName : '',
-      members: signupDraft.teamType === '团队' ? members : '',
-      guideTeacher: val('#ctTeacher'),
+      teamName: signupDraft.teamType === '团队' ? signupDraft.teamName : '',
+      members: signupDraft.teamType === '团队' ? signupDraft.members : '',
+      guideTeacher: signupDraft.guideTeacher,
       work: {
-        title, desc,
+        title,
+        desc,
         images: signupDraft.images.slice(),
         videos: signupDraft.videos.slice(),
         files: signupDraft.files.slice(),
       },
     };
-    const existing = signupDraft.entryId ? contestEntryById(signupDraft.entryId) : null;
     if (existing) {
       Object.assign(existing, fields, { updatedAt: stamp });
     } else {
       DB.contestEntries.unshift(Object.assign({
         id: 'entry-' + Date.now(),
-        contestId: c.id,
+        competitionId: c.id,
         contestName: c.name,
         cover: c.cover,
         studentId: stu.id,
@@ -2231,26 +2451,51 @@
         school: stu.school,
         grade: stu.grade,
         state: 'submitted',
+        eligibilityStatus: '资格待审',
+        reviewStatus: '资格待审',
+        auditNote: '',
+        award: '',
+        resultPublished: false,
+        audits: [{ t: stamp, who: DB.parent.nickname, act: '提交报名作品', note: '' }],
         submittedAt: stamp,
       }, fields));
       c.signupCount = (c.signupCount || 0) + 1;
     }
+    const completedDraft = signupDraft;
+    clearContestDraft(completedDraft);
     signupDraft = null;
     persistState();
-    toast(existing ? '修改已保存' : '报名成功，作品已提交待评审');
+    toast(existing ? '修改已保存，作品继续等待评审' : '报名成功，作品已提交待评审');
     go('#/my-contests');
   }
 
   /* ---------- 我的参赛 ---------- */
+  function withdrawContestEntry(entryId) {
+    const entry = contestEntryById(entryId);
+    if (!entry) return toast('参赛记录不存在');
+    const c = contestById(entry.competitionId);
+    if (!c || contestPhase(c) !== 'open') return toast('报名已截止，无法撤回');
+    if (entry.state !== 'submitted') return toast('作品已进入评审流程，无法撤回');
+    if (!window.confirm(`确认撤回${entry.studentName}的参赛报名？撤回后记录将删除。`)) return;
+    const index = DB.contestEntries.findIndex((item) => item.id === entry.id);
+    if (index < 0) return toast('参赛记录不存在');
+    DB.contestEntries.splice(index, 1);
+    c.signupCount = Math.max(0, (c.signupCount || 0) - 1);
+    clearContestDraft({ contestId: c.id, entryId: entry.id });
+    persistState();
+    screenMyContests();
+    toast('报名已撤回，可在截止前重新报名');
+  }
+
   function screenMyContests() {
     const entries = DB.contestEntries || [];
     const card = (e) => {
       const st = DB.contestStateMap[e.state] || DB.contestStateMap.submitted;
       const w = e.work || {};
-      const editable = (() => {
-        const c = contestById(e.contestId);
-        return !!c && contestPhase(c) === 'open';
-      })();
+      const c = contestById(e.competitionId);
+      const contestName = c?.name || e.contestName;
+      const contestCover = c?.cover || e.cover;
+      const mutable = !!c && contestPhase(c) === 'open' && e.state === 'submitted';
       const chips = [
         (w.images || []).length ? `${I.camera}图片 ${w.images.length}` : '',
         (w.videos || []).length ? `${I.film}视频 ${w.videos.length}` : '',
@@ -2259,9 +2504,9 @@
       return `
       <div class="card ce-card mx mt">
         <div class="ce-head">
-          <div class="ce-cover">${coverImg(e.cover, e.contestName)}</div>
+          <div class="ce-cover">${coverImg(contestCover, contestName)}</div>
           <div style="flex:1;min-width:0">
-            <div class="row between"><div class="bold" style="font-size:14px">${esc(e.contestName)}</div><span class="badge ${st.cls}">${st.label}</span></div>
+            <div class="row between"><div class="bold" style="font-size:14px">${esc(contestName)}</div><span class="badge ${st.cls}">${st.label}</span></div>
             <div class="small muted" style="margin-top:3px">${esc(e.studentName)} · ${esc(e.grade || '')} · ${esc(e.teamType)}${e.teamName ? `「${esc(e.teamName)}」` : ''}</div>
             <div class="small muted">提交于 ${esc(e.submittedAt)}${e.guideTeacher ? ` · 指导老师 ${esc(e.guideTeacher)}` : ''}</div>
             ${e.updatedAt ? `<div class="small muted">最后修改 ${esc(e.updatedAt)}</div>` : ''}
@@ -2275,12 +2520,11 @@
         ${e.members ? `<div class="small muted" style="margin-top:8px">团队成员：${esc(e.members)}</div>` : ''}
         ${e.award ? `<div class="ce-award-tip">${I.trophy}${esc(e.award)}</div>` : ''}
         <div class="divider"></div>
-        <div class="row between">
-          <span class="small muted">${e.state === 'submitted' ? '作品已提交，等待主办方受理' : e.state === 'reviewing' ? '专家评审中，结果将短信通知' : e.state === 'shortlisted' ? '已入围，请留意决赛通知' : e.state === 'awarded' ? '恭喜获奖，证书将寄送到校' : '本届未入围，欢迎下届再战'}</span>
-          <div class="row" style="gap:8px;flex-shrink:0">
-            ${editable ? `<button class="btn btn-primary btn-sm" onclick="location.hash='#/contest-work/${e.id}'">修改作品</button>` : ''}
-            <button class="btn btn-line btn-sm" onclick="location.hash='#/contest/${e.contestId}'">赛事详情</button>
-          </div>
+        <div class="small muted">${e.state === 'submitted' ? '作品已提交，等待主办方受理' : e.state === 'reviewing' ? '专家评审中，结果将短信通知' : e.state === 'shortlisted' ? '已入围，请留意决赛通知' : e.state === 'awarded' ? '恭喜获奖，证书将寄送到校' : '本届未入围，欢迎下届再战'}</div>
+        <div class="ce-actions">
+          ${mutable ? `<button class="btn btn-primary btn-sm" onclick="location.hash='#/contest-work/${e.id}'">修改作品</button>` : ''}
+          ${mutable ? `<button class="btn btn-danger-line btn-sm" onclick="App.withdrawContestEntry('${e.id}')">撤回报名</button>` : ''}
+          <button class="btn btn-line btn-sm" onclick="location.hash='#/contest/${e.competitionId}'">赛事详情</button>
         </div>
       </div>`;
     };
@@ -2478,7 +2722,7 @@
     playContestVideo: () => toast('宣传片需连接后台视频源，敬请期待'),
     downloadContestFile: (name) => toast(`《${name}》需连接后台后下载`),
     pickWorkImages, pickWorkVideos, pickWorkFiles, delWorkAsset,
-    setSignupStudent, setTeamType, toggleContestAgree, submitContestEntry,
+    setSignupStudent, setTeamType, toggleContestAgree, submitContestEntry, withdrawContestEntry,
     openStudentForm, closeStudentForm, editStudent, saveStudentForm, deleteStudent,
     openProfileForm, closeProfileForm, pickAvatar, saveProfile, toggleWxBind, logout, sendCode, doLogin, wxLogin,
   };
