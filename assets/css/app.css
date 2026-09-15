@@ -168,7 +168,10 @@ body {
 .venue-tabs .vt.on { background: #fff; color: var(--orange-deep); box-shadow: 0 1px 3px rgba(0,0,0,.08); }
 
 /* 状态徽章 */
-.badge { font-size: 12px; padding: 3px 9px; border-radius: 20px; font-weight: 600; }
+.badge {
+  display: inline-flex; align-items: center; white-space: nowrap; flex-shrink: 0;
+  font-size: 12px; padding: 3px 9px; border-radius: 20px; font-weight: 600;
+}
 .st-wait { background: #fff4e6; color: var(--warn); }
 .st-info { background: #eaf2ff; color: var(--blue); }
 .st-warn { background: var(--orange-soft); color: var(--orange-deep); }
@@ -659,6 +662,26 @@ body {
 }
 .ct-tabs .ct-tab.on { background: var(--orange); color: #fff; border-color: var(--orange); }
 
+/* ---------- 往期赛事折叠区 ---------- */
+.ct-past {
+  overflow: hidden; border: 1px solid #cfe1e3; border-radius: 14px;
+  background: #f3f8f8; box-shadow: 0 3px 12px rgba(16, 79, 87, .05);
+}
+.ct-past summary {
+  min-height: 44px; padding: 0 14px; display: flex; align-items: center; justify-content: space-between;
+  color: var(--orange-deep); font-size: 14px; font-weight: 700; cursor: pointer; list-style: none;
+}
+.ct-past summary::-webkit-details-marker { display: none; }
+.ct-past summary:focus-visible { outline: 2px solid var(--orange); outline-offset: -2px; }
+.ct-past[open] summary { background: #e8f3f3; border-bottom: 1px solid #d7e6e7; }
+.ct-past-meta { display: inline-flex; align-items: center; gap: 10px; color: #607579; font-size: 12px; font-weight: 600; }
+.ct-past-arrow {
+  width: 8px; height: 8px; border-right: 2px solid var(--orange); border-bottom: 2px solid var(--orange);
+  transform: rotate(-45deg); transition: transform .2s ease;
+}
+.ct-past[open] .ct-past-arrow { transform: rotate(45deg); }
+.ct-past-list { padding: 0 12px 12px; }
+
 /* ---------- 赛事卡片 ---------- */
 .ct-card { overflow: hidden; border-radius: 16px; cursor: pointer; transition: transform .12s ease; }
 .ct-card:active { transform: scale(.99); }
@@ -667,6 +690,7 @@ body {
 .ct-badge {
   position: absolute; top: 10px; left: 10px; z-index: 2;
   display: inline-flex; align-items: center; gap: 5px;
+  white-space: nowrap; flex-shrink: 0;
   padding: 4px 9px; border-radius: 7px; font-size: 11px; font-weight: 700; color: #fff;
 }
 .ct-badge .dot { width: 5px; height: 5px; border-radius: 50%; background: #fff; }
@@ -839,6 +863,8 @@ body {
 /* ---------- 我的参赛记录 ---------- */
 .ce-card { padding: 13px 14px; }
 .ce-head { display: flex; gap: 11px; }
+.ce-head .row.between { align-items: flex-start; gap: 8px; }
+.ce-head .row.between > .bold { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .ce-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .ce-actions .btn-sm { min-height: 44px; padding: 0 14px; border-radius: 12px; }
 .ce-cover { width: 52px; height: 52px; border-radius: 11px; overflow: hidden; flex-shrink: 0; }

@@ -4,11 +4,11 @@
  * 业务闭环：建校/场地 → 审机构 → 审教师 → 审课程 → 课程库
  *          → 分发学校 → 家长报名付费 → 按节销课 → 按月结算
  * ============================================================ */
-const { useState, useMemo, useEffect } = React;
+const { useState, useMemo, useEffect, useRef } = React;
 const {
   Layout, Menu, Table: AntTable, Tag, Button, Modal, Drawer, Descriptions, Card, Statistic,
   Row, Col, Space, Input, Select, Steps, message, Tabs, Divider, Form, InputNumber,
-  Checkbox, Timeline, Alert, Progress, Radio, Avatar, Tooltip, List, Upload, Badge, Grid,
+  Checkbox, Timeline, Alert, Progress, Radio, Avatar, Tooltip, List, Upload, Badge, Grid, DatePicker,
 } = antd;
 const { Header, Sider, Content } = Layout;
 const { TextArea } = Input;
@@ -34,7 +34,7 @@ const STC: Record<string, string> = {
   正常: 'green', 未签到: 'default', 已签到: 'green', 待确认: 'orange', 待上架确认: 'orange', 已确认: 'green', 无异议: 'green', 有异议: 'red', 客服判定结算: 'green', 客服判定不结算: 'default',
   已上传: 'green', 未上传: 'orange',
   已开通: 'green', 未开通: 'orange',
-  征集中: 'blue', 征集截止: 'gold', 评审中: 'processing', 待发布: 'purple', 结果已发布: 'green', 已归档: 'default',
+  未开始: 'gold', 报名结束: 'gold', 征集中: 'blue', 征集截止: 'gold', 评审中: 'processing', 待发布: 'purple', 结果已发布: 'green', 已归档: 'default',
   资格待审: 'orange', 资格通过: 'green', 资格驳回: 'red', 待分配: 'gold', 待评分: 'blue', 评分中: 'processing', 已评分: 'cyan', 待复核: 'purple', 结果确定: 'green',
   可接任务: 'green', 暂停接单: 'default', 已分配: 'blue', 已提交: 'cyan', 已锁定: 'green', 已退回: 'red',
 };
@@ -136,7 +136,8 @@ TERM_DEF['客服判定结算'] = '客服核实后决定本节正常结算消课�
 TERM_DEF['客服判定不结算'] = '客服核实后决定本节不结算、不消课。';
 
 const S = ({ v }: { v: string }) => {
-  const t = <Tag color={STC[v] || 'default'} style={TERM_DEF[v] ? { cursor: 'help' } : {}}>{v}</Tag>;
+  const label = ({ 资格驳回: '资格不通过', 结果确定: '结果已确定', 征集中: '报名中', 征集截止: '报名结束' } as Record<string, string>)[v] || v;
+  const t = <Tag color={STC[v] || 'default'} style={TERM_DEF[v] ? { cursor: 'help' } : {}}>{label}</Tag>;
   return TERM_DEF[v] ? <Tooltip title={TERM_DEF[v]}>{t}</Tooltip> : t;
 };
 
@@ -536,7 +537,19 @@ const loadAdminDB = () => {
     [...(publicDB.contests || []), ...(initDB.competitions || []), ...(saved?.competitions || [])],
     [...(publicDB.contestEntries || []), ...(initDB.contestEntries || []), ...(saved?.contestEntries || [])],
   );
-  return { ...adminState, competitions: shared.competitions, contestEntries: shared.contestEntries.map(toAdminContestEntry) };
+  const demoAssignments = shared.contestEntries.filter((e: any) => e.demo && ['待评分', '评分中', '待复核', '结果确定'].includes(e.reviewStatus)).map((e: any) => ({
+    id: `assignment-${e.id}`, entryId: e.id, expertId: 'expert-001', assignedAt: '2026-09-14 11:00',
+    status: ({ 待评分: '已分配', 评分中: '评分中', 待复核: '已提交', 结果确定: '已锁定' } as any)[e.reviewStatus],
+  }));
+  const demoScores = demoAssignments.filter((a: any) => a.status !== '已分配').map((a: any) => ({
+    id: `score-${a.entryId}`, assignmentId: a.id, status: a.status === '评分中' ? '暂存' : a.status,
+    items: a.status === '评分中' ? { innovation: 26 } : { innovation: 26, completion: 22, practice: 22, presentation: 18 },
+    total: a.status === '评分中' ? 26 : 88, comment: a.status === '评分中' ? '' : '作品完整，选题有实践价值，建议进一步完善测试。', updatedAt: '2026-09-14 12:00',
+  }));
+  return { ...adminState, competitions: shared.competitions, contestEntries: shared.contestEntries.map(toAdminContestEntry),
+    contestAssignments: [...demoAssignments.filter((a: any) => !adminState.contestAssignments.some((x: any) => x.id === a.id)), ...adminState.contestAssignments],
+    contestScores: [...demoScores.filter((a: any) => !adminState.contestScores.some((x: any) => x.id === a.id)), ...adminState.contestScores],
+  };
 };
 
 /* ---------- 工具 ---------- */
@@ -2187,6 +2200,20 @@ function CompetitionPage({ db, setDb }: any) {
   const [expertToAdd, setExpertToAdd] = useState('');
   const [eventEdit, setEventEdit] = useState<any>(null);
   const [eventOpen, setEventOpen] = useState(false);
+  const [eventTabKey, setEventTabKey] = useState('basic');
+  const [eventErrors, setEventErrors] = useState<any[]>([]);
+  const eventErrorRef = useRef<HTMLDivElement>(null);
+  const [uploadPending, setUploadPending] = useState(0);
+  const [previewCompetition, setPreviewCompetition] = useState<any>(null);
+  const uploadCount = useRef(0);
+  const gallerySlots = useRef(0);
+  const [videoPreviewUrl, setVideoPreviewUrl] = useState('');
+  const [coverDraft, setCoverDraft] = useState('');
+  const [galleryDraft, setGalleryDraft] = useState<any[]>([]);
+  const [attachmentDraft, setAttachmentDraft] = useState<any[]>([]);
+  const [videoDraft, setVideoDraft] = useState<any>(null);
+  const [videoPosterDraft, setVideoPosterDraft] = useState('');
+  const [ruleCompetition, setRuleCompetition] = useState<any>(null);
   const [workDetail, setWorkDetail] = useState<any>(null);
   const [auditTarget, setAuditTarget] = useState<any>(null);
   const [assignTarget, setAssignTarget] = useState<any>(null);
@@ -2202,10 +2229,20 @@ function CompetitionPage({ db, setDb }: any) {
   const [selectedWorks, setSelectedWorks] = useState<React.Key[]>([]);
   const [resultCompetitionId, setResultCompetitionId] = useState((db.competitions || [])[0]?.id || '');
   const [eventForm] = Form.useForm();
+  const [ruleForm] = Form.useForm();
   const [expertForm] = Form.useForm();
   const screens = Grid.useBreakpoint();
 
   const competitions = db.competitions || [];
+  useEffect(() => {
+    let active = true;
+    let url = '';
+    setVideoPreviewUrl('');
+    if (videoDraft?.mediaKey) (window as any).FutureEduContestMedia.get(videoDraft.mediaKey).then((file: any) => {
+      if (active && file) { url = URL.createObjectURL(file); setVideoPreviewUrl(url); }
+    }).catch(() => message.warning('视频预览读取失败，请重新选择文件'));
+    return () => { active = false; if (url) URL.revokeObjectURL(url); };
+  }, [videoDraft?.mediaKey]);
   const entries = db.contestEntries || [];
   const experts = db.contestExperts || [];
   const assignments = db.contestAssignments || [];
@@ -2234,37 +2271,170 @@ function CompetitionPage({ db, setDb }: any) {
     contestLogs: [contestLog(mod, act, who), ...(state.contestLogs || [])],
   });
 
+  const textLines = (value: any) => String(value || '').split('\n').map((line) => line.trim()).filter(Boolean);
+  const joinLines = (rows: any[], formatter: (row: any) => string) => (rows || []).map(formatter).join('\n');
+  const parseColumns = (value: any, count: number) => textLines(value).map((line) => {
+    const columns = line.split('|').map((part) => part.trim());
+    while (columns.length < count) columns.push('');
+    return columns;
+  });
+  const uploadSize = (bytes: number) => bytes >= 1048576 ? `${(bytes / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  const uploadKind = (file: any) => (String(file.name || '').split('.').pop() || file.type || '文件').toUpperCase();
+  const adminMediaUrl = (src: string) => !src || /^(data:|blob:|https?:|\/)/.test(src) || src.startsWith('../') ? src : `../${src}`;
+  const adminCoverUrl = (src: string) => ({ science: '../assets/images/courses/science-lab.png', ai: '../assets/images/courses/ai-basics.png', code: '../assets/images/courses/coding-thinking.png', art: '../assets/images/courses/ai-art.png' } as Record<string, string>)[src] || adminMediaUrl(src);
+  const imagePreview = (file: any, maxSide = 960) => new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('图片读取失败'));
+    reader.onload = () => {
+      const image = new Image();
+      image.onerror = () => reject(new Error('图片解析失败'));
+      image.onload = () => {
+        const scale = Math.min(1, maxSide / Math.max(image.width, image.height));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(image.width * scale));
+        canvas.height = Math.max(1, Math.round(image.height * scale));
+        canvas.getContext('2d')?.drawImage(image, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', .78));
+      };
+      image.src = String(reader.result || '');
+    };
+    reader.readAsDataURL(file);
+  });
+  const uploading = (delta: number) => { uploadCount.current += delta; setUploadPending(uploadCount.current); };
+
+  const addGalleryImage = async (file: any) => {
+    if (!String(file.type || '').startsWith('image/')) { message.warning('展示图集只能上传图片'); return Upload.LIST_IGNORE; }
+    if (file.size > 10 * 1048576) { message.warning('单张图片不能超过 10 MB'); return Upload.LIST_IGNORE; }
+    if (gallerySlots.current >= 9) { message.warning('图集最多 9 张，超出图片未添加'); return Upload.LIST_IGNORE; }
+    gallerySlots.current += 1;
+    uploading(1);
+    try {
+      const img = await imagePreview(file);
+      setGalleryDraft((rows) => rows.length >= 9 ? rows : [...rows, { uid: `${Date.now()}-${file.uid || file.name}`, img, name: file.name, caption: '' }]);
+      message.success(`${file.name} 已加入展示图集`);
+    } catch (error: any) {
+      gallerySlots.current -= 1;
+      message.error(error.message || '图片上传失败');
+    } finally { uploading(-1); }
+    return Upload.LIST_IGNORE;
+  };
+  const addListCover = async (file: any) => {
+    if (!String(file.type || '').startsWith('image/')) { message.warning('列表封面只能上传图片'); return Upload.LIST_IGNORE; }
+    if (file.size > 10 * 1048576) { message.warning('列表封面不能超过 10 MB'); return Upload.LIST_IGNORE; }
+    uploading(1);
+    try {
+      setCoverDraft(await imagePreview(file, 1280));
+      message.success('列表封面已上传');
+    } catch (error: any) {
+      message.error(error.message || '列表封面上传失败');
+    } finally { uploading(-1); }
+    return Upload.LIST_IGNORE;
+  };
+  const replaceGalleryImage = async (file: any, uid: string) => {
+    if (!String(file.type || '').startsWith('image/') || file.size > 10 * 1048576) { message.warning('请选择不超过 10 MB 的图片'); return Upload.LIST_IGNORE; }
+    uploading(1);
+    try {
+      const img = await imagePreview(file);
+      setGalleryDraft((rows) => rows.map((row) => row.uid === uid ? { ...row, img, name: file.name } : row));
+      message.success('图片已替换，说明已保留');
+    } catch (error: any) { message.error(error.message); } finally { uploading(-1); }
+    return Upload.LIST_IGNORE;
+  };
+  const addAttachment = async (file: any) => {
+    if (file.size > 50 * 1048576) { message.warning('单个赛事附件不能超过 50 MB'); return Upload.LIST_IGNORE; }
+    uploading(1);
+    try {
+      const mediaKey = await (window as any).FutureEduContestMedia.put(file);
+      setAttachmentDraft((rows) => [...rows.filter((item) => item.name !== file.name), { uid: mediaKey, mediaKey, name: file.name, kind: uploadKind(file), size: uploadSize(file.size), bytes: file.size, mimeType: file.type }]);
+      message.success(`${file.name} 已保存到本浏览器（同名附件替换）`);
+    } catch (error: any) { message.error(error.message); } finally { uploading(-1); }
+    return Upload.LIST_IGNORE;
+  };
+  const addVideo = async (file: any) => {
+    if (!String(file.type || '').startsWith('video/')) { message.warning('请选择视频文件'); return Upload.LIST_IGNORE; }
+    if (file.size > 500 * 1048576) { message.warning('宣传片不能超过 500 MB'); return Upload.LIST_IGNORE; }
+    uploading(1);
+    try {
+      const mediaKey = await (window as any).FutureEduContestMedia.put(file);
+      setVideoDraft({ uid: file.uid, mediaKey, name: file.name, size: uploadSize(file.size), bytes: file.size, mimeType: file.type });
+      message.success('宣传片已保存到本浏览器');
+    } catch (error: any) { message.error(error.message); } finally { uploading(-1); }
+    return Upload.LIST_IGNORE;
+  };
+  const addVideoPoster = async (file: any) => {
+    if (!String(file.type || '').startsWith('image/')) { message.warning('宣传片封面只能上传图片'); return Upload.LIST_IGNORE; }
+    if (file.size > 10 * 1048576) { message.warning('封面图片不能超过 10 MB'); return Upload.LIST_IGNORE; }
+    uploading(1);
+    try {
+      setVideoPosterDraft(await imagePreview(file, 1280));
+      message.success('宣传片封面已上传');
+    } catch (error: any) {
+      message.error(error.message || '封面上传失败');
+    } finally { uploading(-1); }
+    return Upload.LIST_IGNORE;
+  };
+
   const openEvent = (event?: any) => {
     const row = event || {
-      name: '', category: '创新实践', desc: '', organizer: '', audience: '全区中小学生', signupStart: '', signupEnd: '', reviewEnd: '', status: '草稿',
+      name: '', category: '创新实践', cover: '', desc: '', organizer: '', audience: '全区中小学生', signupStart: '', signupEnd: '', reviewEnd: '', status: '草稿',
+      eligibility: { gradeMin: 1, gradeMax: 12, schoolKeywords: [] }, teamForm: '个人 / 团队', fee: '免费', requiresEligibilityReview: true,
+      intro: [], gallery: [], schedule: [], attachments: [], awards: [], video: null,
       materialRule: '图片、视频、附件至少提交一项；作品须为学生本人或团队原创。',
-      criteria: [
-        { key: 'innovation', name: '创新性', max: 30 }, { key: 'completion', name: '完成度', max: 25 },
-        { key: 'practice', name: '技术与实践', max: 25 }, { key: 'presentation', name: '表达展示', max: 20 },
-      ],
+      workSpec: { imageMax: 9, videoMax: 1, fileMax: 5, fileTypes: 'PDF / Word / PPT / 压缩包', requiredFileNameIncludes: [] },
     };
-    const maxOf = (key: string) => row.criteria.find((x: any) => x.key === key)?.max || 0;
     setEventEdit(event || null);
+    setEventTabKey('basic');
+    setEventErrors([]);
+    eventForm.resetFields();
+    gallerySlots.current = (row.gallery || []).length;
+    setCoverDraft(row.cover || '');
+    setGalleryDraft((row.gallery || []).map((item: any, index: number) => ({ uid: item.uid || `gallery-${index}`, ...item })));
+    setAttachmentDraft((row.attachments || []).map((item: any, index: number) => ({ uid: item.uid || `attachment-${index}`, ...item })));
+    setVideoDraft(row.video ? { name: row.video.fileName || '内置演示素材', mediaKey: row.video.mediaKey, demo: !row.video.mediaKey, size: row.video.fileSize || '', bytes: row.video.bytes || 0, mimeType: row.video.mimeType || '' } : null);
+    setVideoPosterDraft(row.video?.poster || '');
     eventForm.setFieldsValue({
       ...row,
+      requiresEligibilityReview: row.requiresEligibilityReview !== false,
       materialRule: row.materialRule || row.workSpec?.note,
-      innovationMax: maxOf('innovation'), completionMax: maxOf('completion'),
-      practiceMax: maxOf('practice'), presentationMax: maxOf('presentation'),
+      gradeMin: row.eligibility?.gradeMin ?? 1,
+      gradeMax: row.eligibility?.gradeMax ?? 12,
+      schoolKeywords: (row.eligibility?.schoolKeywords || []).join('、'),
+      introText: (row.intro || []).join('\n'),
+      schedule: row.schedule || [],
+      awards: contestStore.awardsOf(row),
+      status: ({ 征集中: '报名中', 征集截止: '报名结束', 待发布: '评审中' } as any)[row.status] || row.status,
+      videoTitle: row.video?.title || '', videoDuration: row.video?.duration || '',
+      imageMax: row.workSpec?.imageMax ?? 9, videoMax: row.workSpec?.videoMax ?? 1, fileMax: row.workSpec?.fileMax ?? 5,
+      allowedFileExtensions: row.workSpec?.allowedFileExtensions || ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'zip', 'rar', '7z'],
+      requiredFiles: (row.workSpec?.requiredFileNameIncludes || []).join('、'),
     });
     setEventOpen(true);
   };
 
   const saveEvent = () => {
+    if (uploadCount.current) return message.warning('文件处理中，请稍后保存');
+    setEventErrors([]);
     eventForm.validateFields().then((v: any) => {
-      const total = v.innovationMax + v.completionMax + v.practiceMax + v.presentationMax;
-      if (total !== 100) return message.warning('评分维度总分必须为 100 分');
-      const coverByCategory: Record<string, string> = { 创新实践: 'science', 人工智能: 'ai', 机器人: 'code', 无人机: 'science' };
+      if (v.gradeMin > v.gradeMax) return message.warning('最低年级不能高于最高年级');
+      if (v.signupStart > v.signupEnd) return message.warning('报名截止日期不能早于报名开始日期');
+      if (v.reviewEnd < v.signupEnd) return message.warning('评审截止日期不能早于报名截止日期');
+      if (!coverDraft) return message.warning('请上传赛事列表封面');
+      if (!(v.imageMax || v.videoMax || v.fileMax)) { setEventTabKey('material'); return message.warning('至少允许上传一种作品材料'); }
+      if (v.requiredFiles?.trim() && !v.fileMax) { setEventTabKey('material'); return message.warning('设置必交文件时，附件上限不能为 0'); }
+      if ((videoDraft || videoPosterDraft || v.videoTitle) && (!videoDraft || !videoPosterDraft || !v.videoTitle?.trim())) { setEventTabKey('content'); return message.warning('宣传片请同时配置视频、封面和标题；不展示时请全部移除'); }
+      const awardNames = (v.awards || []).map((a: any) => a.name.trim());
+      if (new Set(awardNames).size !== awardNames.length || awardNames.includes('无奖项')) return message.warning('奖项名称不能重复，也不能使用“无奖项”');
+      const schedule = v.schedule || [];
+      const video = videoDraft || videoPosterDraft || v.videoTitle ? {
+        poster: videoPosterDraft, title: v.videoTitle, duration: v.videoDuration, mediaKey: videoDraft?.mediaKey, demo: videoDraft?.demo,
+        fileName: videoDraft?.name || '', fileSize: videoDraft?.size || '', bytes: videoDraft?.bytes || 0, mimeType: videoDraft?.mimeType || '',
+      } : undefined;
       const row = {
         ...(eventEdit || {}),
         id: eventEdit?.id || 'contest-' + Date.now(),
         name: v.name,
         category: v.category,
-        cover: eventEdit?.cover || coverByCategory[v.category] || 'science',
+        cover: coverDraft,
         desc: v.desc,
         organizer: v.organizer,
         audience: v.audience,
@@ -2272,33 +2442,80 @@ function CompetitionPage({ db, setDb }: any) {
         signupEnd: v.signupEnd,
         reviewEnd: v.reviewEnd,
         status: v.status,
+        requiresEligibilityReview: v.requiresEligibilityReview !== false,
         signupCount: eventEdit?.signupCount || 0,
-        eligibility: eventEdit?.eligibility || { gradeMin: 1, gradeMax: 12 },
-        teamForm: eventEdit?.teamForm || '个人 / 团队',
-        fee: eventEdit?.fee || '免费',
-        intro: eventEdit?.intro || [v.desc],
-        gallery: eventEdit?.gallery || [],
-        schedule: eventEdit?.schedule || [],
-        attachments: eventEdit?.attachments || [],
-        awards: eventEdit?.awards || [],
+        eligibility: {
+          gradeMin: v.gradeMin, gradeMax: v.gradeMax,
+          schoolKeywords: String(v.schoolKeywords || '').split(/[、,，]/).map((item) => item.trim()).filter(Boolean),
+        },
+        teamForm: v.teamForm,
+        fee: v.fee,
+        intro: textLines(v.introText).length ? textLines(v.introText) : [v.desc],
+        gallery: galleryDraft.map(({ uid, name, ...item }) => item),
+        video,
+        schedule,
+        attachments: attachmentDraft.map(({ uid, ...item }) => item),
+        awards: (v.awards || []).map((a: any) => ({ ...a, name: a.name.trim() })),
         expertIds: eventEdit?.expertIds || [],
         reviewerCount: (eventEdit?.expertIds || []).length,
         materialRule: v.materialRule,
-        workSpec: { ...(eventEdit?.workSpec || {}), note: v.materialRule },
-        criteria: [
-          { key: 'innovation', name: '创新性', max: v.innovationMax },
-          { key: 'completion', name: '完成度', max: v.completionMax },
-          { key: 'practice', name: '技术与实践', max: v.practiceMax },
-          { key: 'presentation', name: '表达展示', max: v.presentationMax },
+        workSpec: {
+          ...(eventEdit?.workSpec || {}), note: v.materialRule,
+          imageMax: v.imageMax, videoMax: v.videoMax, fileMax: v.fileMax, allowedFileExtensions: v.allowedFileExtensions,
+          fileTypes: (v.allowedFileExtensions || []).join(' / ').toUpperCase(),
+          requiredFileNameIncludes: String(v.requiredFiles || '').split(/[、,，]/).map((item) => item.trim()).filter(Boolean),
+        },
+        criteria: eventEdit?.criteria || [
+          { key: 'innovation', name: '创新性', max: 30 }, { key: 'completion', name: '完成度', max: 25 },
+          { key: 'practice', name: '技术与实践', max: 25 }, { key: 'presentation', name: '表达展示', max: 20 },
         ],
       };
       setDb((d: any) => {
         const list = eventEdit ? patch(d.competitions, row.id, row) : [row, ...d.competitions];
-        return addLog({ ...d, competitions: list }, '赛事配置', `${eventEdit ? '更新' : '创建'}赛事《${row.name}》`);
+        const contestEntries = d.contestEntries.map((e: any) => e.competitionId !== row.id ? e : { ...e,
+          resultPublished: row.status === '结果已发布' ? e.reviewStatus === '结果确定' : row.status === '已归档' ? e.resultPublished : false,
+        });
+        return addLog({ ...d, competitions: list, contestEntries }, '赛事配置', `${eventEdit ? '更新' : '创建'}赛事《${row.name}》`);
       });
       setEventOpen(false);
       message.success(eventEdit ? '赛事配置已保存' : '赛事已创建');
+    }).catch((error: any) => {
+      const field = error.errorFields?.[0]?.name;
+      setEventErrors(error.errorFields || []);
+      if (field) focusEventField(field);
+      message.warning('请检查标红的必填项，已定位到对应分区');
+      setTimeout(() => eventErrorRef.current?.focus(), 120);
     });
+  };
+  const focusEventField = (field: any[]) => {
+    const key = field[0];
+    setEventTabKey(['schedule', 'awards', 'introText', 'videoTitle', 'videoDuration'].includes(key) ? 'content' : ['materialRule', 'imageMax', 'videoMax', 'fileMax', 'allowedFileExtensions', 'requiredFiles'].includes(key) ? 'material' : 'basic');
+    setTimeout(() => { eventForm.scrollToField(field, { block: 'center' }); document.getElementById(field.join('_'))?.focus(); }, 80);
+  };
+
+  const openReviewRules = (competition: any) => {
+    setRuleCompetition(competition);
+    ruleForm.setFieldsValue({ criteria: (competition.criteria || []).map((item: any) => ({ ...item })) });
+  };
+
+  const saveReviewRules = () => {
+    ruleForm.validateFields().then((values: any) => {
+      const criteria = (values.criteria || []).map((item: any, index: number) => ({
+        key: item.key || `criterion-${Date.now()}-${index}`,
+        name: item.name.trim(), max: Number(item.max),
+      }));
+      if (criteria.length < 2) return message.warning('至少配置 2 个评分维度');
+      const total = criteria.reduce((sum: number, item: any) => sum + item.max, 0);
+      if (total !== 100) return message.warning(`评分维度总分当前为 ${total}，必须等于 100 分`);
+      const save = () => {
+        setDb((state: any) => addLog({ ...state, competitions: patch(state.competitions, ruleCompetition.id, { criteria }) }, '评审规则', `更新《${ruleCompetition.name}》评分维度`));
+        setRuleCompetition(null);
+        message.success('评审规则已保存');
+      };
+      const hasScores = assignments.some((assignment: any) => entryOf(assignment.entryId)?.competitionId === ruleCompetition.id && scoreOf(assignment.id));
+      if (hasScores) Modal.confirm({ title: '本赛事已有评分记录', content: '修改后新评分使用新规则，历史评分不会自动重算。此 Demo 不管理规则版本，请确认需要修改。', okText: '确认修改', cancelText: '返回检查', onOk: save });
+      else save();
+    }).catch(() => message.warning('请补全评分维度名称与分值'));
   };
 
   const addCompetitionExpert = () => {
@@ -2366,6 +2583,14 @@ function CompetitionPage({ db, setDb }: any) {
         && expert.specialties.includes(competition?.category)
         && load < expert.capacity;
     });
+  };
+
+  const openExpertAssignment = (entry: any) => {
+    if (entry.eligibilityStatus !== '资格通过') return message.info('资格审核通过后才能分配专家');
+    const existing = assignmentOf(entry.id);
+    if (existing && ['已提交', '已锁定'].includes(existing.status)) return message.info('专家已提交评分，当前分配已锁定');
+    setAssignTarget(entry);
+    setAssignExpertId(existing?.expertId || '');
   };
 
   const assignWork = (entryId: string, expertId: string, automatic = false) => {
@@ -2500,6 +2725,10 @@ function CompetitionPage({ db, setDb }: any) {
   };
 
   const publishResults = (competition: any) => {
+    if (!competition) return message.warning('请选择赛事');
+    if (competition.status === '结果已发布') return message.info('结果已经公布');
+    const pending = entries.filter((e: any) => e.competitionId === competition.id && e.eligibilityStatus === '资格待审');
+    if (pending.length) return message.warning(`还有 ${pending.length} 份作品资格待审，请先审核后发布`);
     const qualified = entries.filter((e: any) => e.competitionId === competition.id && e.eligibilityStatus === '资格通过');
     if (!qualified.length) return message.warning('当前赛事没有资格通过的作品');
     if (qualified.some((e: any) => e.reviewStatus !== '结果确定')) return message.warning('仍有作品未完成评分复核，不能发布结果');
@@ -2580,15 +2809,22 @@ function CompetitionPage({ db, setDb }: any) {
       <Card size="small" title="全部学生参赛作品" extra={<Space wrap><span style={{ color: '#777' }}>{selectedWorks.length ? `已选 ${selectedWorks.length} 份待分配作品` : '可勾选待分配作品'}</span><Button disabled={!selectedWorks.length} type="primary" onClick={() => autoAssign(activeCompetition.id)}>平均分配所选</Button></Space>}>
         <Alert type="info" showIcon style={{ marginBottom: 12 }} message="一键平均分配会在本赛事专家中按当前任务量均衡分配；也可在每份作品后单独指定或调整专家。" />
         <Tbl {...tblProps} rowSelection={{ selectedRowKeys: selectedWorks, onChange: setSelectedWorks, getCheckboxProps: (row: any) => ({ disabled: row.reviewStatus !== '待分配' || row.eligibilityStatus !== '资格通过' }) }} dataSource={activeWorkRows} columns={[
-          { title: '作品', dataIndex: 'title', width: 240, render: (value: string, row: any) => <span><b>{value}</b><div style={{ color: '#888', fontSize: 12 }}>{row.teamType} · {row.assets.length} 项材料</div></span> },
-          { title: '学生', width: 130, render: (_: any, row: any) => <span>{row.studentName}<div style={{ color: '#888', fontSize: 12 }}>{row.grade}</div></span> },
-          { title: '学校', dataIndex: 'school', width: 220, ellipsis: true },
-          { title: '资格状态', dataIndex: 'eligibilityStatus', width: 110, render: (value: string) => <S v={value} /> },
-          { title: '评审状态', dataIndex: 'reviewStatus', width: 110, render: (value: string) => <S v={value} /> },
-          { title: '分配专家', width: 150, render: (_: any, row: any) => row.expert ? <span>{row.expert.name}<div style={{ color: '#888', fontSize: 12 }}>{row.assignment.status}</div></span> : <Tag>未分配</Tag> },
-          { title: '操作', fixed: 'right', width: 170, render: (_: any, row: any) => {
+          { title: '作品', dataIndex: 'title', width: 205, render: (value: string, row: any) => <span><b>{value}</b><div style={{ color: '#888', fontSize: 12 }}>{row.teamType} · {row.assets.length} 项材料</div></span> },
+          { title: '学生', width: 115, render: (_: any, row: any) => <span>{row.studentName}<div style={{ color: '#888', fontSize: 12 }}>{row.grade}</div></span> },
+          { title: '学校', dataIndex: 'school', width: 190, ellipsis: true },
+          { title: '资格状态', dataIndex: 'eligibilityStatus', width: 100, render: (value: string) => <S v={value} /> },
+          { title: '评审状态', dataIndex: 'reviewStatus', width: 100, render: (value: string) => <S v={value} /> },
+          { title: '分配专家', width: 165, render: (_: any, row: any) => {
             const locked = row.assignment && ['已提交', '已锁定'].includes(row.assignment.status);
-            return <Space><a onClick={() => setWorkDetail(row)}>查看详情</a>{row.eligibilityStatus === '资格通过' && !locked && <a onClick={() => { setAssignTarget(row); setAssignExpertId(row.assignment?.expertId || ''); }}>{row.assignment ? '调整专家' : '指定专家'}</a>}{['资格待审', '资格驳回'].includes(row.eligibilityStatus) && <a onClick={() => setAuditTarget(row)}>资格审核</a>}</Space>;
+            if (row.eligibilityStatus !== '资格通过') return <span style={{ color: '#999' }}>资格通过后可分配</span>;
+            if (!row.assignment) return <Button type="primary" size="small" onClick={() => openExpertAssignment(row)}>分配专家</Button>;
+            return <Space direction="vertical" size={2}>
+              <Space size={6}><Avatar size={22} style={{ background: '#1677ff' }}>{row.expert?.name?.slice(0, 1) || '专'}</Avatar><b>{row.expert?.name || '专家已移除'}</b></Space>
+              {locked ? <span style={{ color: '#999', fontSize: 12 }}>评分已提交 · 不可更换</span> : <Button type="link" size="small" style={{ height: 24, padding: 0 }} onClick={() => openExpertAssignment(row)}>更换专家</Button>}
+            </Space>;
+          } },
+          { title: '操作', fixed: 'right', width: 100, render: (_: any, row: any) => {
+            return <Space><a onClick={() => setWorkDetail(row)}>查看详情</a>{['资格待审', '资格驳回'].includes(row.eligibilityStatus) && <a onClick={() => setAuditTarget(row)}>资格审核</a>}</Space>;
           } },
         ]} />
       </Card>
@@ -2599,18 +2835,20 @@ function CompetitionPage({ db, setDb }: any) {
     <div>
       <Row gutter={[12, 12]} style={{ marginBottom: 12 }}>
         {[
-          ['赛事总数', competitions.length], ['征集中', competitions.filter((c: any) => c.status === '征集中').length],
+          ['赛事总数', competitions.length], ['报名中', competitions.filter((c: any) => contestStore.phaseOf(c) === 'open').length],
           ['待审核作品', entries.filter((e: any) => e.eligibilityStatus === '资格待审').length], ['待复核评分', entries.filter((e: any) => e.reviewStatus === '待复核').length],
         ].map(([title, value], index) => <Col xs={12} lg={6} key={String(title)}><Card size="small" style={statCardStyle(index)}><Statistic title={title} value={value} /></Card></Col>)}
       </Row>
+      <Alert showIcon type="info" style={{ marginBottom: 12 }} message="演示说明：状态由后台选择，日期仅作展示。列表内“状态演示”样例覆盖各阶段，可直接查看作品、打开专家链接或预览家长端。" />
       <Card size="small" title="赛事配置" extra={<Button type="primary" icon={<PlusOutlined />} onClick={() => openEvent()}>创建赛事</Button>}>
         <Tbl {...tblProps} dataSource={competitions} columns={[
           { title: '赛事名称', dataIndex: 'name', width: 290 }, { title: '分类', dataIndex: 'category', render: (v: string) => <Tag color="cyan">{v}</Tag> },
           { title: '报名时间', render: (_: any, r: any) => `${r.signupStart} ~ ${r.signupEnd}` }, { title: '评审截止', dataIndex: 'reviewEnd' },
           { title: '参赛作品', render: (_: any, r: any) => <a onClick={() => { setActiveCompetitionId(r.id); setSelectedWorks([]); }}><b>{entries.filter((e: any) => e.competitionId === r.id).length} 份作品</b></a> },
           { title: '赛事专家', render: (_: any, r: any) => <a onClick={() => { setExpertManageCompetition(r); setExpertToAdd(''); }}>{competitionExperts(r.id).length} 位专家</a> },
-          { title: '状态', dataIndex: 'status', render: (v: string) => <S v={v} /> },
-          { title: '操作', width: 330, render: (_: any, r: any) => <Space><a onClick={() => { setActiveCompetitionId(r.id); setSelectedWorks([]); }}>参赛作品</a><a onClick={() => { setExpertManageCompetition(r); setExpertToAdd(''); }}>配置专家</a><a onClick={() => setReviewLinkCompetition(r)}>评审链接</a><a onClick={() => openEvent(r)}>编辑配置</a><a onClick={() => { setResultCompetitionId(r.id); setTab('results'); }}>查看结果</a></Space> },
+          { title: '状态', dataIndex: 'status', filters: ['草稿', '未开始', '报名中', '报名结束', '评审中', '结果已发布', '已归档'].map((s) => ({ text: s, value: s })), onFilter: (value: any, row: any) => contestStore.phaseOf(row) === contestStore.phaseOf({ status: value }), render: (v: string) => <S v={v === '征集中' ? '报名中' : v === '征集截止' ? '报名结束' : v} /> },
+          { title: '前端预览', width: 110, render: (_: any, r: any) => <Button type="link" icon={<EyeOutlined />} onClick={() => setPreviewCompetition(r)}>预览</Button> },
+          { title: '操作', width: 410, render: (_: any, r: any) => <Space wrap><a onClick={() => { setActiveCompetitionId(r.id); setSelectedWorks([]); }}>参赛作品</a><a onClick={() => { setExpertManageCompetition(r); setExpertToAdd(''); }}>配置专家</a><a onClick={() => openReviewRules(r)}>评审规则</a><a onClick={() => setReviewLinkCompetition(r)}>评审链接</a><a onClick={() => openEvent(r)}>编辑赛事</a><a onClick={() => { setResultCompetitionId(r.id); setTab('results'); }}>查看结果</a></Space> },
         ]} />
       </Card>
     </div>
@@ -2645,11 +2883,11 @@ function CompetitionPage({ db, setDb }: any) {
       <Alert type="success" showIcon style={{ marginBottom: 12 }} message="当前规则：一份作品固定一位专家。系统按专业匹配、任务容量和同校回避进行分配，不计算多人平均分。" />
       <Tbl {...tblProps} dataSource={assignmentRows} columns={[
         { title: '作品', dataIndex: 'title', width: 240 }, { title: '赛事', render: (_: any, r: any) => competitionOf(r.competitionId)?.name },
-        { title: '学校', dataIndex: 'school', ellipsis: true }, { title: '专家', render: (_: any, r: any) => r.expert ? <span>{r.expert.name}<div style={{ color: '#999', fontSize: 12 }}>{r.expert.unit}</div></span> : <Tag>未分配</Tag> },
+        { title: '学校', dataIndex: 'school', ellipsis: true }, { title: '专家', render: (_: any, r: any) => r.expert ? <span>{r.expert.name}<div style={{ color: '#999', fontSize: 12 }}>{r.expert.unit}</div></span> : <Tag color="orange">待分配</Tag> },
         { title: '任务状态', render: (_: any, r: any) => r.assignment ? <S v={r.assignment.status} /> : <S v="待分配" /> },
         { title: '操作', render: (_: any, r: any) => {
           const locked = r.assignment && ['已提交', '已锁定'].includes(r.assignment.status);
-          return locked ? <span style={{ color: '#999' }}>评分提交后不可改派</span> : <a onClick={() => { setAssignTarget(r); setAssignExpertId(r.assignment?.expertId || ''); }}>{r.assignment ? '重新分配' : '分配专家'}</a>;
+          return locked ? <span style={{ color: '#999' }}>评分提交后不可更换</span> : <Button type={r.assignment ? 'link' : 'primary'} size="small" onClick={() => openExpertAssignment(r)}>{r.assignment ? '更换专家' : '分配专家'}</Button>;
         } },
       ]} />
     </Card>
@@ -2705,24 +2943,124 @@ function CompetitionPage({ db, setDb }: any) {
         ]} />
       </>}
 
-      <Modal open={eventOpen} width={760} title={eventEdit ? '编辑赛事配置' : '创建赛事'} okText="保存" cancelText="取消" onCancel={() => setEventOpen(false)} onOk={saveEvent} destroyOnClose>
-        <Form form={eventForm} layout="vertical">
-          <Row gutter={12}>
-            <Col span={16}><Form.Item name="name" label="赛事名称" rules={[{ required: true, message: '请输入赛事名称' }]}><Input /></Form.Item></Col>
-            <Col span={8}><Form.Item name="category" label="赛事分类" rules={[{ required: true }]}><Select options={['创新实践', '人工智能', '机器人', '无人机'].map((x) => ({ value: x, label: x }))} /></Form.Item></Col>
-            <Col span={24}><Form.Item name="desc" label="赛事简介" rules={[{ required: true, message: '请输入赛事简介' }]}><TextArea rows={2} /></Form.Item></Col>
-            <Col span={12}><Form.Item name="organizer" label="主办单位" rules={[{ required: true }]}><Input /></Form.Item></Col>
-            <Col span={12}><Form.Item name="audience" label="参赛对象" rules={[{ required: true }]}><Input /></Form.Item></Col>
-            <Col span={8}><Form.Item name="signupStart" label="报名开始" rules={[{ required: true }]}><Input placeholder="YYYY-MM-DD" /></Form.Item></Col>
-            <Col span={8}><Form.Item name="signupEnd" label="报名截止" rules={[{ required: true }]}><Input placeholder="YYYY-MM-DD" /></Form.Item></Col>
-            <Col span={8}><Form.Item name="reviewEnd" label="评审截止" rules={[{ required: true }]}><Input placeholder="YYYY-MM-DD" /></Form.Item></Col>
-            <Col span={12}><Form.Item name="status" label="赛事状态" rules={[{ required: true }]}><Select options={['草稿', '征集中', '征集截止', '评审中', '待发布', '结果已发布', '已归档'].map((x) => ({ value: x, label: x }))} /></Form.Item></Col>
-            <Col span={24}><Form.Item name="materialRule" label="作品与材料规则" rules={[{ required: true }]}><TextArea rows={2} /></Form.Item></Col>
-          </Row>
-          <Divider orientation="left">评分维度（总分必须为 100）</Divider>
-          <Row gutter={12}>
-            {[['innovationMax', '创新性'], ['completionMax', '完成度'], ['practiceMax', '技术与实践'], ['presentationMax', '表达展示']].map(([name, label]) => <Col span={6} key={name}><Form.Item name={name} label={label} rules={[{ required: true }]}><InputNumber min={1} max={100} style={{ width: '100%' }} /></Form.Item></Col>)}
-          </Row>
+      <Modal open={eventOpen} width={920} title={eventEdit ? '编辑赛事' : '创建赛事'} okText={uploadPending ? '文件处理中…' : '保存赛事'} confirmLoading={uploadPending > 0} cancelButtonProps={{ disabled: uploadPending > 0 }} closable={!uploadPending} maskClosable={false} cancelText="取消" onCancel={() => { if (!uploadCount.current) setEventOpen(false); }} onOk={saveEvent} destroyOnClose>
+        <Alert type="info" showIcon style={{ marginBottom: 12 }} message="赛事展示与报名字段已和家长端保持一致；评分维度请在赛事列表的“评审规则”中单独维护。" />
+        {!!eventErrors.length && <div role="alert" tabIndex={-1} ref={eventErrorRef} style={{ marginBottom: 12, padding: 12, background: '#fff2f0', border: '1px solid #ffccc7', borderRadius: 8 }}><b>还有 {eventErrors.length} 项需要填写或修正</b><Space wrap>{eventErrors.map((error: any) => <Button key={error.name.join('.')} type="link" danger onClick={() => focusEventField(error.name)}>{error.errors[0]}</Button>)}</Space></div>}
+        <div style={{ maxHeight: '66vh', overflowY: 'auto', paddingRight: 8 }}>
+          <Form form={eventForm} layout="vertical" validateMessages={{ required: '请填写${label}' }}>
+            <Tabs activeKey={eventTabKey} onChange={setEventTabKey} items={[
+              { key: 'basic', forceRender: true, label: '基础信息', children: <Row gutter={12}>
+                <Col span={16}><Form.Item name="name" label="赛事名称" rules={[{ required: true, message: '请输入赛事名称' }]}><Input /></Form.Item></Col>
+                <Col span={8}><Form.Item name="category" label="赛事分类" rules={[{ required: true }]}><Select options={['创新实践', '人工智能', '机器人', '无人机'].map((x) => ({ value: x, label: x }))} /></Form.Item></Col>
+                <Col span={24}><Form.Item name="desc" label="列表简介" rules={[{ required: true, message: '请输入列表简介' }]}><TextArea rows={2} showCount maxLength={120} /></Form.Item></Col>
+                <Col span={12}><Form.Item name="organizer" label="主办单位" rules={[{ required: true }]}><Input /></Form.Item></Col>
+                <Col span={12}><Form.Item name="audience" label="参赛对象" rules={[{ required: true }]}><Input placeholder="如：全区中小学生" /></Form.Item></Col>
+                {['signupStart', 'signupEnd', 'reviewEnd'].map((name, i) => <Col span={8} key={name}><Form.Item name={name} label={['报名开始', '报名截止', '评审截止'][i]} rules={[{ required: true, message: '请选择日期' }]} getValueProps={(value: any) => ({ value: value ? (window as any).dayjs(value) : null })} getValueFromEvent={(_: any, date: string) => date}><DatePicker style={{ width: '100%' }} placeholder="选择日期" /></Form.Item></Col>)}
+                <Col span={8}><Form.Item name="gradeMin" label="最低年级" rules={[{ required: true }]}><InputNumber min={1} max={12} style={{ width: '100%' }} /></Form.Item></Col>
+                <Col span={8}><Form.Item name="gradeMax" label="最高年级" rules={[{ required: true }]}><InputNumber min={1} max={12} style={{ width: '100%' }} /></Form.Item></Col>
+                <Col span={8}><Form.Item name="schoolKeywords" label="学校范围关键词" tooltip="多个关键词用顿号分隔；留空表示不限制学校"><Input placeholder="如：天府新区、成都" /></Form.Item></Col>
+                <Col span={8}><Form.Item name="teamForm" label="参赛形式" rules={[{ required: true }]}><Select options={['个人', '团队', '个人 / 团队'].map((x) => ({ value: x, label: x }))} /></Form.Item></Col>
+                <Col span={8}><Form.Item name="fee" label="报名费用" extra="Demo 不包含赛事支付流程" rules={[{ required: true }]}><Select options={[{ value: '免费', label: '免费' }]} /></Form.Item></Col>
+                <Col span={8}><Form.Item name="status" label="赛事状态" extra="演示以此状态为准，不按日期自动切换" rules={[{ required: true }]}><Select options={['草稿', '未开始', '报名中', '报名结束', '评审中', '结果已发布', '已归档'].map((x) => ({ value: x, label: x }))} /></Form.Item></Col>
+                <Col span={24}><Form.Item name="requiresEligibilityReview" label="作品资格审核" extra="无需审核时，新提交作品将直接进入专家分配；已有作品状态不变"><Radio.Group options={[{ value: true, label: '需要审核' }, { value: false, label: '无需审核' }]} /></Form.Item></Col>
+                <Col span={16}>
+                  <Form.Item label="列表封面" required extra="建议 16:9，支持 JPG、PNG、WebP，单张不超过 10 MB；用于家长端赛事列表卡片。">
+                    <Upload accept="image/*" maxCount={1} showUploadList={false} beforeUpload={addListCover}><Button icon={<PlusOutlined />}>{coverDraft ? '更换列表封面' : '上传列表封面'}</Button></Upload>
+                    {coverDraft && <div style={{ position: 'relative', marginTop: 10, width: 320, maxWidth: '100%' }}><img src={adminCoverUrl(coverDraft)} alt="赛事列表封面预览" style={{ display: 'block', width: '100%', aspectRatio: '16 / 9', objectFit: 'cover', borderRadius: 8, background: '#f0f2f5' }} /><Button danger size="small" onClick={() => setCoverDraft('')} style={{ position: 'absolute', right: 6, top: 6 }}>移除</Button></div>}
+                  </Form.Item>
+                </Col>
+              </Row> },
+              { key: 'content', forceRender: true, label: '前端展示内容', children: <Row gutter={12}>
+                <Col span={24}><Form.Item name="introText" label="赛事详情介绍" extra="每行作为一个介绍段落"><TextArea rows={4} placeholder="输入赛事背景、目标和评审关注点，每段一行" /></Form.Item></Col>
+                <Col span={24}><Divider orientation="left">赛程安排</Divider><Form.List name="schedule">{(fields, { add, remove, move }) => <>
+                  {fields.map(({ key, name }, index) => <Card key={key} size="small" style={{ marginBottom: 8 }} title={`节点 ${index + 1}`} extra={<Space><Button disabled={!index} onClick={() => move(index, index - 1)}>上移</Button><Button danger onClick={() => remove(name)}>删除</Button></Space>}><Row gutter={12}>
+                    <Col span={8}><Form.Item name={[name, 'title']} label="阶段名称" rules={[{ required: true, whitespace: true, message: '填写阶段名称' }]}><Input /></Form.Item></Col>
+                    <Col span={16}><Form.Item name={[name, 'date']} label="展示时间" rules={[{ required: true, message: '填写展示时间' }]}><Input placeholder="如：2026-09-01 ~ 2026-09-30" /></Form.Item></Col>
+                    <Col span={24}><Form.Item name={[name, 'desc']} label="阶段说明"><Input /></Form.Item></Col>
+                  </Row></Card>)}<Button block type="dashed" icon={<PlusOutlined />} onClick={() => add({ title: '', date: '', desc: '' })}>新增赛程节点</Button>
+                </>}</Form.List></Col>
+                <Col span={24}><Divider orientation="left">奖项设置</Divider><Alert type="info" message="图标会显示在家长端；奖项名称同步用于结果复核，名额仅作展示说明。" style={{ marginBottom: 12 }} /><Form.List name="awards">{(fields, { add, remove }) => <>
+                  {fields.map(({ key, name }) => <Row key={key} gutter={8} align="middle">
+                    <Col span={7}><Form.Item name={[name, 'name']} label="奖项名称" rules={[{ required: true, whitespace: true, message: '填写奖项名称' }]}><Input placeholder="如：金奖" /></Form.Item></Col>
+                    <Col span={5}><Form.Item name={[name, 'icon']} label="图标"><Select options={[{ value: 'trophy', label: '奖杯' }, { value: 'award', label: '奖章' }, { value: 'star', label: '星星' }]} /></Form.Item></Col>
+                    <Col span={9}><Form.Item name={[name, 'quota']} label="名额 / 组别说明"><Input placeholder="如：小学组 3 名" /></Form.Item></Col>
+                    <Col span={3}><Button danger onClick={() => remove(name)}>删除</Button></Col>
+                  </Row>)}<Button block type="dashed" icon={<PlusOutlined />} onClick={() => add({ name: '', icon: 'trophy', quota: '' })}>新增奖项</Button>
+                </>}</Form.List></Col>
+                <Col span={24}>
+                  <Form.Item label="展示图集" extra="支持 JPG、PNG、WebP，单张不超过 10 MB，最多 9 张；上传后可逐张填写前端展示说明。">
+                    <Upload accept="image/*" multiple showUploadList={false} beforeUpload={addGalleryImage}>
+                      <Button icon={<PlusOutlined />} disabled={galleryDraft.length >= 9}>上传展示图片（{galleryDraft.length}/9）</Button>
+                    </Upload>
+                    {galleryDraft.length > 0 && <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12, marginTop: 12 }}>
+                      {galleryDraft.map((item, index) => <Card key={item.uid || `${item.img}-${index}`} size="small" styles={{ body: { padding: 10 } }}>
+                        <img src={adminMediaUrl(item.img)} alt={item.caption || item.name || `展示图 ${index + 1}`} style={{ display: 'block', width: '100%', aspectRatio: '4 / 3', objectFit: 'cover', borderRadius: 6, marginBottom: 8, background: '#f0f2f5' }} />
+                        <Input value={item.caption} aria-label={`第 ${index + 1} 张图片说明`} placeholder="填写图片说明" onChange={(event: any) => setGalleryDraft((rows) => rows.map((row, rowIndex) => rowIndex === index ? { ...row, caption: event.target.value } : row))} />
+                        <Upload accept="image/*" disabled={uploadPending > 0} showUploadList={false} beforeUpload={(file: any) => replaceGalleryImage(file, item.uid)}><Button type="link" disabled={uploadPending > 0}>替换图片</Button></Upload>
+                        <Button danger type="link" block disabled={uploadPending > 0} style={{ marginTop: 4, minHeight: 36 }} onClick={() => { gallerySlots.current -= 1; setGalleryDraft((rows) => rows.filter((_, rowIndex) => rowIndex !== index)); }}>移除图片</Button>
+                      </Card>)}
+                    </div>}
+                  </Form.Item>
+                </Col>
+                <Col span={24}>
+                  <Form.Item label="赛事附件" extra="单个不超过 50 MB；同名文件替换。仅保存在本浏览器，未上传服务器；内置附件下载为演示文本。">
+                    <Upload multiple showUploadList={false} beforeUpload={addAttachment}>
+                      <Button icon={<PlusOutlined />}>上传赛事附件</Button>
+                    </Upload>
+                    {attachmentDraft.length > 0 && <List style={{ marginTop: 12 }} bordered size="small" dataSource={attachmentDraft} renderItem={(item: any, index: number) => <List.Item actions={[<Button key="download" type="link" onClick={() => (window as any).FutureEduContestMedia.download(item).catch((error: any) => message.error(error.message))}>下载预览</Button>, <Button key="remove" danger type="link" style={{ minHeight: 36 }} onClick={() => setAttachmentDraft((rows) => rows.filter((_, rowIndex) => rowIndex !== index))}>移除</Button>]}><List.Item.Meta title={item.name} description={`${item.kind || '文件'} · ${item.size || '大小未知'} · ${item.mediaKey ? '本地文件' : '演示素材'}`} /></List.Item>} />}
+                  </Form.Item>
+                </Col>
+                <Col span={24}><Divider orientation="left">赛事宣传片</Divider></Col>
+                <Col span={12}>
+                  <Form.Item label="宣传片视频" extra="文件不超过 500 MB。仅保存到本浏览器，未上传服务器；换设备后需重新选择。">
+                    <Upload accept="video/*" maxCount={1} showUploadList={false} beforeUpload={addVideo}><Button icon={<PlusOutlined />}>{videoDraft ? '重新上传视频' : '上传宣传片'}</Button></Upload>
+                    {videoDraft && <Card size="small" style={{ marginTop: 10 }}><Space style={{ width: '100%', justifyContent: 'space-between' }}><span><b>{videoDraft.name}</b><div style={{ color: '#8a919f', fontSize: 12 }}>{videoDraft.size || '大小未知'}</div></span><Button danger type="link" onClick={() => setVideoDraft(null)}>移除</Button></Space></Card>}
+                    {videoPreviewUrl && <video src={videoPreviewUrl} poster={adminMediaUrl(videoPosterDraft)} controls style={{ width: '100%', marginTop: 8 }} />}
+                    <Button type="link" onClick={() => { setVideoDraft({ demo: true, name: '内置演示素材' }); setVideoPosterDraft('assets/images/contests/hero-banner.webp'); eventForm.setFieldsValue({ videoTitle: '赛事宣传片 · 演示素材', videoDuration: '演示动画' }); }}>使用内置演示素材</Button>
+                    <Button type="link" danger onClick={() => { setVideoDraft(null); setVideoPosterDraft(''); eventForm.setFieldsValue({ videoTitle: '', videoDuration: '' }); }}>移除整个宣传片</Button>
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item label="宣传片封面" extra="建议 16:9，支持 JPG、PNG、WebP，单张不超过 10 MB。">
+                    <Upload accept="image/*" maxCount={1} showUploadList={false} beforeUpload={addVideoPoster}><Button icon={<PlusOutlined />}>{videoPosterDraft ? '更换封面' : '上传封面'}</Button></Upload>
+                    {videoPosterDraft && <div style={{ position: 'relative', marginTop: 10, width: 240 }}><img src={adminMediaUrl(videoPosterDraft)} alt="宣传片封面预览" style={{ display: 'block', width: '100%', aspectRatio: '16 / 9', objectFit: 'cover', borderRadius: 8, background: '#f0f2f5' }} /><Button danger size="small" onClick={() => setVideoPosterDraft('')} style={{ position: 'absolute', right: 6, top: 6 }}>移除</Button></div>}
+                  </Form.Item>
+                </Col>
+                <Col span={18}><Form.Item name="videoTitle" label="宣传片标题"><Input placeholder="如：赛事官方宣传片" /></Form.Item></Col>
+                <Col span={6}><Form.Item name="videoDuration" label="视频时长"><Input placeholder="02:18" /></Form.Item></Col>
+              </Row> },
+              { key: 'material', forceRender: true, label: '报名与材料', children: <Row gutter={12}>
+                <Col span={24}><Form.Item name="materialRule" label="作品与材料规则" rules={[{ required: true, message: '请输入作品与材料规则' }]}><TextArea rows={3} /></Form.Item></Col>
+                <Col span={6}><Form.Item name="imageMax" label="图片上限" rules={[{ required: true }]}><InputNumber min={0} max={30} style={{ width: '100%' }} /></Form.Item></Col>
+                <Col span={6}><Form.Item name="videoMax" label="视频上限" rules={[{ required: true }]}><InputNumber min={0} max={10} style={{ width: '100%' }} /></Form.Item></Col>
+                <Col span={6}><Form.Item name="fileMax" label="附件上限" rules={[{ required: true }]}><InputNumber min={0} max={30} style={{ width: '100%' }} /></Form.Item></Col>
+                <Col span={18}><Form.Item name="allowedFileExtensions" label="允许的附件类型" rules={[{ required: true, message: '至少选择一种文件类型' }]}><Select mode="multiple" options={['pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'zip', 'rar', '7z', 'txt'].map((x) => ({ value: x, label: x.toUpperCase() }))} /></Form.Item></Col>
+                <Col span={24}><Form.Item name="requiredFiles" label="必交文件名关键词" tooltip="多个关键词用顿号分隔；例如安全承诺书"><Input placeholder="选填，如：安全承诺书" /></Form.Item></Col>
+              </Row> },
+            ]} />
+          </Form>
+        </div>
+      </Modal>
+
+      <Modal open={!!previewCompetition} title={`家长端预览：${previewCompetition?.name || ''}`} width={440} footer={null} onCancel={() => setPreviewCompetition(null)} destroyOnClose>
+        <Alert type="info" showIcon message="预览已保存内容；草稿和归档仅在此预览中可见。" style={{ marginBottom: 8 }} />
+        {previewCompetition && <iframe title="家长端赛事预览" src={`../index.html?contestPreview=1#/contest/${encodeURIComponent(previewCompetition.id)}`} style={{ width: '100%', height: '65vh', border: '1px solid #eee', borderRadius: 12 }} />}
+      </Modal>
+
+      <Modal open={!!ruleCompetition} width={720} title={`评审规则：${ruleCompetition?.name || ''}`} okText="保存评审规则" cancelText="取消" onCancel={() => setRuleCompetition(null)} onOk={saveReviewRules} destroyOnClose>
+        <Alert type="warning" showIcon style={{ marginBottom: 16 }} message="评分维度总分必须为 100 分" description="评审已开始后修改维度会影响后续评分，请确认规则已同步给所有赛事专家。已提交的历史评分不会自动重算。" />
+        <Form form={ruleForm} layout="vertical">
+          <Form.List name="criteria">
+            {(fields, { add, remove }) => <>
+              {fields.map((field, index) => <Row gutter={12} align="middle" key={field.key}>
+                <Form.Item name={[field.name, 'key']} hidden><Input /></Form.Item>
+                <Col span={15}><Form.Item name={[field.name, 'name']} label={index === 0 ? '评分维度' : undefined} rules={[{ required: true, message: '请输入维度名称' }]}><Input placeholder="如：创新性" /></Form.Item></Col>
+                <Col span={6}><Form.Item name={[field.name, 'max']} label={index === 0 ? '分值' : undefined} rules={[{ required: true, message: '请输入分值' }]}><InputNumber min={1} max={100} style={{ width: '100%' }} /></Form.Item></Col>
+                <Col span={3}><Button danger type="link" disabled={fields.length <= 2} onClick={() => remove(field.name)} style={{ minHeight: 44 }}>删除</Button></Col>
+              </Row>)}
+              <Button block type="dashed" icon={<PlusOutlined />} onClick={() => add({ key: `criterion-${Date.now()}`, name: '', max: 10 })}>添加评分维度</Button>
+            </>}
+          </Form.List>
         </Form>
       </Modal>
 
@@ -2765,9 +3103,11 @@ function CompetitionPage({ db, setDb }: any) {
         ]}><List.Item.Meta avatar={<Avatar style={{ background: '#1677ff' }}>{expert.name.slice(0, 1)}</Avatar>} title={<Space>{expert.name}<S v={expert.status} /></Space>} description={<span>{expert.unit}<br /><span style={{ color: '#1677ff' }}>当前分配 {expertLoad(expert.id, reviewLinkCompetition.id)} 份作品</span></span>} /></List.Item>} />
       </Modal>
 
-      <Modal open={!!assignTarget} title={`分配专家：${assignTarget?.title || ''}`} okText="确认分配" cancelText="取消" onCancel={() => setAssignTarget(null)} onOk={() => assignWork(assignTarget.id, assignExpertId)}>
+      <Modal open={!!assignTarget} title={`${assignmentOf(assignTarget?.id) ? '更换' : '分配'}专家：${assignTarget?.title || ''}`} okText={assignmentOf(assignTarget?.id) ? '确认更换' : '确认分配'} okButtonProps={{ disabled: !assignExpertId }} cancelText="取消" onCancel={() => { setAssignTarget(null); setAssignExpertId(''); }} onOk={() => assignWork(assignTarget.id, assignExpertId)}>
         <Alert type="info" showIcon style={{ marginBottom: 14 }} message="仅显示已加入本赛事且符合专业、容量与同校回避规则的专家。每份作品分配 1 位专家。" />
-        <Select style={{ width: '100%' }} value={assignExpertId || undefined} placeholder="请选择专家" onChange={setAssignExpertId} options={(assignTarget ? availableExperts(assignTarget) : []).map((x: any) => ({ value: x.id, label: `${x.name} · ${x.specialties.join('/')} · 本赛事 ${expertLoad(x.id, assignTarget.competitionId)} 项` }))} />
+        {assignmentOf(assignTarget?.id) && <Descriptions size="small" column={1} style={{ marginBottom: 12 }} items={[{ key: 'current', label: '当前专家', children: expertOf(assignmentOf(assignTarget.id)?.expertId)?.name || '专家已移除' }]} />}
+        <Select showSearch optionFilterProp="label" style={{ width: '100%' }} value={assignExpertId || undefined} placeholder="请选择专家" onChange={setAssignExpertId} options={(assignTarget ? availableExperts(assignTarget) : []).map((x: any) => ({ value: x.id, label: `${x.name} · ${x.specialties.join('/')} · 本赛事 ${expertLoad(x.id, assignTarget.competitionId)} 项` }))} />
+        {assignTarget && !availableExperts(assignTarget).length && <Alert type="warning" showIcon style={{ marginTop: 12 }} message="暂无可分配专家" description={<span>请先为赛事加入专业匹配且有容量的专家。<Button type="link" onClick={() => { setExpertManageCompetition(competitionOf(assignTarget.competitionId)); setExpertToAdd(''); setAssignTarget(null); }}>去配置赛事专家</Button></span>} />}
       </Modal>
 
       <Modal open={expertOpen} title="新增专家" okText="加入专家库" cancelText="取消" onCancel={() => setExpertOpen(false)} onOk={saveExpert} destroyOnClose>
@@ -2797,7 +3137,7 @@ function CompetitionPage({ db, setDb }: any) {
         {reviewTarget && <Space direction="vertical" style={{ width: '100%' }} size={14}>
           <Alert type="info" showIcon message={`专家 ${reviewTarget.expert?.name || ''} 评分：${reviewTarget.score?.total || 0} 分`} description={reviewTarget.score?.comment} />
           <Radio.Group value={reviewAction} onChange={(e: any) => setReviewAction(e.target.value)}><Radio.Button value="confirm">确认评分</Radio.Button><Radio.Button value="return">退回重评</Radio.Button></Radio.Group>
-          {reviewAction === 'confirm' && <Select style={{ width: '100%' }} value={reviewAward} onChange={setReviewAward} options={['一等奖', '二等奖', '三等奖', '优秀奖', '无奖项'].map((x) => ({ value: x, label: x }))} />}
+          {reviewAction === 'confirm' && <Select style={{ width: '100%' }} value={reviewAward} onChange={setReviewAward} options={[...new Set([...contestStore.awardsOf(competitionOf(reviewTarget?.competitionId)).map((a: any) => a.name), '无奖项'])].map((x: any) => ({ value: x, label: x }))} />}
           <TextArea rows={3} value={reviewNote} onChange={(e: any) => setReviewNote(e.target.value)} placeholder={reviewAction === 'confirm' ? '填写复核意见' : '填写退回原因，专家将重新评分'} />
         </Space>}
       </Modal>
@@ -2873,8 +3213,15 @@ function App() {
   useEffect(() => {
     const { competitions, contestEntries, ...adminState } = db;
     try { localStorage.setItem(ADMIN_STORE_KEY, JSON.stringify(adminState)); } catch (_) {}
-    if (contestStore) contestStore.save({ competitions, contestEntries });
+    if (contestStore && !contestStore.save({ competitions, contestEntries })) message.error('浏览器存储空间不足，赛事未持久保存，请减少图片后重试');
   }, [db]);
+  useEffect(() => {
+    const sync = (event: StorageEvent) => {
+      if (event.key === contestStore?.KEY || event.key === ADMIN_STORE_KEY) setDb(loadAdminDB());
+    };
+    window.addEventListener('storage', sync);
+    return () => window.removeEventListener('storage', sync);
+  }, []);
   if (reviewToken) return <ExpertReviewPage db={db} setDb={setDb} token={reviewToken} eventId={reviewEventId} />;
   const title = MENUS.find((m) => m.key === nav)?.label || '';
   const pages: Record<string, any> = {

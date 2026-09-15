@@ -5,3 +5,4 @@ dist/
 .local-dev.pid
 .local-dev.log
 .qoder/
+.sophcode/

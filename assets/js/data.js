@@ -1003,6 +1003,27 @@ window.DB = {
 
 (function () {
   const KEY = 'futureEdu.contests.v1';
+  // Demo 状态由运营显式选择，不随系统日期自动失效；兼容旧版名称。
+  const phaseOf = (c) => ({ '草稿': 'draft', '未开始': 'soon', '征集中': 'open', '报名中': 'open', '征集截止': 'ended', '报名结束': 'ended', '评审中': 'reviewing', '待发布': 'reviewing', '结果已发布': 'published', '已归档': 'archived' }[c?.status] || 'open');
+  const awardsOf = (c) => (c?.awards || []).map((a) => {
+    if (typeof a !== 'string') return a;
+    const [name, ...note] = a.split(/[：:]/);
+    return { name, icon: 'trophy', quota: note.join('：') };
+  });
+  const entryPresentation = (e) => {
+    if (e.resultPublished) return { label: '已公布', cls: 'st-done', hint: e.award && e.award !== '无奖项' ? `恭喜获得${e.award}！` : '本次未获奖，感谢参与，期待下一次精彩作品。' };
+    if (e.eligibilityStatus === '资格驳回') return { label: '资格不通过', cls: 'st-warn', hint: e.auditNote || '请联系主办方了解审核原因。' };
+    const views = {
+      '资格待审': ['资格待审', '作品已提交，等待主办方审核资格与材料。'],
+      '待分配': ['待评分', '资格已通过，等待分配评审专家。'],
+      '待评分': ['待评分', '已分配专家，等待评分。'],
+      '评分中': ['评分中', '专家正在评审作品，请耐心等待。'],
+      '待复核': ['待复核', '专家已提交评分，等待主办方复核。'],
+      '结果确定': ['结果已确定', '评审已完成，奖项将在统一公布后显示。'],
+    };
+    const [label, hint] = views[e.reviewStatus] || views['资格待审'];
+    return { label, hint, cls: 'st-info' };
+  };
   const ID_ALIASES = {
     'competition-innovation-2026': 'innovation-2026',
     'competition-ai-2026': 'ai-2026',
@@ -1052,11 +1073,15 @@ window.DB = {
       ],
       ...source,
       id,
+      requiresEligibilityReview: source.requiresEligibilityReview !== false,
       eligibility: { gradeMin: 1, gradeMax: 12, ...(source.eligibility || {}) },
       materialRule: source.materialRule || workSpec.note,
       workSpec,
     };
   };
+  const initialEntryReviewState = (competition) => competition?.requiresEligibilityReview === false
+    ? { state: 'reviewing', eligibilityStatus: '资格通过', reviewStatus: '待分配' }
+    : { state: 'submitted', eligibilityStatus: '资格待审', reviewStatus: '资格待审' };
   const stateOf = (entry) => {
     if (entry.resultPublished) return entry.award && entry.award !== '无奖项' ? 'awarded' : 'rejected';
     if (entry.eligibilityStatus === '资格驳回') return 'rejected';
@@ -1113,14 +1138,90 @@ window.DB = {
       contestEntries: mergeEntries(contestEntries),
     };
     try {
+      const previous = JSON.parse(localStorage.getItem(KEY) || 'null');
+      if (previous && JSON.stringify(previous.competitions) === JSON.stringify(payload.competitions) && JSON.stringify(previous.contestEntries) === JSON.stringify(payload.contestEntries)) return true;
       localStorage.setItem(KEY, JSON.stringify(payload));
+      return true;
     } catch (_) {
       payload.contestEntries = payload.contestEntries.map((entry) => ({
         ...entry,
         work: { ...entry.work, images: entry.work.images.map(({ thumb, ...image }) => image) },
       }));
-      try { localStorage.setItem(KEY, JSON.stringify(payload)); } catch (__) {}
+      try { localStorage.setItem(KEY, JSON.stringify(payload)); return true; } catch (__) { return false; }
     }
   };
-  window.FutureEduContestStore = { KEY, load, save, normalizeCompetitionId, normalizeCompetition, normalizeEntry, mergeCompetitions, mergeEntries };
+  window.FutureEduContestStore = { KEY, load, save, phaseOf, awardsOf, entryPresentation, normalizeCompetitionId, normalizeCompetition, initialEntryReviewState, normalizeEntry, mergeCompetitions, mergeEntries };
 })();
+
+// 独立的状态样例，不覆盖已有赛事；每场样例只展示一类流程阶段。
+(function () {
+  const base = window.DB.contests[0];
+  const cases = [
+    ['soon', '未开始', []], ['open', '报名中', ['资格待审', '资格驳回']],
+    ['ended', '报名结束', ['待分配']], ['reviewing', '评审中', ['待评分', '评分中', '待复核']],
+    ['ready', '评审中', ['结果确定']], ['published', '结果已发布', ['结果确定', '结果确定']],
+    ['archived', '已归档', ['结果确定']], ['draft', '草稿', []],
+  ];
+  cases.forEach(([key, status, stages]) => {
+    const id = `demo-contest-${key}`;
+    window.DB.contests.push({ ...base, id, name: `状态演示 · ${key === 'ready' ? '等待结果公布' : status}`, status,
+      demo: true, desc: '演示样例：日期仅用于展示，可在后台切换赛事状态体验完整流程。', signupCount: stages.length,
+      expertIds: ['expert-001'], teamForm: key === 'open' ? '团队' : '个人 / 团队',
+      awards: [{ name: '金奖', icon: 'trophy', quota: '各组别 1 名' }, { name: '银奖', icon: 'award', quota: '各组别 3 名' }, { name: '创意奖', icon: 'star', quota: '若干名' }],
+    });
+    stages.forEach((stage, i) => {
+      const student = window.DB.students[i % window.DB.students.length];
+      window.DB.contestEntries.push({ id: `${id}-entry-${i}`, competitionId: id, studentId: student.id, studentName: student.name,
+        school: student.school, grade: student.grade, teamType: key === 'open' ? '团队' : '个人', teamName: key === 'open' ? '未来创客队' : '',
+        members: key === 'open' ? student.name + '、张一帆' : '', submittedAt: '2026-09-14 10:00', demo: true,
+        eligibilityStatus: stage === '资格待审' || stage === '资格驳回' ? stage : '资格通过', reviewStatus: stage,
+        auditNote: stage === '资格驳回' ? '缺少原创声明，请联系主办方确认补充方式。' : '',
+        resultPublished: ['published', 'archived'].includes(key), award: stage === '结果确定' && i === 0 ? '金奖' : '',
+        work: { title: `校园创意作品 · ${stage}${i + 1}`, desc: '围绕校园环保问题开展观察与设计，展示创新思路及实践成果。', images: [], videos: [], files: [{ name: '作品说明.txt', size: '演示附件' }] },
+      });
+    });
+  });
+})();
+
+// 大文件保存在本浏览器 IndexedDB，前后台同源可预览，不上传服务器。
+window.FutureEduContestMedia = {
+  async database() {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open('futureEdu.contestMedia.v1', 1);
+      let expired = false;
+      const timer = setTimeout(() => { expired = true; reject(new Error('本地存储响应超时，请刷新页面后重试')); }, 10000);
+      request.onupgradeneeded = () => request.result.createObjectStore('files');
+      request.onsuccess = () => { clearTimeout(timer); if (expired) request.result.close(); else resolve(request.result); };
+      request.onerror = () => { clearTimeout(timer); reject(new Error('浏览器本地文件存储不可用')); };
+      request.onblocked = () => { expired = true; clearTimeout(timer); reject(new Error('本地存储被其他页面占用，请关闭旧预览后重试')); };
+    });
+  },
+  async put(file) {
+    const db = await this.database();
+    const key = `media-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('files', 'readwrite');
+      const timer = setTimeout(() => { try { tx.abort(); } catch (_) {} }, 30000);
+      tx.objectStore('files').put(file, key);
+      tx.oncomplete = () => { clearTimeout(timer); db.close(); resolve(key); };
+      tx.onabort = tx.onerror = () => { clearTimeout(timer); db.close(); reject(new Error('本地文件保存失败或超时，请选择较小文件重试')); };
+    });
+  },
+  async get(key) {
+    if (!key) return null;
+    const db = await this.database();
+    return new Promise((resolve, reject) => {
+      const request = db.transaction('files').objectStore('files').get(key);
+      request.onsuccess = () => { db.close(); resolve(request.result || null); };
+      request.onerror = () => { db.close(); reject(new Error('本地文件读取失败')); };
+    });
+  },
+  async download(item) {
+    const file = await this.get(item.mediaKey);
+    if (item.mediaKey && !file) throw new Error('本地文件已清理，请在后台重新上传');
+    const blob = file || new Blob([`赛事演示附件\n\n文件：${item.name}\n本文件为演示素材，不是正式赛事文件。\n作品需包含：标题、创作思路、实践过程与原创声明。`], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = file ? item.name : `演示素材-${item.name}.txt`; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+  },
+};

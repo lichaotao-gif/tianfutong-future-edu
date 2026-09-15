@@ -124,9 +124,9 @@
     art: 'assets/images/courses/ai-art.png',
   };
   const coverImg = (key, alt, extra = '') => {
-    const src = coverImages[key];
+    const src = coverImages[key] || (/^(data:image\/|blob:|https?:\/\/|\/|\.\.\/|assets\/)/.test(String(key || '')) ? key : '');
     if (!src) return `<div class="cover cv-${key}">${esc(String(alt).slice(0, 2))}</div>`;
-    return `<div class="cover cover-image ${extra}"><img src="${src}" alt="${esc(alt)}" loading="lazy"><span class="cover-fallback">${esc(String(alt).slice(0, 2))}</span></div>`;
+    return `<div class="cover cover-image ${extra}"><img src="${esc(src)}" alt="${esc(alt)}" loading="lazy"><span class="cover-fallback">${esc(String(alt).slice(0, 2))}</span></div>`;
   };
   const avatarImg = (src, fallback, alt, cls = 'ava') => src
     ? `<div class="${cls} avatar-img"><img src="${src}" alt="${esc(alt || fallback)}" loading="lazy"></div>`
@@ -1722,11 +1722,15 @@
   /* ============================================================
    * 屏幕 14：赛事活动（列表 / 详情 / 报名与作品提交 / 我的参赛）
    * ============================================================ */
-  const CONTEST_TABS = [['all', '全部赛事'], ['open', '报名中'], ['soon', '即将开始'], ['ended', '已结束']];
+  const CONTEST_TABS = [['all', '全部赛事'], ['open', '报名中']];
   const CONTEST_PHASE = {
     open: { label: '报名中', cls: 'open' },
-    soon: { label: '即将开始', cls: 'soon' },
-    ended: { label: '已结束', cls: 'ended' },
+    soon: { label: '未开始', cls: 'soon' },
+    ended: { label: '报名结束', cls: 'ended' },
+    reviewing: { label: '评审中', cls: 'soon' },
+    published: { label: '已公布', cls: 'open' },
+    archived: { label: '已归档', cls: 'ended' },
+    draft: { label: '草稿', cls: 'ended' },
   };
   let contestFilter = 'all';
 
@@ -1738,14 +1742,56 @@
   /* 一个家长账号下可能有多个孩子，判断「是否已报名」要看全部孩子 */
   const contestEntriesOf = (contestId) =>
     (DB.contestEntries || []).filter((e) => e.competitionId === contestId);
-  const contestPhase = (c) => {
-    const now = new Date();
-    const start = parseBuyTime(c.signupStart);
-    const end = parseBuyTime(c.signupEnd, true);
-    if (start && now < start) return 'soon';
-    if (end && now > end) return 'ended';
-    return 'open';
-  };
+  const contestPhase = (c) => contestStore.phaseOf(c);
+  const contestTeamTypes = (c) => ['个人', '团队'].includes(c.teamForm) ? [c.teamForm] : ['个人', '团队'];
+  const contestPreview = new URLSearchParams(location.search).get('contestPreview') === '1';
+  async function playContestVideo(id) {
+    const c = contestById(id);
+    if (!c?.video) return toast('暂无宣传片');
+    const dialog = document.createElement('dialog');
+    dialog.style.cssText = 'width:min(92vw,680px);padding:20px;border:0;border-radius:16px;background:#fff;color:#173a38';
+    dialog.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;gap:12px"><b>${esc(c.video.title || '赛事宣传片')}</b><button class="btn btn-line btn-sm" data-close>关闭</button></div><p class="small muted" data-status role="status">正在读取本地文件…</p><div data-player></div>`;
+    document.body.appendChild(dialog);
+    const focusBefore = document.activeElement;
+    let objectUrl = '';
+    let timer;
+    const close = () => dialog.close();
+    dialog.querySelector('[data-close]').onclick = close;
+    dialog.addEventListener('close', () => { clearInterval(timer); dialog.querySelector('video')?.pause(); if (objectUrl) URL.revokeObjectURL(objectUrl); dialog.remove(); focusBefore?.focus(); }, { once: true });
+    dialog.showModal();
+    try {
+      const file = await window.FutureEduContestMedia.get(c.video.mediaKey);
+      if (!dialog.isConnected) return;
+      const player = dialog.querySelector('[data-player]');
+      const status = dialog.querySelector('[data-status]');
+      if (file) {
+        status.textContent = '本浏览器保存的演示文件，未上传服务器';
+        const video = document.createElement('video');
+        objectUrl = URL.createObjectURL(file); video.src = objectUrl; video.controls = true; video.playsInline = true;
+        video.poster = c.video.poster || ''; video.style.width = '100%';
+        video.onerror = () => { status.textContent = '此视频编码无法播放，请在后台换用浏览器支持的 MP4 / WebM 文件。'; };
+        player.appendChild(video); video.play().catch(() => { status.textContent = '文件已就绪，请点击播放'; });
+      } else if (c.video.mediaKey) {
+        status.textContent = '本地视频已清理，请在后台重新选择文件。';
+      } else {
+        status.textContent = '内置演示动画 · 非正式宣传片，可在后台替换为本地视频';
+        player.innerHTML = `<div style="aspect-ratio:16/9;position:relative;background:#123f40;border-radius:12px;overflow:hidden"><img src="assets/images/contests/hero-banner.webp" alt="赛事演示背景" style="width:100%;height:100%;object-fit:cover;opacity:.35"><div style="position:absolute;inset:0;display:grid;place-content:center;text-align:center;color:white;padding:20px"><h2 data-slide></h2><p>天府未来教育 · 让创意成为作品</p><span data-time></span></div></div><button class="btn btn-line btn-sm" style="margin-top:12px" data-toggle>暂停演示</button>`;
+        const slides = ['发现身边的问题', '动手设计，验证创意', '提交作品，展示成果', '专家评审，见证成长'];
+        let tick = 0;
+        let paused = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const toggle = player.querySelector('[data-toggle]');
+        const update = () => { player.querySelector('[data-slide]').textContent = slides[Math.floor(tick / 3) % slides.length]; player.querySelector('[data-time]').textContent = `${String(tick % 12).padStart(2, '0')} / 12 秒 · 循环演示`; toggle.textContent = paused ? '播放演示' : '暂停演示'; };
+        toggle.onclick = () => { paused = !paused; update(); };
+        update(); timer = setInterval(() => { if (!paused) { tick++; update(); } }, 1000);
+      }
+    } catch (error) { if (dialog.isConnected) dialog.querySelector('[data-status]').textContent = error.message || '读取失败，请重试'; }
+  }
+  async function downloadContestFile(id, index) {
+    const item = contestById(id)?.attachments?.[index];
+    if (!item) return toast('附件不存在');
+    try { await window.FutureEduContestMedia.download(item); toast(item.mediaKey ? '已准备下载本地附件' : '已下载演示文本素材'); }
+    catch (error) { toast(error.message || '文件下载失败，请重试'); }
+  }
   const contestDaysLeft = (c) => {
     const end = parseBuyTime(c.signupEnd, true);
     return end ? Math.max(0, Math.ceil((end - new Date()) / 86400000)) : 0;
@@ -1767,13 +1813,21 @@
 
   function screenContests() {
     const visible = (DB.contests || []).filter((c) => !['草稿', '已归档'].includes(c.status));
-    const list = visible.filter((c) => contestFilter === 'all' || contestPhase(c) === contestFilter);
-    const card = (c) => {
-      const ph = CONTEST_PHASE[contestPhase(c)];
+    const activePhases = ['open', 'soon'];
+    const pastPhases = ['ended', 'reviewing', 'published'];
+    const list = visible.filter((c) => contestFilter === 'open'
+      ? contestPhase(c) === 'open'
+      : activePhases.includes(contestPhase(c)));
+    const pastList = contestFilter === 'all'
+      ? visible.filter((c) => pastPhases.includes(contestPhase(c)))
+      : [];
+    const card = (c, nested = false) => {
+      const phase = contestPhase(c);
+      const ph = CONTEST_PHASE[phase];
       return `
-      <div class="card ct-card mx mt" onclick="location.hash='#/contest/${c.id}'">
+      <div class="card ct-card${nested ? '' : ' mx'} mt" onclick="location.hash='#/contest/${c.id}'">
         <div class="ct-cover">
-          <span class="ct-badge ${ph.cls}">${ph.cls === 'open' ? '<span class="dot"></span>' : ''}${ph.label}</span>
+          <span class="ct-badge ${ph.cls}">${phase === 'open' ? '<span class="dot"></span>' : ''}${ph.label}</span>
           <span class="ct-cat">${esc(c.category)}</span>
           ${coverImg(c.cover, c.name)}
         </div>
@@ -1800,7 +1854,15 @@
         <div class="ct-tabs">
           ${CONTEST_TABS.map(([k, label]) => `<span class="ct-tab ${contestFilter === k ? 'on' : ''}" onclick="App.setContestFilter('${k}')">${label}</span>`).join('')}
         </div>
-        ${list.map(card).join('') || '<div class="empty">该分类下暂无赛事</div>'}
+        ${list.map((c) => card(c)).join('') || '<div class="empty">暂无符合条件的赛事</div>'}
+        ${pastList.length ? `
+        <details class="ct-past mx mt">
+          <summary>
+            <span>往期赛事</span>
+            <span class="ct-past-meta">${pastList.length} 场<span class="ct-past-arrow" aria-hidden="true"></span></span>
+          </summary>
+          <div class="ct-past-list">${pastList.map((c) => card(c, true)).join('')}</div>
+        </details>` : ''}
         <div style="height:18px"></div>
       </div>
     </div>`);
@@ -1808,7 +1870,7 @@
 
   function screenContest(id) {
     const c = contestById(id);
-    if (!c || ['草稿', '已归档'].includes(c.status)) return screenContests();
+    if (!c || (c.status === '草稿' && !contestPreview) || (c.status === '已归档' && !contestPreview && !contestEntriesOf(c.id).length)) return screenContests();
     const phase = contestPhase(c);
     const ph = CONTEST_PHASE[phase];
     const left = contestDaysLeft(c);
@@ -1821,6 +1883,10 @@
         open: `<button class="btn btn-primary" onclick="location.hash='#/contest-signup/${c.id}'">立即报名并提交作品</button>`,
         soon: `<button class="btn btn-primary" disabled>报名 ${esc(c.signupStart)} 开启</button>`,
         ended: '<button class="btn btn-primary" disabled>报名已结束</button>',
+        reviewing: '<button class="btn btn-primary" disabled>评审进行中，敬请期待</button>',
+        published: '<button class="btn btn-primary" onclick="location.hash=\'#/my-contests\'">查看我的参赛结果</button>',
+        archived: '<button class="btn btn-primary" disabled>赛事已归档</button>',
+        draft: '<button class="btn btn-primary" disabled>草稿预览 · 暂未开放</button>',
       }[phase];
     const unsigned = (DB.students || []).filter((s) => !contestEntryOf(c.id, s.id));
     render(`
@@ -1851,12 +1917,12 @@
               </figure>`).join('')}
           </div>
           ${c.video ? `
-            <div class="cd-video" onclick="App.playContestVideo()">
-              <img src="${c.video.poster}" alt="${esc(c.video.title)}" loading="lazy">
+            <div class="cd-video" role="button" tabindex="0" aria-label="播放宣传片" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" onclick="App.playContestVideo('${c.id}')">
+              <img src="${c.video.poster || 'assets/images/contests/hero-banner.webp'}" alt="${esc(c.video.title || '赛事宣传片')}" loading="lazy">
               <span class="play">${I.play}</span>
-              <span class="dur">${esc(c.video.duration)}</span>
+              <span class="dur">${c.video.mediaKey ? esc(c.video.duration || '本地视频') : '演示动画'}</span>
             </div>
-            <div class="small muted" style="margin-top:6px">${esc(c.video.title)}</div>` : ''}
+            <div class="small muted" style="margin-top:6px">${esc(c.video.title)} · ${c.video.mediaKey ? '本地演示文件' : '内置演示素材'}</div>` : ''}
         </div>
 
         ${(c.schedule || []).length ? `
@@ -1874,10 +1940,10 @@
         ${(c.attachments || []).length ? `
         <div class="card mx mt pad">
           <div class="section-title">参赛附件</div>
-          ${c.attachments.map((f) => `
-            <div class="cd-file" onclick="App.downloadContestFile('${esc(f.name)}')">
+          ${c.attachments.map((f, index) => `
+            <div class="cd-file" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" onclick="App.downloadContestFile('${c.id}',${index})">
               <div class="ic">${I.doc}</div>
-              <div class="nm"><div>${esc(f.name)}</div><div class="sz">${esc(f.kind)} · ${esc(f.size)}</div></div>
+              <div class="nm"><div>${esc(f.name)}</div><div class="sz">${esc(f.kind)} · ${esc(f.size)} · ${f.mediaKey ? '本地文件' : '下载演示文本'}</div></div>
               <span class="dl">${I.download}</span>
             </div>`).join('')}
         </div>` : ''}
@@ -1886,7 +1952,7 @@
         <div class="card mx mt pad">
           <div class="section-title">奖项设置</div>
           <div class="cd-awards">
-            ${c.awards.map((a) => `<div class="cd-award">${I.trophy}${esc(a)}</div>`).join('')}
+            ${contestStore.awardsOf(c).map((a) => `<div class="cd-award">${({ trophy: I.trophy, award: I.award, star: I.star })[a.icon] || I.trophy}<span>${esc(a.name)}${a.quota ? `：${esc(a.quota)}` : ''}</span></div>`).join('')}
           </div>
         </div>` : ''}
 
@@ -1896,14 +1962,14 @@
               <div class="cd-mine">
                 <div class="t">已报名 ${mineList.length} 个孩子</div>
                 ${mineList.map((e) => `<div class="d">${esc(e.studentName)} · ${esc((e.work || {}).title || '未命名作品')}<br>提交于 ${esc(e.submittedAt)}${e.updatedAt ? ` · 最后修改 ${esc(e.updatedAt)}` : ''}</div>`).join('')}
-                <div class="d">${phase === 'open' ? '报名截止前可继续修改作品内容。' : '报名已截止，作品不可再修改。'}</div>
+                <div class="d">${phase === 'open' ? '报名开放期间，资格待审的作品可修改；已审核作品请联系主办方。' : '报名已截止，作品不可再修改。'}</div>
                 ${phase === 'open' && unsigned.length ? `<div class="cd-mine-more" onclick="location.hash='#/contest-signup/${c.id}'">继续给其他孩子报名 ›</div>` : ''}
               </div>
             </div>` : phase === 'open' ? `
             <div class="cd-countdown">
-              <div class="lb">距报名截止</div>
-              <div class="dd"><span class="n">${left}</span><span class="u">天</span></div>
-              <div class="dl">截止日期 ${esc(c.signupEnd)}</div>
+              <div class="lb">报名通道已开放</div>
+              <div class="dl">报名时间 ${esc(c.signupStart)} ~ ${esc(c.signupEnd)}</div>
+              <div class="small muted">演示模式：以赛事状态为准，日期仅供展示</div>
             </div>` : ''}
           <div class="pad">
             <div class="kv"><span class="k">主办单位</span><span class="v">${esc(c.organizer)}</span></div>
@@ -2089,9 +2155,10 @@
     const studentId = availableStudents.some((s) => s.id === preferredStudentId)
       ? preferredStudentId
       : availableStudents[0].id;
-    const teamType = ['个人', '团队'].includes((stored || {}).teamType)
+    const allowedTeams = contestTeamTypes(c);
+    const teamType = allowedTeams.includes((stored || {}).teamType)
       ? stored.teamType
-      : editing ? (entry.teamType || '个人') : '个人';
+      : editing && allowedTeams.includes(entry.teamType) ? entry.teamType : allowedTeams[0];
     signupDraft = {
       contestId: c.id,
       entryId: editing ? entry.id : null,
@@ -2138,7 +2205,7 @@
           <div class="form-row">
             <label>参赛形式</label>
             <div class="seg" id="ctSeg">
-              ${['个人', '团队'].map((t) => `<span class="sg ${t === signupDraft.teamType ? 'on' : ''}" data-team="${t}" onclick="App.setTeamType('${t}')">${t}</span>`).join('')}
+              ${allowedTeams.map((t) => `<span class="sg ${t === signupDraft.teamType ? 'on' : ''}" data-team="${t}" onclick="App.setTeamType('${t}')">${t}</span>`).join('')}
             </div>
           </div>
           <div id="ctTeamFields" style="display:${isTeam ? '' : 'none'}">
@@ -2184,7 +2251,7 @@
           <div class="form-row">
             <label>作品附件（最多 ${spec.fileMax} 个 · ${esc(spec.fileTypes)} · 每个不超过 ${esc(fmtFileSize(spec.fileMaxBytes))}）</label>
             <div id="upFiles"></div>
-            <input type="file" class="up-file-input" id="upFileInput" accept=".pdf,.doc,.docx,.ppt,.pptx,.zip,.rar,.7z" multiple onchange="App.pickWorkFiles(this)">
+            <input type="file" class="up-file-input" id="upFileInput" accept="${spec.allowedFileExtensions.map((x) => '.' + x).join(',')}" multiple onchange="App.pickWorkFiles(this)">
           </div>
         </div>
 
@@ -2350,7 +2417,7 @@
   }
 
   function setTeamType(t) {
-    if (!signupDraft || !['个人', '团队'].includes(t)) return;
+    if (!signupDraft || !contestTeamTypes(contestById(signupDraft.contestId)).includes(t)) return;
     signupDraft.teamType = t;
     document.querySelectorAll('#ctSeg .sg').forEach((el) => el.classList.toggle('on', el.dataset.team === t));
     const fields = $('#ctTeamFields');
@@ -2381,6 +2448,7 @@
     if (!c) return screenContests();
     const phase = contestPhase(c);
     if (phase !== 'open') return toast(phase === 'soon' ? '报名尚未开启，暂不能提交' : '报名已截止，无法提交作品');
+    signupDraft.spec = contestWorkSpec(c);
 
     const existing = signupDraft.entryId ? contestEntryById(signupDraft.entryId) : null;
     if (signupDraft.entryId && !existing) return toast('参赛记录不存在，请返回后重试');
@@ -2388,6 +2456,7 @@
 
     syncContestDraftFields();
     const stu = (DB.students || []).find((s) => s.id === signupDraft.studentId);
+    if (!contestTeamTypes(c).includes(signupDraft.teamType)) return toast('参赛形式不符合赛事要求，请返回重新选择');
     const eligibilityIssue = contestEligibilityIssue(c, stu);
     if (eligibilityIssue) return toast(eligibilityIssue);
     const duplicate = contestEntryOf(c.id, stu.id);
@@ -2441,6 +2510,8 @@
     if (existing) {
       Object.assign(existing, fields, { updatedAt: stamp });
     } else {
+      const initialReviewState = contestStore.initialEntryReviewState(c);
+      const auditNote = c.requiresEligibilityReview === false ? '赛事无需资格审核，作品直接进入待分配' : '';
       DB.contestEntries.unshift(Object.assign({
         id: 'entry-' + Date.now(),
         competitionId: c.id,
@@ -2450,13 +2521,11 @@
         studentName: stu.name,
         school: stu.school,
         grade: stu.grade,
-        state: 'submitted',
-        eligibilityStatus: '资格待审',
-        reviewStatus: '资格待审',
-        auditNote: '',
+        ...initialReviewState,
+        auditNote,
         award: '',
         resultPublished: false,
-        audits: [{ t: stamp, who: DB.parent.nickname, act: '提交报名作品', note: '' }],
+        audits: [{ t: stamp, who: DB.parent.nickname, act: '提交报名作品', note: auditNote }],
         submittedAt: stamp,
       }, fields));
       c.signupCount = (c.signupCount || 0) + 1;
@@ -2465,7 +2534,7 @@
     clearContestDraft(completedDraft);
     signupDraft = null;
     persistState();
-    toast(existing ? '修改已保存，作品继续等待评审' : '报名成功，作品已提交待评审');
+    toast(existing ? '修改已保存，作品继续等待评审' : c.requiresEligibilityReview === false ? '报名成功，作品已进入待分配' : '报名成功，作品已提交待审核');
     go('#/my-contests');
   }
 
@@ -2490,7 +2559,7 @@
   function screenMyContests() {
     const entries = DB.contestEntries || [];
     const card = (e) => {
-      const st = DB.contestStateMap[e.state] || DB.contestStateMap.submitted;
+      const st = contestStore.entryPresentation(e);
       const w = e.work || {};
       const c = contestById(e.competitionId);
       const contestName = c?.name || e.contestName;
@@ -2518,9 +2587,9 @@
           ${chips.length ? `<div class="ce-assets">${chips.map((t) => `<span class="ce-asset">${t}</span>`).join('')}</div>` : ''}
         </div>
         ${e.members ? `<div class="small muted" style="margin-top:8px">团队成员：${esc(e.members)}</div>` : ''}
-        ${e.award ? `<div class="ce-award-tip">${I.trophy}${esc(e.award)}</div>` : ''}
+        ${e.resultPublished ? `<div class="ce-award-tip">${I.trophy}${esc(e.award && e.award !== '无奖项' ? e.award : '本次未获奖')}</div>` : ''}
         <div class="divider"></div>
-        <div class="small muted">${e.state === 'submitted' ? '作品已提交，等待主办方受理' : e.state === 'reviewing' ? '专家评审中，结果将短信通知' : e.state === 'shortlisted' ? '已入围，请留意决赛通知' : e.state === 'awarded' ? '恭喜获奖，证书将寄送到校' : '本届未入围，欢迎下届再战'}</div>
+        <div class="small muted">${esc(st.hint)}</div>
         <div class="ce-actions">
           ${mutable ? `<button class="btn btn-primary btn-sm" onclick="location.hash='#/contest-work/${e.id}'">修改作品</button>` : ''}
           ${mutable ? `<button class="btn btn-danger-line btn-sm" onclick="App.withdrawContestEntry('${e.id}')">撤回报名</button>` : ''}
@@ -2706,6 +2775,15 @@
     screenHome();
   }
   window.addEventListener('hashchange', route);
+  window.addEventListener('storage', (event) => {
+    if (event.key !== contestStore?.KEY) return;
+    const shared = contestStore.load();
+    DB.contests = shared.competitions;
+    const studentIds = new Set(DB.students.map((s) => s.id));
+    DB.contestEntries = shared.contestEntries.filter((e) => studentIds.has(e.studentId));
+    if (/^#\/(contests|contest\/|my-contests)/.test(location.hash)) route();
+    else if (/^#\/contest-(signup|work)/.test(location.hash)) toast('赛事配置已更新，提交前将按最新规则检查');
+  });
   window.addEventListener('DOMContentLoaded', route);
 
   /* 暴露给内联事件 */
@@ -2719,8 +2797,7 @@
     openAftersale, closeAftersale, selectAS, submitAftersale,
     toggleFaq,
     setContestFilter: (k) => { contestFilter = k; screenContests(); },
-    playContestVideo: () => toast('宣传片需连接后台视频源，敬请期待'),
-    downloadContestFile: (name) => toast(`《${name}》需连接后台后下载`),
+    playContestVideo, downloadContestFile,
     pickWorkImages, pickWorkVideos, pickWorkFiles, delWorkAsset,
     setSignupStudent, setTeamType, toggleContestAgree, submitContestEntry, withdrawContestEntry,
     openStudentForm, closeStudentForm, editStudent, saveStudentForm, deleteStudent,

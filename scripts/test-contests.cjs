@@ -1,0 +1,37 @@
+const assert = require('node:assert/strict');
+const vm = require('node:vm');
+const fs = require('node:fs');
+const storage = new Map();
+const context = { window: {}, localStorage: { getItem: k => storage.get(k) || null, setItem: (k, v) => storage.set(k, v) } };
+vm.createContext(context);
+vm.runInContext(fs.readFileSync(require('node:path').join(__dirname, '../assets/js/data.js'), 'utf8'), context);
+const { DB, FutureEduContestStore: store } = context.window;
+for (const [status, phase] of Object.entries({ 草稿: 'draft', 未开始: 'soon', 报名中: 'open', 征集中: 'open', 报名结束: 'ended', 征集截止: 'ended', 评审中: 'reviewing', 待发布: 'reviewing', 结果已发布: 'published', 已归档: 'archived' })) {
+  assert.equal(store.phaseOf({ status, signupEnd: '2000-01-01' }), phase, '显式状态不依赖日期');
+}
+const data = store.load(DB.contests, DB.contestEntries);
+assert.equal(data.competitions.filter(c => c.demo).length, 8);
+assert.equal(store.normalizeCompetition({ id: 'legacy-review' }).requiresEligibilityReview, true);
+assert.equal(store.normalizeCompetition({ id: 'skip-review', requiresEligibilityReview: false }).requiresEligibilityReview, false);
+assert.deepEqual({ ...store.initialEntryReviewState({ requiresEligibilityReview: true }) }, { state: 'submitted', eligibilityStatus: '资格待审', reviewStatus: '资格待审' });
+assert.deepEqual({ ...store.initialEntryReviewState({ requiresEligibilityReview: false }) }, { state: 'reviewing', eligibilityStatus: '资格通过', reviewStatus: '待分配' });
+const labels = new Set(data.contestEntries.filter(e => e.demo).map(e => store.entryPresentation(e).label));
+for (const label of ['资格待审', '资格不通过', '待评分', '评分中', '待复核', '结果已确定', '已公布']) assert.ok(labels.has(label), `缺少状态样例：${label}`);
+const unpublished = data.contestEntries.find(e => e.id === 'demo-contest-ready-entry-0');
+assert.equal(unpublished.resultPublished, false);
+assert.ok(!store.entryPresentation(unpublished).hint.includes('金奖'));
+const rejected = data.contestEntries.find(e => e.id === 'demo-contest-open-entry-1');
+assert.ok(store.entryPresentation(rejected).hint.includes('原创声明'));
+assert.equal(store.entryPresentation(data.contestEntries.find(e => e.id === 'demo-contest-published-entry-1')).hint.includes('未获奖'), true);
+const awards = store.awardsOf({ awards: ['金奖：小学组 1 名', { name: '创意奖', icon: 'star', quota: '若干名' }] });
+assert.equal(awards[0].name, '金奖');
+assert.equal(awards[0].quota, '小学组 1 名');
+assert.equal(awards[1].icon, 'star');
+assert.equal(store.save(data), true);
+const original = storage.get(store.KEY);
+assert.equal(store.save(data), true);
+assert.equal(storage.get(store.KEY), original, '相同内容不能触发跨页重复写入');
+assert.equal(store.load().competitions.length, data.competitions.length);
+context.localStorage.setItem = () => { throw Error('quota'); };
+assert.equal(store.save({ competitions: [{ id: 'quota-test' }], contestEntries: [] }), false, '容量不足必须报告失败');
+console.log('赛事回归通过：状态、样例、奖项兼容、公布可见性、存储反馈');
