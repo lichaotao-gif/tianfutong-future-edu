@@ -1266,7 +1266,7 @@
           </div>
         </div>
         <div class="card mx mt" style="overflow:hidden">
-          ${cell('#12a9c4', I.trophy, '我的参赛', `${(DB.contestEntries || []).length} 条赛事报名与作品记录`, "location.hash='#/my-contests'")}
+          ${cell('#176b75', I.book, '我的课程', '含缤果数字教材购买记录', "location.hash='#/my-courses'")}
           ${cell('#f59b1c', I.help, '帮助中心', '报名、销课与退费常见问题', "location.hash='#/help'")}
           ${cell('#8a8f99', I.service, '客服与售后', '在线咨询', "App.soonTip()")}
           ${cell('#6b78f7', I.clip, '协议与规则', '平台服务协议 · 课程服务协议 · 隐私政策', "location.hash='#/legal'")}
@@ -2740,6 +2740,129 @@
   /* ============================================================
    * 路由
    * ============================================================ */
+  const eventStore = window.FutureEduEventActivityStore;
+  const eventPreview = new URLSearchParams(location.search).get('eventPreview') === '1';
+  const eventById = (id) => (eventStore?.load() || []).find((item) => item.id === routeId(id) && (item.status === 'published' || eventPreview));
+  const digitalBookById = (id) => (DB.digitalBooks || []).find((item) => item.id === id)
+    || (eventStore?.load() || []).flatMap((event) => event.recommendedBooks || []).find((item) => item.id === id);
+  const safeExternalUrl = (raw) => {
+    try {
+      const url = new URL(raw);
+      return url.protocol === 'https:' ? url.href : '';
+    } catch (_) { return ''; }
+  };
+  const openExternal = (raw, missingMessage) => {
+    const url = safeExternalUrl(raw);
+    if (!url) return toast(missingMessage || '链接尚未配置');
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+  const recommendationCard = (book) => {
+    const url = safeExternalUrl(book.purchaseUrl);
+    const content = `
+      <img class="ev-book-cover" src="${esc(book.cover)}" alt="${esc(book.title)}封面" loading="lazy">
+      <div class="ev-book-main">
+        <div class="ev-book-platform">${esc(book.platform)}</div>
+        <div class="ev-book-title">${esc(book.title)}</div>
+        <div class="ev-book-author">作者：${esc(book.author)}</div>
+        <div class="ev-book-price">${book.price !== undefined && book.price !== null && book.price !== '' && Number.isFinite(Number(book.price)) ? `¥${Number(book.price).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '价格待确认'}</div>
+        ${url ? '' : '<div class="ev-book-unavailable">购买渠道待开放</div>'}
+      </div>
+    `;
+    return url
+      ? `<a class="ev-book" href="${esc(url)}" target="_blank" rel="noopener noreferrer" aria-label="查看${esc(book.title)}">${content}</a>`
+      : `<div class="ev-book ev-book-static">${content}</div>`;
+  };
+
+  function screenEventList() {
+    const events = (eventStore?.load() || []).filter((event) => event.status === 'published').sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+    render(`
+      <div class="screen ev-screen">
+        ${navbar('赛事活动')}
+        <div class="scroll">
+          ${events.map((event) => `
+            <a class="ev-event-card" href="#/contest/${esc(event.id)}">
+              <div class="ev-event-art">${event.cover ? `<img class="ev-event-cover" src="${esc(event.cover)}" alt="" aria-hidden="true">` : ''}<span>${esc(event.coverEyebrow || '')}</span><strong>${esc(event.coverSlogan || '').replace(/\n/g, '<br>')}</strong></div>
+              <div class="ev-event-info">
+                <div class="ev-event-kicker">${esc(event.category)} · ${esc(event.fee)}</div>
+                <h2>${esc(event.name)}</h2>
+                <p>${esc(event.desc)}</p>
+                <div class="ev-event-foot"><span>报名截至 ${esc(event.registrationEnd)}</span><b>查看详情 ›</b></div>
+              </div>
+            </a>`).join('') || '<div class="empty">暂无赛事</div>'}
+        </div>
+      </div>`);
+  }
+
+  function screenEventDetail(id) {
+    const event = eventById(id);
+    if (!event) return screenEventList();
+    const books = event.recommendedBooks || [];
+    render(`
+      <div class="screen ev-screen">
+        ${navbar('赛事详情')}
+        <div class="scroll ev-detail-scroll">
+          <div class="ev-detail-hero">
+            ${event.cover ? `<img class="ev-detail-cover" src="${esc(event.cover)}" alt="" aria-hidden="true">` : ''}
+            <h1>${esc(event.name)}</h1>
+            <p>${esc(event.desc)}</p>
+          </div>
+          <section class="ev-section">
+            <h2>赛事信息</h2>
+            <dl class="ev-facts">
+              <div><dt>主办单位</dt><dd>${esc(event.organizer)}</dd></div>
+              <div><dt>参赛对象</dt><dd>${esc(event.audience)}</dd></div>
+              <div><dt>初赛报名</dt><dd>${esc(event.registrationStart)} 至 ${esc(event.registrationEnd)}</dd></div>
+              <div><dt>报名费用</dt><dd>${esc(event.fee)}</dd></div>
+            </dl>
+          </section>
+          <section class="ev-section">
+            <h2>赛程安排</h2>
+            <ol class="ev-stages">${(event.stages || []).map((stage) => `
+              <li><div class="ev-stage-name">${esc(stage.name)}<span>${esc(stage.time)}</span></div><p>${esc(stage.detail)}</p></li>`).join('')}</ol>
+            ${event.scheduleTip ? `<div class="ev-tip">${esc(event.scheduleTip)}</div>` : ''}
+          </section>
+          <section class="ev-section">
+            <h2>报名须知</h2>
+            <ul class="ev-notes">${(event.notes || []).map((note) => `<li>${esc(note)}</li>`).join('')}</ul>
+          </section>
+          ${books.length ? `<section class="ev-section ev-recommend">
+            <div class="ev-section-heading"><h2>推荐课程</h2></div>
+            ${books.map(recommendationCard).join('')}
+          </section>` : ''}
+        </div>
+        <div class="ev-actionbar"><button class="btn btn-primary" onclick="App.openEventSignup('${esc(event.id)}')">${esc(event.actionLabel || '立即参赛')}</button>${event.actionHint ? `<p class="ev-action-hint">${esc(event.actionHint)}</p>` : ''}</div>
+      </div>`);
+  }
+
+  let myCoursesTab = 'school';
+  function screenMyCourses() {
+    const schoolCourses = (DB.orders || []).filter((order) => ['preauth', 'paid'].includes(order.payState) && order.status !== 'canceled');
+    const purchases = (DB.digitalPurchases || []).filter((record) => record.status === 'paid');
+    render(`
+      <div class="screen ev-screen">
+        ${navbar('我的课程')}
+        <div class="scroll">
+          <div class="ev-course-tabs" role="tablist" aria-label="课程类型">
+            <button id="ev-tab-school" class="ev-course-tab${myCoursesTab === 'school' ? ' active' : ''}" type="button" role="tab" aria-selected="${myCoursesTab === 'school'}" aria-controls="ev-course-panel" onclick="App.setMyCoursesTab('school')">已购课程 <span>${schoolCourses.length}</span></button>
+            <button id="ev-tab-digital" class="ev-course-tab${myCoursesTab === 'digital' ? ' active' : ''}" type="button" role="tab" aria-selected="${myCoursesTab === 'digital'}" aria-controls="ev-course-panel" onclick="App.setMyCoursesTab('digital')">数字教材 <span>${purchases.length}</span></button>
+          </div>
+          <div id="ev-course-panel" class="ev-course-panel" role="tabpanel" aria-labelledby="ev-tab-${myCoursesTab}">
+          ${myCoursesTab === 'school' ? (schoolCourses.length ? schoolCourses.map((order) => `<a class="ev-school-course" href="#/${order.result ? 'result' : 'schedule'}/${esc(order.id)}">
+            <div class="ev-school-cover">${coverImg(order.cover, order.courseName)}</div>
+            <div class="ev-school-main"><strong>${esc(order.courseName)}</strong><span>${esc(studentByOrder(order).name)} · ${esc(DB.statusMap[order.status]?.label || '已缴费')}</span></div>
+            <span class="ev-school-arrow" aria-hidden="true">›</span>
+          </a>`).join('') : '<div class="ev-empty"><strong>暂无已购课程</strong><p>课程报名和缴费状态可在「我的报名」中查看。</p></div>') : (purchases.length ? purchases.map((record) => {
+            const book = digitalBookById(record.bookId) || record;
+            return `<div class="ev-purchase card mx mt">
+              ${book.cover ? `<img src="${esc(book.cover)}" alt="${esc(book.title || '数字教材')}封面">` : `<div class="ev-cover-fallback">${I.book}</div>`}
+              <div><strong>${esc(book.title || '数字教材')}</strong><p>${esc(book.author || '作者未标注')} · ${esc(book.platform || '缤果数字教材')}</p><small>购买时间：${esc(record.paidAt || '—')}</small><div class="ev-order-no">订单号：${esc(record.orderNo || '—')}</div></div>
+            </div>`;
+          }).join('') : '<div class="ev-empty"><div class="ev-empty-icon">' + I.book + '</div><strong>暂无数字教材购买记录</strong><p>购买数字教材后，可在这里查看课程记录。</p></div>')}
+          </div>
+        </div>
+      </div>`);
+  }
+
   const routes = [
     [/^#\/?$|^#\/home$|^#\/tft$/, screenHome],
     [/^#\/course\/([^/]+)\/([^/]+)$/, (m) => screenCourse(m[1], m[2])],
@@ -2757,17 +2880,18 @@
     [/^#\/profile$/, screenProfile],
     [/^#\/login$/, screenLogin],
     [/^#\/help$/, screenHelp],
-    [/^#\/contests$/, screenContests],
-    [/^#\/contest\/([^/]+)$/, (m) => screenContest(m[1])],
-    [/^#\/contest-signup\/([^/]+)$/, (m) => screenContestSignup(m[1])],
-    [/^#\/contest-work\/([^/]+)$/, (m) => screenContestWork(m[1])],
-    [/^#\/my-contests$/, screenMyContests],
+    [/^#\/contests$/, screenEventList],
+    [/^#\/contest\/([^/]+)$/, (m) => screenEventDetail(m[1])],
+    [/^#\/my-courses$/, screenMyCourses],
+    [/^#\/contest-signup\/([^/]+)$/, (m) => screenEventDetail(m[1])],
+    [/^#\/contest-work\/([^/]+)$/, screenEventList],
+    [/^#\/my-contests$/, screenEventList],
     [/^#\/legal$/, screenLegalList],
     [/^#\/legal\/([^/]+)$/, (m) => screenLegal(m[1])],
   ];
   function route() {
     const h = location.hash || '#/';
-    if (!DB.parent.loggedIn && /^#\/(me|students|profile|contest-signup|contest-work|my-contests)/.test(h)) return screenLogin();
+    if (!DB.parent.loggedIn && /^#\/(me|students|profile|my-courses)/.test(h)) return screenLogin();
     for (const [re, fn] of routes) {
       const m = h.match(re);
       if (m) return fn(m);
@@ -2776,6 +2900,7 @@
   }
   window.addEventListener('hashchange', route);
   window.addEventListener('storage', (event) => {
+    if (event.key === eventStore?.KEY && /^#\/(contests|contest\/)/.test(location.hash)) return route();
     if (event.key !== contestStore?.KEY) return;
     const shared = contestStore.load();
     DB.contests = shared.competitions;
@@ -2785,6 +2910,15 @@
     else if (/^#\/contest-(signup|work)/.test(location.hash)) toast('赛事配置已更新，提交前将按最新规则检查');
   });
   window.addEventListener('DOMContentLoaded', route);
+
+  // 接入缤果订单接口时调用：只接收已支付订单，不在赛事页采集报名资料。
+  window.FutureEduDigitalBooks = {
+    receivePaidOrders(records) {
+      DB.digitalPurchases = Array.isArray(records) ? records.filter((record) =>
+        record && record.status === 'paid' && record.bookId && record.orderNo) : [];
+      if (location.hash === '#/my-courses') screenMyCourses();
+    },
+  };
 
   /* 暴露给内联事件 */
   window.App = {
@@ -2796,6 +2930,9 @@
     confirmLesson, openDispute, closeDispute, selectDispute, submitDispute,
     openAftersale, closeAftersale, selectAS, submitAftersale,
     toggleFaq,
+    openEventSignup: (id) => openExternal(eventById(id)?.officialUrl, '赛事官网链接尚未配置'),
+    openDigitalBook: (id) => openExternal(digitalBookById(id)?.purchaseUrl, '缤果单本书购买链接待配置'),
+    setMyCoursesTab: (tab) => { if (!['school', 'digital'].includes(tab)) return; myCoursesTab = tab; screenMyCourses(); document.getElementById(`ev-tab-${tab}`)?.focus(); },
     setContestFilter: (k) => { contestFilter = k; screenContests(); },
     playContestVideo, downloadContestFile,
     pickWorkImages, pickWorkVideos, pickWorkFiles, delWorkAsset,

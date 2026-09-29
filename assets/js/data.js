@@ -5,6 +5,61 @@
  * ============================================================ */
 
 window.DB = {
+  // 赛事活动家长端数据。正式上线时由赛事配置、缤果书目与订单接口替换。
+  eventContests: [
+    {
+      id: 'luxun-18',
+      name: '第十八届鲁迅青少年文学大赛',
+      status: 'published',
+      coverEyebrow: '文学 · 创作',
+      coverSlogan: '以文字\n写青春',
+      organizer: '鲁迅文化基金会',
+      audience: '全国普通高中生（高三组 / 高一高二组）',
+      category: '文学写作',
+      cover: 'assets/images/contests/luxun-literature-cover.jpg',
+      fee: '全程免费',
+      registrationStart: '2026-09-20',
+      registrationEnd: '2026-12-05',
+      officialUrl: 'https://www.luxunwenxue.com/',
+      desc: '面向全国普通高中生的文学赛事，以命题作文为主要形式，分省级初赛、省级复赛和全国总决赛。',
+      scheduleTip: '赛程如有调整，以赛事官网通知为准。',
+      actionLabel: '立即免费参赛',
+      actionHint: '报名将在官方赛事平台完成',
+      stages: [
+        { name: '省级初赛', time: '2026.09.20—12.05', detail: '官网报名，使用专用稿纸手写作文并上传扫描件' },
+        { name: '省级复赛', time: '高三组 2027.01.02 / 高一高二组 2027.05 下旬', detail: '初赛一、二等奖选手晋级' },
+        { name: '全国总决赛', time: '高三组 2027.02.13 / 高一高二组 2027.07 下旬', detail: '复赛一等奖选手晋级' },
+      ],
+      notes: [
+        '报名、作品提交、晋级确认和成绩查询均在赛事官网完成。',
+        '报名信息确认后不可修改；各阶段晋级后须在官网按时确认。',
+        '具体安排以赛事官网公布的信息为准。',
+      ],
+      recommendedBookIds: ['bingo-516', 'luxun-writing'],
+    },
+  ],
+  digitalBooks: [
+    {
+      id: 'bingo-516',
+      title: '全国中小学生海洋文化创意设计大赛（白名单）AIGC赛训课',
+      author: '平台未标注',
+      cover: 'https://static.bingotalk.cn/bingoprd/image/cdfaf67869039a4039360e43e15c8901.jpg?x-oss-process=image/resize,w_500',
+      platform: '缤果数字教材',
+      price: 1580, // 页面演示价格，正式金额以缤果实际售价为准。
+      purchaseUrl: 'https://binguoketang.com/#/bingoBook/bookInfo?id=516&flag=store',
+    },
+    {
+      id: 'luxun-writing',
+      title: '文学写作与作品赏析',
+      author: '文学写作课程组',
+      cover: '/assets/images/contests/luxun-writing-course.jpg',
+      platform: '缤果数字教材',
+      price: 199, // 模拟课程与价格；配置真实单本书链接后可直接跳转购买。
+      purchaseUrl: '',
+    },
+  ],
+  // 只展示缤果回传的已支付订单；当前静态原型没有回传接口，不伪造购买记录。
+  digitalPurchases: [],
   // 家长账号（Demo：本地模拟登录 / 注册 / 微信绑定）
   parent: {
     nickname: '李先生',
@@ -1000,6 +1055,70 @@ window.DB = {
     '其他问题',
   ],
 };
+
+// 静态原型中后台与家长端共享推荐课程配置；空数组表示该赛事不展示推荐课程板块。
+(function () {
+  const KEY = 'futureEdu.eventRecommendations.v2';
+  const LEGACY_KEY = 'futureEdu.eventRecommendations.v1';
+  const defaults = () => Object.fromEntries((window.DB.eventContests || []).map((event) => [
+    event.id,
+    (event.recommendedBookIds || []).map((id) => (window.DB.digitalBooks || []).find((book) => book.id === id)).filter(Boolean),
+  ]));
+  const fillSeedPrices = (config) => Object.fromEntries(Object.entries(config).map(([eventId, books]) => [
+    eventId,
+    Array.isArray(books) ? books.map((book) => {
+      if (!book || (book.price !== undefined && book.price !== null)) return book;
+      const seed = (window.DB.digitalBooks || []).find((item) => item.purchaseUrl === book.purchaseUrl);
+      return seed?.price === undefined ? book : { ...book, price: seed.price };
+    }) : [],
+  ]));
+  const upgradeLegacy = (saved) => {
+    const config = { ...defaults(), ...saved };
+    const oldBooks = saved['luxun-18'];
+    const original = (window.DB.digitalBooks || []).find((book) => book.id === 'bingo-516');
+    const additional = (window.DB.digitalBooks || []).find((book) => book.id === 'luxun-writing');
+    if (Array.isArray(oldBooks) && oldBooks.length === 1 && oldBooks[0]?.purchaseUrl === original?.purchaseUrl && additional) {
+      config['luxun-18'] = [...oldBooks, additional];
+    }
+    return fillSeedPrices(config);
+  };
+  const load = () => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(KEY) || 'null');
+      if (saved && typeof saved === 'object' && !Array.isArray(saved)) return fillSeedPrices({ ...defaults(), ...saved });
+      const legacy = JSON.parse(localStorage.getItem(LEGACY_KEY) || 'null');
+      if (legacy && typeof legacy === 'object' && !Array.isArray(legacy)) return upgradeLegacy(legacy);
+    } catch (_) {}
+    return defaults();
+  };
+  const save = (config) => {
+    try { localStorage.setItem(KEY, JSON.stringify(config)); return true; } catch (_) { return false; }
+  };
+  window.FutureEduEventRecommendations = { KEY, load, save };
+})();
+
+// 新赛事活动管理独立于原赛事评审功能；首次加载沿用现有赛事和推荐课程配置。
+(function () {
+  const KEY = 'futureEdu.eventActivities.v1';
+  const initial = () => (window.DB.eventContests || []).map((event, index) => ({
+    ...event,
+    status: event.status || 'published',
+    sortOrder: index,
+    recommendedBooks: (window.FutureEduEventRecommendations?.load()[event.id] || []).map((book) => ({ ...book })),
+  }));
+  const load = () => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(KEY) || 'null');
+      if (Array.isArray(saved)) return saved;
+    } catch (_) {}
+    return initial();
+  };
+  const save = (events) => {
+    if (!Array.isArray(events)) return false;
+    try { localStorage.setItem(KEY, JSON.stringify(events)); return true; } catch (_) { return false; }
+  };
+  window.FutureEduEventActivityStore = { KEY, load, save };
+})();
 
 (function () {
   const KEY = 'futureEdu.contests.v1';

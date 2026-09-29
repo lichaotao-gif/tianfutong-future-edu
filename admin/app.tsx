@@ -3182,6 +3182,239 @@ const LogPage = ({ db }: any) => (
 /* ============================================================
  * 应用外壳
  * ============================================================ */
+function EventActivityPage() {
+  const store = (window as any).FutureEduEventActivityStore;
+  const [events, setEvents] = useState<any[]>(() => store.load());
+  const [editing, setEditing] = useState<any>(null);
+  const [coverUploading, setCoverUploading] = useState(false);
+  const [uploadingBookId, setUploadingBookId] = useState<string | null>(null);
+  const sorted = [...events].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+  const patch = (field: string, value: any) => setEditing((current: any) => ({ ...current, [field]: value }));
+  const patchItem = (field: string, index: number, value: any) => setEditing((current: any) => ({
+    ...current, [field]: (current[field] || []).map((item: any, i: number) => i === index ? value : item),
+  }));
+  const addItem = (field: string, value: any) => setEditing((current: any) => ({ ...current, [field]: [...(current[field] || []), value] }));
+  const removeItem = (field: string, index: number) => setEditing((current: any) => ({ ...current, [field]: (current[field] || []).filter((_: any, i: number) => i !== index) }));
+  const moveItem = (field: string, index: number, direction: number) => setEditing((current: any) => {
+    const items = [...(current[field] || [])];
+    const next = index + direction;
+    if (next < 0 || next >= items.length) return current;
+    [items[index], items[next]] = [items[next], items[index]];
+    return { ...current, [field]: items };
+  });
+  const validImage = (value: string) => value?.startsWith('/assets/images/') || value?.startsWith('assets/images/') || /^https:\/\//i.test(value || '') || /^data:image\/jpeg;base64,/i.test(value || '');
+  const validHttps = (value: string) => /^https:\/\/[^\s]+$/i.test(value || '');
+  const compressCover = (file: File, targetWidth: number, targetHeight: number, onDone: (cover: string) => void, onFinish: () => void) => {
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) { onFinish(); message.warning('请选择 JPG、PNG 或 WebP 图片'); return false; }
+    if (file.size > 10 * 1024 * 1024) { onFinish(); message.warning('封面图片不能超过 10 MB'); return false; }
+    const fail = () => { onFinish(); message.error('图片读取失败，请重新上传'); };
+    const reader = new FileReader();
+    reader.onerror = fail;
+    reader.onload = () => {
+      const image = new window.Image();
+      image.onerror = fail;
+      image.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = targetWidth;
+          canvas.height = targetHeight;
+          const context = canvas.getContext('2d');
+          if (!context) return fail();
+          const width = image.naturalWidth;
+          const height = image.naturalHeight;
+          const ratio = canvas.width / canvas.height;
+          const cropWidth = Math.min(width, height * ratio);
+          const cropHeight = Math.min(height, width / ratio);
+          context.drawImage(image, (width - cropWidth) / 2, (height - cropHeight) / 2, cropWidth, cropHeight, 0, 0, canvas.width, canvas.height);
+          const cover = canvas.toDataURL('image/jpeg', 0.78);
+          onDone(cover);
+          onFinish();
+        } catch (_) { fail(); }
+      };
+      image.src = String(reader.result || '');
+    };
+    reader.readAsDataURL(file);
+    return false;
+  };
+  const uploadCover = (file: File) => {
+    setCoverUploading(true);
+    return compressCover(file, 1200, 675, (cover) => {
+      setEditing((current: any) => current ? { ...current, cover } : current);
+      message.success('赛事封面已上传');
+    }, () => setCoverUploading(false));
+  };
+  const uploadBookCover = (file: File, bookId: string) => {
+    setUploadingBookId(bookId);
+    return compressCover(file, 600, 825, (cover) => {
+      setEditing((current: any) => current ? {
+        ...current,
+        recommendedBooks: (current.recommendedBooks || []).map((book: any) => book.id === bookId ? { ...book, cover } : book),
+      } : current);
+      message.success('课程封面已上传');
+    }, () => setUploadingBookId(null));
+  };
+  const saveEvents = (next: any[]) => {
+    if (!store.save(next)) return message.error('保存失败，请检查浏览器存储空间');
+    setEvents(next);
+    return true;
+  };
+  const create = () => setEditing({
+    id: `event-${Date.now()}`, status: 'draft', sortOrder: events.length, name: '', desc: '',
+    cover: '', coverEyebrow: '', coverSlogan: '', category: '', fee: '全程免费',
+    organizer: '', audience: '', registrationStart: '', registrationEnd: '', officialUrl: '',
+    stages: [], scheduleTip: '赛程如有调整，以赛事官网通知为准。', notes: [], recommendedBooks: [],
+    actionLabel: '立即免费参赛', actionHint: '报名将在官方赛事平台完成',
+  });
+  const save = (status: string) => {
+    const event = { ...editing, status, name: editing.name?.trim(), desc: editing.desc?.trim() };
+    if (!event.name) return message.warning('请填写赛事标题');
+    if (status === 'published') {
+      if (!event.desc || !event.category || !event.fee || !event.cover || !event.organizer || !event.audience || !event.registrationStart || !event.registrationEnd || !event.officialUrl || !event.actionLabel) return message.warning('请补全封面、标题、赛事信息和报名入口');
+      if (!validImage(event.cover)) return message.warning('请上传有效的赛事封面');
+      if (!validHttps(event.officialUrl)) return message.warning('官方报名链接须使用 HTTPS 地址');
+      if (event.registrationStart > event.registrationEnd) return message.warning('报名结束日期不能早于开始日期');
+      if (!event.stages?.length || event.stages.some((stage: any) => !stage.name?.trim() || !stage.time?.trim() || !stage.detail?.trim())) return message.warning('请至少完整填写一个赛程阶段');
+      if (!event.notes?.length || event.notes.some((note: string) => !note.trim())) return message.warning('请至少完整填写一条报名须知');
+      for (const book of event.recommendedBooks || []) {
+        if (!book.title?.trim() || !book.author?.trim() || !book.cover?.trim() || book.price === null || book.price === undefined || !Number.isFinite(Number(book.price)) || Number(book.price) < 0) return message.warning('请补全推荐课程的封面、标题、作者和有效价格');
+        if (!validImage(book.cover) || (book.purchaseUrl?.trim() && !validHttps(book.purchaseUrl))) return message.warning('推荐课程的封面或购买链接格式不正确');
+      }
+    }
+    const next = events.some((item) => item.id === event.id)
+      ? events.map((item) => item.id === event.id ? event : item)
+      : [...events, event];
+    if (!saveEvents(next)) return;
+    setEditing(null);
+    message.success(status === 'published' ? '赛事已发布，家长端刷新后可见' : '赛事已保存');
+  };
+  const setStatus = (event: any, status: string) => {
+    const next = events.map((item) => item.id === event.id ? { ...item, status } : item);
+    if (saveEvents(next)) message.success(status === 'archived' ? '赛事已下架' : '赛事已保存为草稿');
+  };
+  const moveEvent = (id: string, direction: number) => {
+    const next = [...sorted];
+    const index = next.findIndex((item) => item.id === id);
+    const target = index + direction;
+    if (target < 0 || target >= next.length) return;
+    [next[index], next[target]] = [next[target], next[index]];
+    saveEvents(next.map((item, order) => ({ ...item, sortOrder: order })));
+  };
+  const preview = (id: string) => window.open(`../?eventPreview=1#/contest/${encodeURIComponent(id)}`, '_blank', 'noopener,noreferrer');
+  const rowActions = (field: string, index: number, count: number) => <Space size={0}>
+    <Button type="link" disabled={index === 0} onClick={() => moveItem(field, index, -1)}>上移</Button>
+    <Button type="link" disabled={index === count - 1} onClick={() => moveItem(field, index, 1)}>下移</Button>
+    <Button type="link" danger onClick={() => removeItem(field, index)}>移除</Button>
+  </Space>;
+
+  if (!editing) return <Space direction="vertical" size={16} style={{ width: '100%' }}>
+    <Alert type="info" showIcon message="赛事活动管理" description="这里配置家长端的赛事列表和详情。已发布的赛事对家长展示；草稿和下架赛事仅供后台查看。" />
+    <Button type="primary" icon={<PlusOutlined />} onClick={create} style={{ alignSelf: 'flex-start' }}>创建赛事</Button>
+    {sorted.length ? sorted.map((event, index) => <Card key={event.id} size="small" style={{ width: '100%' }}>
+      <Row gutter={[16, 12]} align="middle">
+        <Col xs={24} md={10}><Space direction="vertical" size={4}><Space><b>{event.name || '未命名赛事'}</b><Tag color={event.status === 'published' ? 'green' : event.status === 'archived' ? 'default' : 'gold'}>{event.status === 'published' ? '已发布' : event.status === 'archived' ? '已下架' : '草稿'}</Tag></Space><span style={{ color: '#888', fontSize: 12 }}>报名截至 {event.registrationEnd || '未设置'} · 推荐课程 {(event.recommendedBooks || []).length} 门</span></Space></Col>
+        <Col xs={24} md={14}><Space wrap>
+          <Button type="primary" ghost onClick={() => setEditing(JSON.parse(JSON.stringify(event)))}>编辑</Button>
+          <Button onClick={() => preview(event.id)}>预览</Button>
+          {event.status === 'published' && <Button onClick={() => setStatus(event, 'archived')}>下架</Button>}
+          <Button disabled={index === 0} onClick={() => moveEvent(event.id, -1)}>上移</Button>
+          <Button disabled={index === sorted.length - 1} onClick={() => moveEvent(event.id, 1)}>下移</Button>
+        </Space></Col>
+      </Row>
+    </Card>) : <Card>暂无赛事，点击“创建赛事”开始配置。</Card>}
+  </Space>;
+
+  return <Space direction="vertical" size={16} style={{ width: '100%' }}>
+    <Space wrap><Button onClick={() => setEditing(null)}>返回列表</Button><b style={{ fontSize: 18 }}>{events.some((item) => item.id === editing.id) ? '编辑赛事' : '创建赛事'}</b><Tag>{editing.status === 'published' ? '已发布' : editing.status === 'archived' ? '已下架' : '草稿'}</Tag></Space>
+    <Card title="列表封面与详情顶部" size="small"><Row gutter={[16, 16]}>
+      <Col xs={24} md={12}><label>赛事标题 *</label><Input value={editing.name} onChange={(e) => patch('name', e.target.value)} /></Col>
+      <Col xs={24} md={12}><label>赛事类别 *</label><Input value={editing.category} placeholder="例如：文学写作" onChange={(e) => patch('category', e.target.value)} /></Col>
+      <Col xs={24}><label>副标题／简介 *</label><TextArea rows={2} value={editing.desc} onChange={(e) => patch('desc', e.target.value)} /></Col>
+      <Col xs={24}><label>赛事封面 *</label><div style={{ marginTop: 6 }}><Upload accept="image/jpeg,image/png,image/webp" showUploadList={false} beforeUpload={uploadCover}><Button loading={coverUploading}>上传赛事封面</Button></Upload><span style={{ marginLeft: 12, color: '#888', fontSize: 12 }}>建议尺寸：1200 × 675 像素（16:9）；上传后自动裁剪</span></div></Col>
+      {editing.cover && <Col xs={24}><img src={editing.cover.startsWith('assets/') ? `../${editing.cover}` : editing.cover} alt="赛事封面预览" style={{ width: 260, maxWidth: '100%', aspectRatio: '16/9', objectFit: 'cover', borderRadius: 10 }} /></Col>}
+      <Col xs={24} md={12}><label>封面短标签</label><Input value={editing.coverEyebrow || ''} placeholder="例如：文学 · 创作" onChange={(e) => patch('coverEyebrow', e.target.value)} /></Col>
+      <Col xs={24} md={12}><label>封面主文案</label><TextArea rows={2} value={editing.coverSlogan || ''} placeholder="可换行，例如：以文字／写青春" onChange={(e) => patch('coverSlogan', e.target.value)} /></Col>
+    </Row></Card>
+    <Card title="赛事信息" size="small"><Row gutter={[16, 16]}>
+      <Col xs={24} md={12}><label>主办单位 *</label><Input value={editing.organizer} onChange={(e) => patch('organizer', e.target.value)} /></Col>
+      <Col xs={24} md={12}><label>参赛对象 *</label><Input value={editing.audience} onChange={(e) => patch('audience', e.target.value)} /></Col>
+      <Col xs={24} md={8}><label>报名费用 *</label><Input value={editing.fee} onChange={(e) => patch('fee', e.target.value)} /></Col>
+      <Col xs={12} md={8}><label>报名开始 *</label><Input type="date" value={editing.registrationStart} onChange={(e) => patch('registrationStart', e.target.value)} /></Col>
+      <Col xs={12} md={8}><label>报名结束 *</label><Input type="date" value={editing.registrationEnd} onChange={(e) => patch('registrationEnd', e.target.value)} /></Col>
+    </Row></Card>
+    <Card title="赛程安排" size="small" extra={<Button onClick={() => addItem('stages', { name: '', time: '', detail: '' })}>添加阶段</Button>}>
+      {(editing.stages || []).map((stage: any, index: number) => <Card key={index} size="small" style={{ marginBottom: 10 }} title={`阶段 ${index + 1}`} extra={rowActions('stages', index, editing.stages.length)}><Row gutter={[12, 12]}>
+        <Col xs={24} md={8}><label>阶段名称</label><Input value={stage.name} onChange={(e) => patchItem('stages', index, { ...stage, name: e.target.value })} /></Col>
+        <Col xs={24} md={16}><label>时间</label><Input value={stage.time} onChange={(e) => patchItem('stages', index, { ...stage, time: e.target.value })} /></Col>
+        <Col xs={24}><label>阶段说明</label><TextArea rows={2} value={stage.detail} onChange={(e) => patchItem('stages', index, { ...stage, detail: e.target.value })} /></Col>
+      </Row></Card>)}
+      <label>赛程提示</label><Input value={editing.scheduleTip || ''} onChange={(e) => patch('scheduleTip', e.target.value)} />
+    </Card>
+    <Card title="报名须知" size="small" extra={<Button onClick={() => addItem('notes', '')}>添加须知</Button>}>
+      {(editing.notes || []).map((note: string, index: number) => <div key={index} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 10 }}><Input.TextArea rows={2} aria-label={`报名须知 ${index + 1}`} value={note} onChange={(e) => patchItem('notes', index, e.target.value)} />{rowActions('notes', index, editing.notes.length)}</div>)}
+    </Card>
+    <Card title="官方报名入口" size="small"><Row gutter={[16, 16]}>
+      <Col xs={24}><label>官方报名链接 *</label><Input value={editing.officialUrl} placeholder="https://" onChange={(e) => patch('officialUrl', e.target.value)} /></Col>
+      <Col xs={24} md={12}><label>按钮文字 *</label><Input value={editing.actionLabel} onChange={(e) => patch('actionLabel', e.target.value)} /></Col>
+      <Col xs={24} md={12}><label>按钮下方提示</label><Input value={editing.actionHint || ''} onChange={(e) => patch('actionHint', e.target.value)} /></Col>
+    </Row></Card>
+    <Card title="推荐课程 · 数字教材" size="small" extra={<Button onClick={() => addItem('recommendedBooks', { id: `book-${Date.now()}`, platform: '缤果数字教材', title: '', author: '', cover: '', price: null, purchaseUrl: '' })}>添加课程</Button>}>
+      <p style={{ color: '#888', marginTop: 0 }}>没有配置课程时，家长端不展示“推荐课程”板块；未填购买链接的课程仅展示。</p>
+      {(editing.recommendedBooks || []).map((book: any, index: number) => <Card key={book.id || index} size="small" style={{ marginBottom: 10 }} title={`课程 ${index + 1}`} extra={rowActions('recommendedBooks', index, editing.recommendedBooks.length)}><Row gutter={[12, 12]}>
+        <Col xs={24} md={12}><label>标题</label><Input value={book.title} onChange={(e) => patchItem('recommendedBooks', index, { ...book, title: e.target.value })} /></Col>
+        <Col xs={24} md={12}><label>作者</label><Input value={book.author} onChange={(e) => patchItem('recommendedBooks', index, { ...book, author: e.target.value })} /></Col>
+        <Col xs={24} md={8}><label>价格（元）</label><InputNumber min={0} precision={2} style={{ width: '100%' }} value={book.price ?? null} onChange={(value) => patchItem('recommendedBooks', index, { ...book, price: value })} /></Col>
+        <Col xs={24} md={16}><label>课程封面</label><div style={{ marginTop: 6 }}><Upload accept="image/jpeg,image/png,image/webp" showUploadList={false} beforeUpload={(file: File) => uploadBookCover(file, book.id)}><Button loading={uploadingBookId === book.id}>上传课程封面</Button></Upload><span style={{ marginLeft: 12, color: '#888', fontSize: 12 }}>建议尺寸：720 × 990 像素（8:11）；上传后自动裁剪</span></div>{book.cover && <img src={book.cover.startsWith('assets/') ? `../${book.cover}` : book.cover} alt={`${book.title || '课程'}封面预览`} style={{ display: 'block', width: 82, height: 113, objectFit: 'cover', borderRadius: 5, marginTop: 10 }} />}</Col>
+        <Col xs={24}><label>缤果单本书购买链接</label><Input value={book.purchaseUrl} onChange={(e) => patchItem('recommendedBooks', index, { ...book, purchaseUrl: e.target.value })} /></Col>
+      </Row></Card>)}
+    </Card>
+    <Space wrap style={{ paddingBottom: 28 }}><Button onClick={() => save('draft')}>保存草稿</Button><Button type="primary" onClick={() => save('published')}>{editing.status === 'published' ? '保存并更新' : '发布赛事'}</Button><Button onClick={() => setEditing(null)}>取消</Button></Space>
+  </Space>;
+}
+
+function EventRecommendationPage() {
+  const store = (window as any).FutureEduEventRecommendations;
+  const events = (window as any).DB.eventContests || [];
+  const [config, setConfig] = useState<any>(() => store.load());
+  const updateBook = (eventId: string, index: number, field: string, value: any) => setConfig((current: any) => ({
+    ...current,
+    [eventId]: (current[eventId] || []).map((book: any, i: number) => i === index ? { ...book, [field]: value } : book),
+  }));
+  const addBook = (eventId: string) => setConfig((current: any) => ({
+    ...current,
+    [eventId]: [...(current[eventId] || []), { id: `book-${Date.now()}`, title: '', author: '', price: null, cover: '', platform: '缤果数字教材', purchaseUrl: '' }],
+  }));
+  const removeBook = (eventId: string, index: number) => setConfig((current: any) => ({
+    ...current, [eventId]: (current[eventId] || []).filter((_: any, i: number) => i !== index),
+  }));
+  const save = () => {
+    for (const books of Object.values(config) as any[][]) for (const book of books) {
+      if (!book.title?.trim() || !book.author?.trim() || !book.cover?.trim()) return message.warning('请填写课程封面、标题及作者');
+      if (book.price === null || book.price === undefined || !Number.isFinite(Number(book.price)) || Number(book.price) < 0) return message.warning('请填写有效的课程价格');
+      try {
+        if (!book.cover.startsWith('/assets/images/') && new URL(book.cover).protocol !== 'https:') return message.warning('封面须使用 HTTPS 地址或站内图片路径');
+        if (book.purchaseUrl?.trim() && new URL(book.purchaseUrl).protocol !== 'https:') return message.warning('购买链接须使用 HTTPS 地址');
+      } catch (_) { return message.warning('请检查封面或购买链接地址'); }
+    }
+    if (!store.save(config)) return message.error('保存失败，请检查浏览器存储空间');
+    message.success('推荐课程配置已保存，家长端刷新后生效');
+  };
+  return <Space direction="vertical" size={16} style={{ width: '100%' }}>
+    <Alert type="info" showIcon message="按赛事配置推荐课程" description="添加课程后，家长端赛事详情显示“推荐课程”；未填写购买链接的课程仅展示，填写缤果单本书链接后可点击跳转。移除全部课程并保存后，整个板块隐藏。" />
+    {events.map((event: any) => <Card key={event.id} title={event.name} extra={<Button onClick={() => addBook(event.id)}>添加课程</Button>}>
+      {(config[event.id] || []).length ? (config[event.id] || []).map((book: any, index: number) => <Card key={book.id || index} size="small" style={{ marginBottom: 12 }} title={`课程 ${index + 1}`} extra={<Button danger type="link" onClick={() => removeBook(event.id, index)}>移除</Button>}>
+        <Row gutter={[12, 12]}>
+          <Col xs={24} md={12}><label>标题</label><Input value={book.title} onChange={(e) => updateBook(event.id, index, 'title', e.target.value)} /></Col>
+          <Col xs={24} md={12}><label>作者</label><Input value={book.author} onChange={(e) => updateBook(event.id, index, 'author', e.target.value)} /></Col>
+          <Col xs={24} md={12}><label>价格（元）</label><InputNumber min={0} precision={2} style={{ width: '100%' }} value={book.price ?? null} onChange={(value) => updateBook(event.id, index, 'price', value)} /></Col>
+          <Col xs={24}><label>封面地址</label><Input value={book.cover} onChange={(e) => updateBook(event.id, index, 'cover', e.target.value)} /></Col>
+          <Col xs={24}><label>缤果单本书购买链接</label><Input value={book.purchaseUrl} placeholder="配置后可点击跳转购买" onChange={(e) => updateBook(event.id, index, 'purchaseUrl', e.target.value)} /></Col>
+        </Row>
+      </Card>) : <p style={{ color: '#888', margin: 0 }}>未配置推荐课程，家长端不显示该板块。</p>}
+    </Card>)}
+    <div><Button type="primary" onClick={save}>保存配置</Button></div>
+  </Space>;
+}
+
 const MENUS = [
   { key: 'dash', icon: <DashboardOutlined />, label: '首页看板' },
   { key: 'user', icon: <TeamOutlined />, label: '平台用户管理' },
@@ -3190,7 +3423,7 @@ const MENUS = [
   { key: 'org', icon: <ShopOutlined />, label: '机构入驻管理' },
   { key: 'teacher', icon: <IdcardOutlined />, label: '教师审核管理' },
   { key: 'course', icon: <BookOutlined />, label: '课程审核与课程库' },
-  { key: 'competition', icon: <TrophyOutlined />, label: '赛事评审中心' },
+  { key: 'eventActivities', icon: <TrophyOutlined />, label: '赛事活动管理' },
   { key: 'deploy', icon: <SendOutlined />, label: '学校课程配置' },
   { key: 'class', icon: <ClusterOutlined />, label: '成班管理' },
   { key: 'order', icon: <ProfileOutlined />, label: '订单管理' },
@@ -3229,6 +3462,7 @@ function App() {
     school: <SchoolPage db={db} setDb={setDb} go={setNav} />, venue: <VenuePage db={db} setDb={setDb} />,
     org: <OrgPage db={db} setDb={setDb} />, teacher: <TeacherPage db={db} setDb={setDb} />,
     course: <CoursePage db={db} setDb={setDb} />, competition: <CompetitionPage db={db} setDb={setDb} />,
+    eventActivities: <EventActivityPage />, eventRecommendations: <EventRecommendationPage />,
     deploy: <DeployPage db={db} setDb={setDb} />, class: <ClassPage db={db} setDb={setDb} />, order: <OrderPage db={db} setDb={setDb} />,
     lesson: <LessonPage db={db} setDb={setDb} />, settle: <SettlePage db={db} setDb={setDb} />,
     aftersale: <AftersalePage db={db} setDb={setDb} />, log: <LogPage db={db} />,
@@ -3241,7 +3475,7 @@ function App() {
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#001529' }}>
       <div style={{ color: '#fff', padding: '18px 16px', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
         <div style={{ width: 34, height: 34, borderRadius: 8, background: '#1677ff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>未</div>
-        <div style={{ lineHeight: 1.25 }}><b>天府未来教育中心</b><div style={{ fontSize: 11, opacity: .65 }}>后台管理系统 Demo</div></div>
+        <div style={{ lineHeight: 1.25 }}><b>天府未来教育中心</b><div style={{ fontSize: 11, opacity: .65 }}>后台管理系统</div></div>
       </div>
       <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
         <Menu theme="dark" mode="inline" selectedKeys={[nav]} items={MENUS} onClick={(e: any) => selectNav(e.key)} />
