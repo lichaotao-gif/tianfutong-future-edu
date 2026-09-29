@@ -1266,7 +1266,7 @@
           </div>
         </div>
         <div class="card mx mt" style="overflow:hidden">
-          ${cell('#176b75', I.book, '我的课程', '含缤果数字教材购买记录', "location.hash='#/my-courses'")}
+          ${cell('#176b75', I.book, '我的课程', '含数字教材购买记录', "location.hash='#/my-courses'")}
           ${cell('#f59b1c', I.help, '帮助中心', '报名、销课与退费常见问题', "location.hash='#/help'")}
           ${cell('#8a8f99', I.service, '客服与售后', '在线咨询', "App.soonTip()")}
           ${cell('#6b78f7', I.clip, '协议与规则', '平台服务协议 · 课程服务协议 · 隐私政策', "location.hash='#/legal'")}
@@ -2743,8 +2743,8 @@
   const eventStore = window.FutureEduEventActivityStore;
   const eventPreview = new URLSearchParams(location.search).get('eventPreview') === '1';
   const eventById = (id) => (eventStore?.load() || []).find((item) => item.id === routeId(id) && (item.status === 'published' || eventPreview));
-  const digitalBookById = (id) => (DB.digitalBooks || []).find((item) => item.id === id)
-    || (eventStore?.load() || []).flatMap((event) => event.recommendedBooks || []).find((item) => item.id === id);
+  const digitalBookById = (id) => (eventStore?.load() || []).flatMap((event) => event.recommendedBooks || []).find((item) => item.id === id)
+    || (DB.digitalBooks || []).find((item) => item.id === id);
   const safeExternalUrl = (raw) => {
     try {
       const url = new URL(raw);
@@ -2761,16 +2761,14 @@
     const content = `
       <img class="ev-book-cover" src="${esc(book.cover)}" alt="${esc(book.title)}封面" loading="lazy">
       <div class="ev-book-main">
-        <div class="ev-book-platform">${esc(book.platform)}</div>
         <div class="ev-book-title">${esc(book.title)}</div>
         <div class="ev-book-author">作者：${esc(book.author)}</div>
         <div class="ev-book-price">${book.price !== undefined && book.price !== null && book.price !== '' && Number.isFinite(Number(book.price)) ? `¥${Number(book.price).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '价格待确认'}</div>
-        ${url ? '' : '<div class="ev-book-unavailable">购买渠道待开放</div>'}
       </div>
     `;
     return url
       ? `<a class="ev-book" href="${esc(url)}" target="_blank" rel="noopener noreferrer" aria-label="查看${esc(book.title)}">${content}</a>`
-      : `<div class="ev-book ev-book-static">${content}</div>`;
+      : `<button class="ev-book" type="button" data-book-id="${esc(book.id)}" onclick="App.openDigitalBook(this.dataset.bookId)" aria-label="查看${esc(book.title)}">${content}</button>`;
   };
 
   function screenEventList() {
@@ -2855,7 +2853,7 @@
             const book = digitalBookById(record.bookId) || record;
             return `<div class="ev-purchase card mx mt">
               ${book.cover ? `<img src="${esc(book.cover)}" alt="${esc(book.title || '数字教材')}封面">` : `<div class="ev-cover-fallback">${I.book}</div>`}
-              <div><strong>${esc(book.title || '数字教材')}</strong><p>${esc(book.author || '作者未标注')} · ${esc(book.platform || '缤果数字教材')}</p><small>购买时间：${esc(record.paidAt || '—')}</small><div class="ev-order-no">订单号：${esc(record.orderNo || '—')}</div></div>
+              <div><strong>${esc(book.title || '数字教材')}</strong><p>${esc(book.author || '作者未标注')}</p><small>购买时间：${esc(record.paidAt || '—')}</small><div class="ev-order-no">订单号：${esc(record.orderNo || '—')}</div></div>
             </div>`;
           }).join('') : '<div class="ev-empty"><div class="ev-empty-icon">' + I.book + '</div><strong>暂无数字教材购买记录</strong><p>购买数字教材后，可在这里查看课程记录。</p></div>')}
           </div>
@@ -2931,7 +2929,7 @@
     openAftersale, closeAftersale, selectAS, submitAftersale,
     toggleFaq,
     openEventSignup: (id) => openExternal(eventById(id)?.officialUrl, '赛事官网链接尚未配置'),
-    openDigitalBook: (id) => openExternal(digitalBookById(id)?.purchaseUrl, '缤果单本书购买链接待配置'),
+    openDigitalBook: (id) => openExternal(digitalBookById(id)?.purchaseUrl, '未配置渠道'),
     setMyCoursesTab: (tab) => { if (!['school', 'digital'].includes(tab)) return; myCoursesTab = tab; screenMyCourses(); document.getElementById(`ev-tab-${tab}`)?.focus(); },
     setContestFilter: (k) => { contestFilter = k; screenContests(); },
     playContestVideo, downloadContestFile,

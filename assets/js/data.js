@@ -42,7 +42,7 @@ window.DB = {
     {
       id: 'bingo-516',
       title: '全国中小学生海洋文化创意设计大赛（白名单）AIGC赛训课',
-      author: '平台未标注',
+      author: '陈思远',
       cover: 'https://static.bingotalk.cn/bingoprd/image/cdfaf67869039a4039360e43e15c8901.jpg?x-oss-process=image/resize,w_500',
       platform: '缤果数字教材',
       price: 1580, // 页面演示价格，正式金额以缤果实际售价为准。
@@ -51,7 +51,7 @@ window.DB = {
     {
       id: 'luxun-writing',
       title: '文学写作与作品赏析',
-      author: '文学写作课程组',
+      author: '林知夏',
       cover: '/assets/images/contests/luxun-writing-course.jpg',
       platform: '缤果数字教材',
       price: 199, // 模拟课程与价格；配置真实单本书链接后可直接跳转购买。
@@ -1100,6 +1100,15 @@ window.DB = {
 // 新赛事活动管理独立于原赛事评审功能；首次加载沿用现有赛事和推荐课程配置。
 (function () {
   const KEY = 'futureEdu.eventActivities.v1';
+  const exampleAuthors = { 'bingo-516': '陈思远', 'luxun-writing': '林知夏' };
+  const withExampleAuthors = (events) => events.map((event) => ({
+    ...event,
+    recommendedBooks: (event.recommendedBooks || []).map((book) => ({
+      ...book,
+      author: exampleAuthors[book.id] && ['平台未标注', '文学写作课程组'].includes(book.author)
+        ? exampleAuthors[book.id] : book.author,
+    })),
+  }));
   const initial = () => (window.DB.eventContests || []).map((event, index) => ({
     ...event,
     status: event.status || 'published',
@@ -1109,9 +1118,9 @@ window.DB = {
   const load = () => {
     try {
       const saved = JSON.parse(localStorage.getItem(KEY) || 'null');
-      if (Array.isArray(saved)) return saved;
+      if (Array.isArray(saved)) return withExampleAuthors(saved);
     } catch (_) {}
-    return initial();
+    return withExampleAuthors(initial());
   };
   const save = (events) => {
     if (!Array.isArray(events)) return false;

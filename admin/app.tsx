@@ -3358,7 +3358,7 @@ function EventActivityPage() {
       <Col xs={24} md={12}><label>按钮下方提示</label><Input value={editing.actionHint || ''} onChange={(e) => patch('actionHint', e.target.value)} /></Col>
     </Row></Card>
     <Card title="推荐课程 · 数字教材" size="small" extra={<Button onClick={() => addItem('recommendedBooks', { id: `book-${Date.now()}`, platform: '缤果数字教材', title: '', author: '', cover: '', price: null, purchaseUrl: '' })}>添加课程</Button>}>
-      <p style={{ color: '#888', marginTop: 0 }}>没有配置课程时，家长端不展示“推荐课程”板块；未填购买链接的课程仅展示。</p>
+      <p style={{ color: '#888', marginTop: 0 }}>没有配置课程时，家长端不展示“推荐课程”板块；未填购买链接时，点击课程会提示“未配置渠道”。</p>
       {(editing.recommendedBooks || []).map((book: any, index: number) => <Card key={book.id || index} size="small" style={{ marginBottom: 10 }} title={`课程 ${index + 1}`} extra={rowActions('recommendedBooks', index, editing.recommendedBooks.length)}><Row gutter={[12, 12]}>
         <Col xs={24} md={12}><label>标题</label><Input value={book.title} onChange={(e) => patchItem('recommendedBooks', index, { ...book, title: e.target.value })} /></Col>
         <Col xs={24} md={12}><label>作者</label><Input value={book.author} onChange={(e) => patchItem('recommendedBooks', index, { ...book, author: e.target.value })} /></Col>

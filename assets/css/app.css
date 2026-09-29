@@ -638,16 +638,13 @@ body {
 .ev-section-heading h2 { margin-bottom: 6px; }
 .ev-section-heading span { color: #399477; font-size: 11px; }
 .ev-recommend-note { margin: 0 0 14px; color: #718079; font-size: 11px; line-height: 1.6; }
-.ev-book { display: flex; gap: 13px; border-top: 1px solid #edf0ec; padding-top: 14px; color: inherit; text-decoration: none; cursor: pointer; }
+.ev-book { display: flex; gap: 13px; width: 100%; border: 0; border-top: 1px solid #edf0ec; padding: 14px 0 0; background: transparent; color: inherit; text-align: left; text-decoration: none; font: inherit; cursor: pointer; }
 .ev-book + .ev-book { margin-top: 14px; }
-.ev-book-static { cursor: default; }
 .ev-book-cover { width: 82px; height: 113px; flex: none; object-fit: cover; border-radius: 5px; background: #e8eee9; box-shadow: 1px 3px 8px rgba(0,0,0,.13); }
 .ev-book-main { flex: 1; min-width: 0; }
-.ev-book-platform { color: #74927e; font-size: 10px; }
-.ev-book-title { margin: 6px 0; color: #284439; font-size: 13px; font-weight: 700; line-height: 1.45; }
+.ev-book-title { margin: 0 0 6px; color: #284439; font-size: 13px; font-weight: 700; line-height: 1.45; }
 .ev-book-author { color: #819087; font-size: 11px; }
 .ev-book-price { margin-top: 10px; color: #c95231; font-size: 17px; font-weight: 800; }
-.ev-book-unavailable { margin-top: 5px; color: #87958d; font-size: 10px; }
 .ev-actionbar { position: absolute; bottom: 0; left: 0; right: 0; padding: 10px 16px calc(12px + env(safe-area-inset-bottom)); background: #fff; border-top: 1px solid #e8eee8; box-shadow: 0 -5px 20px rgba(20,50,40,.07); }
 .ev-actionbar .btn { width: 100%; background: #176b75; }
 .ev-action-hint { margin: 7px 0 0; color: #718079; font-size: 11px; line-height: 1.4; text-align: center; }
