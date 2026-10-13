@@ -3184,10 +3184,23 @@ const LogPage = ({ db }: any) => (
  * ============================================================ */
 function EventActivityPage() {
   const store = (window as any).FutureEduEventActivityStore;
+  const bannerStore = (window as any).FutureEduHomeBannerStore;
+  const signupStore = (window as any).FutureEduEventSignupStore;
   const [events, setEvents] = useState<any[]>(() => store.load());
+  const [banner, setBanner] = useState<any>(() => bannerStore.load());
+  const [signupClicks, setSignupClicks] = useState<any[]>(() => signupStore.load());
   const [editing, setEditing] = useState<any>(null);
   const [coverUploading, setCoverUploading] = useState(false);
+  const [bannerUploading, setBannerUploading] = useState(false);
   const [uploadingBookId, setUploadingBookId] = useState<string | null>(null);
+  useEffect(() => {
+    const sync = (event: StorageEvent) => {
+      if (event.key === signupStore.KEY) setSignupClicks(signupStore.load());
+      if (event.key === bannerStore.KEY) setBanner(bannerStore.load());
+    };
+    window.addEventListener('storage', sync);
+    return () => window.removeEventListener('storage', sync);
+  }, []);
   const sorted = [...events].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
   const patch = (field: string, value: any) => setEditing((current: any) => ({ ...current, [field]: value }));
   const patchItem = (field: string, index: number, value: any) => setEditing((current: any) => ({
@@ -3242,6 +3255,19 @@ function EventActivityPage() {
       setEditing((current: any) => current ? { ...current, cover } : current);
       message.success('赛事封面已上传');
     }, () => setCoverUploading(false));
+  };
+  const uploadBanner = (file: File) => {
+    setBannerUploading(true);
+    return compressCover(file, 1200, 480, (image) => {
+      setBanner((current: any) => ({ ...current, image }));
+      message.success('首页 Banner 已上传');
+    }, () => setBannerUploading(false));
+  };
+  const saveBanner = () => {
+    if (banner.enabled && (!banner.image || !banner.title?.trim() || !banner.eventId)) return message.warning('请补全 Banner 图片、标题和跳转赛事');
+    if (banner.enabled && !events.some((event) => event.id === banner.eventId && event.status === 'published')) return message.warning('Banner 只能跳转已发布的赛事');
+    if (!bannerStore.save(banner)) return message.error('Banner 保存失败，请检查浏览器存储空间');
+    message.success('首页 Banner 已保存，家长端刷新后可见');
   };
   const uploadBookCover = (file: File, bookId: string) => {
     setUploadingBookId(bookId);
@@ -3308,6 +3334,15 @@ function EventActivityPage() {
 
   if (!editing) return <Space direction="vertical" size={16} style={{ width: '100%' }}>
     <Alert type="info" showIcon message="赛事活动管理" description="这里配置家长端的赛事列表和详情。已发布的赛事对家长展示；草稿和下架赛事仅供后台查看。" />
+    <Card title="首页 Banner" size="small" style={{ width: '100%' }}><Row gutter={[16, 14]}>
+      <Col xs={24}><Checkbox checked={!!banner.enabled} onChange={(e) => setBanner((current: any) => ({ ...current, enabled: e.target.checked }))}>在首页展示</Checkbox></Col>
+      <Col xs={24}><label>Banner 图片</label><div style={{ marginTop: 6 }}><Upload accept="image/jpeg,image/png,image/webp" showUploadList={false} beforeUpload={uploadBanner}><Button loading={bannerUploading}>上传 Banner</Button></Upload><span style={{ marginLeft: 12, color: '#888', fontSize: 12 }}>建议尺寸：1200 × 480 像素（5:2）；上传后自动裁剪</span></div></Col>
+      {banner.image && <Col xs={24}><img src={banner.image.startsWith('assets/') ? `../${banner.image}` : banner.image} alt="首页 Banner 预览" style={{ display: 'block', width: 300, maxWidth: '100%', aspectRatio: '5/2', objectFit: 'cover', borderRadius: 8 }} /></Col>}
+      <Col xs={24} md={12}><label>标题</label><Input value={banner.title || ''} onChange={(e) => setBanner((current: any) => ({ ...current, title: e.target.value }))} /></Col>
+      <Col xs={24} md={12}><label>副标题</label><Input value={banner.subtitle || ''} onChange={(e) => setBanner((current: any) => ({ ...current, subtitle: e.target.value }))} /></Col>
+      <Col xs={24} md={12}><label>点击跳转赛事</label><Select style={{ width: '100%' }} value={banner.eventId || undefined} placeholder="请选择已发布赛事" options={sorted.filter((event) => event.status === 'published').map((event) => ({ value: event.id, label: event.name }))} onChange={(value) => setBanner((current: any) => ({ ...current, eventId: value }))} /></Col>
+      <Col xs={24}><Button type="primary" onClick={saveBanner}>保存 Banner 配置</Button></Col>
+    </Row></Card>
     <Button type="primary" icon={<PlusOutlined />} onClick={create} style={{ alignSelf: 'flex-start' }}>创建赛事</Button>
     {sorted.length ? sorted.map((event, index) => <Card key={event.id} size="small" style={{ width: '100%' }}>
       <Row gutter={[16, 12]} align="middle">
@@ -3321,6 +3356,16 @@ function EventActivityPage() {
         </Space></Col>
       </Row>
     </Card>) : <Card>暂无赛事，点击“创建赛事”开始配置。</Card>}
+    <Card title={`报名点击记录（${signupClicks.length}）`} size="small" style={{ width: '100%' }}>
+      <p style={{ color: '#888', marginTop: 0 }}>点击后自动记录当前孩子姓名、学校和登录手机号；点击记录不代表已在赛事官网完成报名。</p>
+      <AntTable size="small" rowKey="id" pagination={{ pageSize: 8 }} dataSource={signupClicks} scroll={{ x: 720 }} columns={[
+        { title: '点击时间', dataIndex: 'clickedAt', width: 170, render: (value: string) => value ? new Date(value).toLocaleString('zh-CN', { hour12: false }) : '—' },
+        { title: '赛事', dataIndex: 'eventName', width: 220, ellipsis: true },
+        { title: '学生姓名', dataIndex: 'studentName', width: 100 },
+        { title: '学校', dataIndex: 'school', width: 220, ellipsis: true },
+        { title: '登录手机号', dataIndex: 'phone', width: 140 },
+      ]} />
+    </Card>
   </Space>;
 
   return <Space direction="vertical" size={16} style={{ width: '100%' }}>

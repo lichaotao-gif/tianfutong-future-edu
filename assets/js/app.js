@@ -36,6 +36,7 @@
       if (Array.isArray(saved.students) && saved.students.length) DB.students = saved.students;
       if (saved.currentStudentId) DB.currentStudentId = saved.currentStudentId;
       if (saved.parent) Object.assign(DB.parent, saved.parent);
+      if (DB.parent.phoneRaw && `${DB.parent.phoneRaw}`.replace(/^(1\d{2})\d{4}(\d{4})$/, '$1****$2') !== DB.parent.phone) DB.parent.phoneRaw = '';
       if (Array.isArray(saved.contestEntries)) DB.contestEntries = saved.contestEntries;
       if (saved.contestSignupCounts) {
         (DB.contests || []).forEach((c) => {
@@ -156,6 +157,7 @@
     check: '<svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     checkBig: '<svg width="38" height="38" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     clock: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M12 7v5l3 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+    pin: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 1 1 14 0Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="10" r="2.3" stroke="currentColor" stroke-width="1.8"/></svg>',
     swap: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M7 4 3.5 7.5 7 11M3.5 7.5H16M17 13l3.5 3.5L17 20m3.5-3.5H8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
 
     /* 底部导航：未选中描边、选中实心 */
@@ -301,41 +303,46 @@
       const statuses = classes.map((cls) => buyWindow(c, cls).label === '可购买' ? classStatus(c, cls) : buyWindow(c, cls).label);
       const primaryStatus = ['未到购买时间', '报名中', '待成班', '已成班', '已排课', '已截止', '已满员'].find((x) => statuses.includes(x)) || statuses[0];
       const firstClass = shownClasses[0] || classes[0];
+      const locationName = (c.venueType || '校内') === '校外'
+        ? String(firstClass?.place || c.place || '').split(' · ')[0]
+        : firstClass?.school || s.school;
+      const location = DB.courseLocations?.[locationName];
+      const address = location?.address || firstClass?.place || c.place || '地址待更新';
+      const distance = Number.isFinite(Number(location?.distanceKm))
+        ? `约 ${Number(location.distanceKm).toFixed(1)} km` : '距离待更新';
       return `
       <div class="card course-card mx mt" onclick="location.hash='#/course/${c.id}'">
-        <div class="cc-cover">${coverImg(c.cover, c.name)}</div>
-        <div class="cc-body">
-          <div class="cc-title-row"><div class="cc-name">${esc(c.name)}</div>${statusBadge(primaryStatus)}</div>
-          <div style="margin-bottom:4px"><span class="tag ${(c.venueType || '校内') === '校外' ? 'blue' : ''}">${esc(c.venueType || '校内')}</span>${c.tags.map((t) => `<span class="tag gray">${esc(t)}</span>`).join('')}</div>
-          <div class="cc-meta">${esc(c.gradeRange)} · 共 ${c.lessons} 次课</div>
-          <div class="cc-schedule">${esc(classSummary)}${classes.length > shownClasses.length ? ` 等 ${classes.length} 个班` : ''}</div>
-          ${firstClass ? `<div class="small muted" style="margin-top:3px">购买时间：${esc(buyRangeText(c, firstClass))}</div>` : ''}
-          <div class="row between" style="margin-top:6px">
-            <span class="price"><span class="yen">¥</span><span class="num">${minPrice}</span><span class="small muted"> 起</span></span>
-            ${available ? `<span class="small muted">余 ${totalLeft} 名额</span>` : `<span class="small muted">${esc(primaryStatus)}</span>`}
+        <div class="cc-location"><span class="cc-address">${I.pin}<span>地址：${esc(address)}</span></span><span class="cc-distance">${esc(distance)}</span></div>
+        <div class="cc-content">
+          <div class="cc-cover">${coverImg(c.cover, c.name)}</div>
+          <div class="cc-body">
+            <div class="cc-title-row"><div class="cc-name">${esc(c.name)}</div>${statusBadge(primaryStatus)}</div>
+            <div style="margin-bottom:4px"><span class="tag ${(c.venueType || '校内') === '校外' ? 'blue' : ''}">${esc(c.venueType || '校内')}</span>${c.tags.map((t) => `<span class="tag gray">${esc(t)}</span>`).join('')}</div>
+            <div class="cc-meta">${esc(c.gradeRange)} · 共 ${c.lessons} 次课</div>
+            <div class="cc-schedule">${esc(classSummary)}${classes.length > shownClasses.length ? ` 等 ${classes.length} 个班` : ''}</div>
+            ${firstClass ? `<div class="small muted" style="margin-top:3px">购买时间：${esc(buyRangeText(c, firstClass))}</div>` : ''}
+            <div class="row between" style="margin-top:6px">
+              <span class="price"><span class="yen">¥</span><span class="num">${minPrice}</span><span class="small muted"> 起</span></span>
+              ${available ? `<span class="small muted">余 ${totalLeft} 名额</span>` : `<span class="small muted">${esc(primaryStatus)}</span>`}
+            </div>
           </div>
         </div>
       </div>`;
     };
 
-    const hour = new Date().getHours();
-    const greet = hour < 6 ? '夜深了' : hour < 11 ? '早上好' : hour < 13 ? '中午好' : hour < 18 ? '下午好' : '晚上好';
+    const banner = window.FutureEduHomeBannerStore?.load();
     render(`
     <div class="screen has-tabbar">
       <div class="scroll">
         <div class="home-hero" style="padding-top:calc(14px + env(safe-area-inset-top))">
           <div class="hh-deco hh-deco1"></div>
           <div class="hh-deco hh-deco2"></div>
-          <div class="hh-top">
-            <div class="hh-greet">${greet}，欢迎回来</div>
-            <button class="hh-switch" onclick="App.openSwitchSheet()">${I.swap} 切换孩子</button>
-          </div>
           <div class="hh-student">
-            ${avatarImg(s.avatarImage, s.avatar, s.name)}
             <div class="info">
-              <div class="nm">${esc(s.name)} <span class="school-pill">${esc(s.grade)}</span></div>
+              <div class="nm">${esc(s.name)}</div>
               <div class="sc">${I.school} ${esc(s.school)}</div>
             </div>
+            <button class="hh-switch" type="button" onclick="App.openSwitchSheet()">${I.swap} 切换孩子</button>
           </div>
         </div>
 
@@ -349,12 +356,15 @@
           </div>
         </div>
 
+        ${banner?.enabled && banner.image ? `<button class="home-promo mx mt" type="button" onclick="App.openHomeBanner()" aria-label="查看${esc(banner.title || '赛事活动')}">
+          <img src="${esc(banner.image)}" alt="" aria-hidden="true">
+          <span class="home-promo-copy"><strong>${esc(banner.title || '赛事活动')}</strong>${banner.subtitle ? `<span>${esc(banner.subtitle)}</span>` : ''}</span>
+          <span class="home-promo-arrow" aria-hidden="true">›</span>
+        </button>` : ''}
+
         <div class="mx mt">
-          <div class="row between">
-            <div class="section-title" style="margin-bottom:0">可报名的课程</div>
-            <div class="venue-tabs">
-              ${['全部', '校内', '校外'].map((v) => `<span class="vt ${homeVenueFilter === v ? 'on' : ''}" onclick="App.setVenueFilter('${v}')">${v}</span>`).join('')}
-            </div>
+          <div class="venue-tabs" role="group" aria-label="上课地点筛选">
+            ${['全部', '校内', '校外'].map((v) => `<button class="vt ${homeVenueFilter === v ? 'on' : ''}" type="button" aria-pressed="${homeVenueFilter === v}" onclick="App.setVenueFilter('${v}')">${v}</button>`).join('')}
           </div>
         </div>
         ${filteredCourseItems().map(courseCard).join('') || '<div class="empty">该分类下暂无可报名课程</div>'}
@@ -1518,7 +1528,9 @@
       if (p1 !== p2) return toast('两次输入的密码不一致');
       DB.parent.password = p1;
     }
-    Object.assign(DB.parent, { nickname: nick, phone: maskPhone(phone), avatar: profileAvatar });
+    if (!/^1\d{10}$/.test(phone) && phone !== DB.parent.phone) return toast('请输入正确的 11 位手机号');
+    const phoneRaw = /^1\d{10}$/.test(phone) ? phone : DB.parent.phoneRaw || '';
+    Object.assign(DB.parent, { nickname: nick, phone: maskPhone(phone), phoneRaw, avatar: profileAvatar });
     persistState();
     closeProfileForm();
     toast('已保存');
@@ -1599,7 +1611,7 @@
     if (!/^1\d{10}$/.test(phone)) return toast('请输入正确的 11 位手机号');
     if (!sentCode) return toast('请先获取验证码');
     if (code !== sentCode) return toast('验证码不正确');
-    Object.assign(DB.parent, { loggedIn: true, phone: maskPhone(phone) });
+    Object.assign(DB.parent, { loggedIn: true, phone: maskPhone(phone), phoneRaw: phone });
     persistState();
     toast('登录成功');
     go('#/me');
@@ -2743,6 +2755,11 @@
   const eventStore = window.FutureEduEventActivityStore;
   const eventPreview = new URLSearchParams(location.search).get('eventPreview') === '1';
   const eventById = (id) => (eventStore?.load() || []).find((item) => item.id === routeId(id) && (item.status === 'published' || eventPreview));
+  const openHomeBanner = () => {
+    const banner = window.FutureEduHomeBannerStore?.load();
+    if (!banner?.enabled || !eventById(banner.eventId)) return toast('赛事暂未开放');
+    go(`#/contest/${encodeURIComponent(banner.eventId)}`);
+  };
   const digitalBookById = (id) => (eventStore?.load() || []).flatMap((event) => event.recommendedBooks || []).find((item) => item.id === id)
     || (DB.digitalBooks || []).find((item) => item.id === id);
   const safeExternalUrl = (raw) => {
@@ -2754,6 +2771,29 @@
   const openExternal = (raw, missingMessage) => {
     const url = safeExternalUrl(raw);
     if (!url) return toast(missingMessage || '链接尚未配置');
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+  const openEventSignup = (id) => {
+    const event = eventById(id);
+    const url = safeExternalUrl(event?.officialUrl);
+    if (!url) return toast('赛事官网链接尚未配置');
+    if (!DB.parent.loggedIn) { toast('请先登录后参赛'); return go('#/login'); }
+    const student = currentStudent();
+    const maskedPhone = String(DB.parent.phone || '');
+    const rawPhone = String(DB.parent.phoneRaw || '');
+    const phone = /^1\d{10}$/.test(rawPhone) && maskPhone(rawPhone) === maskedPhone ? rawPhone : maskedPhone;
+    if (!student?.name || !student.school || !phone) return toast('请先完善学生与手机号信息');
+    const saved = window.FutureEduEventSignupStore?.add({
+      id: `signup-click-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      eventId: event.id,
+      eventName: event.name,
+      studentId: student.id,
+      studentName: student.name,
+      school: student.school,
+      phone,
+      clickedAt: new Date().toISOString(),
+    });
+    if (!saved) return toast('报名信息记录失败，请稍后重试');
     window.open(url, '_blank', 'noopener,noreferrer');
   };
   const recommendationCard = (book) => {
@@ -2828,7 +2868,7 @@
             ${books.map(recommendationCard).join('')}
           </section>` : ''}
         </div>
-        <div class="ev-actionbar"><button class="btn btn-primary" onclick="App.openEventSignup('${esc(event.id)}')">${esc(event.actionLabel || '立即参赛')}</button>${event.actionHint ? `<p class="ev-action-hint">${esc(event.actionHint)}</p>` : ''}</div>
+        <div class="ev-actionbar"><button class="btn btn-primary" onclick="App.openEventSignup('${esc(event.id)}')">${esc(event.actionLabel || '立即参赛')}</button>${event.actionHint ? `<p class="ev-action-hint">${esc(event.actionHint)}</p>` : ''}<p class="ev-action-hint">点击后将记录当前孩子姓名、学校和登录手机号，用于报名统计。</p></div>
       </div>`);
   }
 
@@ -2928,7 +2968,7 @@
     confirmLesson, openDispute, closeDispute, selectDispute, submitDispute,
     openAftersale, closeAftersale, selectAS, submitAftersale,
     toggleFaq,
-    openEventSignup: (id) => openExternal(eventById(id)?.officialUrl, '赛事官网链接尚未配置'),
+    openHomeBanner, openEventSignup,
     openDigitalBook: (id) => openExternal(digitalBookById(id)?.purchaseUrl, '未配置渠道'),
     setMyCoursesTab: (tab) => { if (!['school', 'digital'].includes(tab)) return; myCoursesTab = tab; screenMyCourses(); document.getElementById(`ev-tab-${tab}`)?.focus(); },
     setContestFilter: (k) => { contestFilter = k; screenContests(); },

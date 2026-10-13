@@ -163,9 +163,10 @@ body {
 }
 
 /* 校内/校外筛选 tab */
-.venue-tabs { display: flex; gap: 4px; background: #eef0f4; border-radius: 16px; padding: 3px; }
-.venue-tabs .vt { padding: 4px 12px; border-radius: 13px; font-size: 12px; color: var(--muted); cursor: pointer; font-weight: 600; }
+.venue-tabs { display: flex; gap: 4px; width: 100%; max-width: 360px; margin: 0 auto; background: #eef0f4; border-radius: 18px; padding: 4px; }
+.venue-tabs .vt { flex: 1; min-height: 44px; padding: 8px 12px; border: 0; border-radius: 14px; background: transparent; color: #66717b; font: inherit; font-size: 15px; cursor: pointer; font-weight: 700; }
 .venue-tabs .vt.on { background: #fff; color: var(--orange-deep); box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+.venue-tabs .vt:focus-visible { outline: 2px solid var(--orange-deep); outline-offset: -2px; }
 
 /* 状态徽章 */
 .badge {
@@ -289,31 +290,37 @@ body {
 /* 学生信息头部（未来教育首页 banner） */
 .home-hero {
   position: relative; background: var(--orange-grad); color: #fff;
-  padding: 14px 16px 34px; border-radius: 0 0 24px 24px; overflow: hidden;
+  padding: 14px 16px 29px; border-radius: 0 0 24px 24px; overflow: hidden;
 }
 .home-hero .hh-deco { position: absolute; border-radius: 50%; background: rgba(255,255,255,.10); pointer-events: none; }
 .home-hero .hh-deco1 { width: 160px; height: 160px; right: -46px; top: -64px; }
 .home-hero .hh-deco2 { width: 92px; height: 92px; right: 66px; bottom: -48px; background: rgba(255,255,255,.07); }
-.hh-top { position: relative; display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
-.hh-greet { font-size: 13px; opacity: .92; }
 .hh-switch {
   display: inline-flex; align-items: center; gap: 5px;
   background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.4);
   color: #fff; font-size: 12px; font-weight: 600; font-family: var(--font);
-  padding: 6px 12px; border-radius: 20px; cursor: pointer; transition: background .2s;
+  min-height: 44px; padding: 6px 12px; border-radius: 22px; cursor: pointer; transition: background .2s;
 }
 .hh-switch:active { background: rgba(255,255,255,.28); }
-.hh-student { position: relative; display: flex; align-items: center; gap: 13px; }
-.hh-student .ava {
-  width: 56px; height: 56px; border-radius: 17px; background: rgba(255,255,255,.22);
-  display: flex; align-items: center; justify-content: center; font-size: 23px; font-weight: 800; flex-shrink: 0;
-  box-shadow: 0 0 0 2.5px rgba(255,255,255,.55);
-}
+.hh-student { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .hh-student .info { flex: 1; min-width: 0; }
-.hh-student .nm { font-size: 19px; font-weight: 800; display: flex; align-items: center; gap: 8px; }
+.hh-student .nm { font-size: 19px; font-weight: 800; }
 .hh-student .sc { font-size: 12.5px; opacity: .92; margin-top: 4px; display: flex; align-items: center; gap: 5px; }
 .hh-student .sc svg { width: 13px; height: 13px; flex-shrink: 0; opacity: .9; }
-.school-pill { background: rgba(255,255,255,.2); font-size: 11px; padding: 4px 8px; border-radius: 10px; font-weight: 600; }
+.hh-student .sc { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.hh-switch:focus-visible, .home-promo:focus-visible { outline: 3px solid #176b75; outline-offset: 3px; }
+.home-promo {
+  position: relative; display: flex; align-items: center; width: calc(100% - 32px); min-height: 132px;
+  overflow: hidden; padding: 20px; border: 0; border-radius: 16px; color: #fff;
+  text-align: left; font: inherit; cursor: pointer; background: #153e3b;
+  box-shadow: var(--shadow);
+}
+.home-promo::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg,rgba(10,40,38,.9),rgba(10,40,38,.58) 60%,rgba(10,40,38,.2)); }
+.home-promo > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.home-promo-copy { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 7px; max-width: 84%; }
+.home-promo-copy strong { font-size: 18px; line-height: 1.4; }
+.home-promo-copy span { font-size: 12px; line-height: 1.5; opacity: .9; }
+.home-promo-arrow { position: relative; z-index: 1; margin-left: auto; font-size: 28px; line-height: 1; }
 
 /* 快捷入口（首页两格） */
 .quick2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -323,7 +330,8 @@ body {
 .quick2 .qi .qd { font-size: 11px; color: var(--muted); }
 
 /* 课程卡片 */
-.course-card { position: relative; display: flex; gap: 12px; padding: 14px; cursor: pointer; }
+.course-card { position: relative; overflow: hidden; cursor: pointer; }
+.course-card .cc-content { display: flex; gap: 12px; padding: 14px; }
 .course-card .cc-cover { width: 92px; height: 92px; border-radius: 12px; overflow: hidden; flex-shrink: 0; }
 .course-card .cc-body { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .course-card .cc-name { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
@@ -336,6 +344,11 @@ body {
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
   overflow: hidden;
 }
+.course-card .cc-location { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 2px 10px; padding: 10px 14px; border-bottom: 1px solid #c9e5e7; background: linear-gradient(90deg, #d9f0f2, #e8f7f5); color: #285e63; font-size: 12px; line-height: 1.5; }
+.course-card .cc-address { display: inline-flex; align-items: flex-start; gap: 5px; min-width: 0; }
+.course-card .cc-address svg { flex: none; margin-top: 1px; color: #0c86a0; }
+.course-card .cc-address span { overflow-wrap: anywhere; }
+.course-card .cc-distance { color: #126d74; font-weight: 800; white-space: nowrap; }
 .course-type-badge {
   position: absolute; top: 10px; right: 10px; z-index: 2;
   height: 22px; padding: 0 8px; border-radius: 999px;

@@ -60,11 +60,19 @@ window.DB = {
   ],
   // 只展示缤果回传的已支付订单；当前静态原型没有回传接口，不伪造购买记录。
   digitalPurchases: [],
+  // 课程卡片的地点与示例距离；接入定位服务后替换距离值。
+  courseLocations: {
+    '成都天府新区实验小学': { address: '天府大道南段 1 号', distanceKm: 1.2 },
+    '成都天府新区第七小学': { address: '科学城中路 88 号', distanceKm: 2.8 },
+    '成都麓湖小学': { address: '麓湖生态城 12 号', distanceKm: 4.6 },
+    '麓山社区党群服务中心': { address: '华阳街道社区服务中心 3 楼', distanceKm: 3.4 },
+  },
   // 家长账号（Demo：本地模拟登录 / 注册 / 微信绑定）
   parent: {
     nickname: '李先生',
     avatar: '李',
     phone: '138****8888',
+    phoneRaw: '13800008888',
     password: '123456',
     wechatBound: false,
     loggedIn: true,
@@ -1127,6 +1135,35 @@ window.DB = {
     try { localStorage.setItem(KEY, JSON.stringify(events)); return true; } catch (_) { return false; }
   };
   window.FutureEduEventActivityStore = { KEY, load, save };
+})();
+
+// 首页活动 Banner 配置和赛事报名点击记录由家长端、后台共用。
+(function () {
+  const BANNER_KEY = 'futureEdu.homeBanner.v1';
+  const SIGNUP_KEY = 'futureEdu.eventSignupClicks.v1';
+  const defaultBanner = {
+    enabled: true,
+    image: 'assets/images/contests/luxun-literature-cover.jpg',
+    title: '第十八届鲁迅青少年文学大赛',
+    subtitle: '了解赛事详情与报名安排',
+    eventId: 'luxun-18',
+  };
+  const read = (key) => {
+    try { return JSON.parse(localStorage.getItem(key) || 'null'); } catch (_) { return null; }
+  };
+  const write = (key, value) => {
+    try { localStorage.setItem(key, JSON.stringify(value)); return true; } catch (_) { return false; }
+  };
+  window.FutureEduHomeBannerStore = {
+    KEY: BANNER_KEY,
+    load: () => ({ ...defaultBanner, ...(read(BANNER_KEY) || {}) }),
+    save: (banner) => write(BANNER_KEY, banner),
+  };
+  window.FutureEduEventSignupStore = {
+    KEY: SIGNUP_KEY,
+    load: () => Array.isArray(read(SIGNUP_KEY)) ? read(SIGNUP_KEY) : [],
+    add: (record) => write(SIGNUP_KEY, [record, ...(Array.isArray(read(SIGNUP_KEY)) ? read(SIGNUP_KEY) : [])].slice(0, 500)),
+  };
 })();
 
 (function () {
